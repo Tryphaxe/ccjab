@@ -1,0 +1,81 @@
+// ==========================
+//   SCHEMA DE BASE DE DONNÉES
+// ==========================
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+
+//
+// ==========================
+//        UTILISATEUR
+// ==========================
+model User {
+  id        String   @id @default(uuid())
+  name     String
+  contact  String
+  email     String   @unique
+  password  String
+  role      Role     @default(AGENT) // ADMIN ou AGENT
+
+  // Relations
+  notifs    Notif[]
+  events    Even[]   @relation("UserEvents")
+}
+
+enum Role {
+  ADMIN
+  AGENT
+}
+
+// ==========================
+//        SALLE
+// ==========================
+model Salle {
+  id        String @id @default(uuid())
+  nom_salle String
+  nombre_place Int?
+
+  events Even[]
+}
+
+// ==========================
+//        EVENEMENT
+// ==========================
+model Even {
+  id             String   @id @default(uuid())
+  categorie      String
+  montant        Float?
+  date_debut     DateTime
+  date_fin       DateTime
+  description    String?
+  nom_client     String?
+  contact_client String?
+  type String?
+  createdAt DateTime @default(now())
+
+  salle_id String?
+  salle    Salle?  @relation(fields: [salle_id], references: [id])
+
+  agent_id String?
+  agent    User?  @relation("UserEvents", fields: [agent_id], references: [id])
+}
+
+// ==========================
+//        NOTIFICATIONS
+// ==========================
+model Notif {
+  id         String   @id @default(uuid())
+  message    String
+  created_at DateTime @default(now())
+  isRead    Boolean  @default(false)
+
+  agent_id String
+  agent    User  @relation(fields: [agent_id], references: [id])
+}

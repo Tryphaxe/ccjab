@@ -1,0 +1,83 @@
+import axios from 'axios';
+import toast from 'react-hot-toast';
+
+// 🟢 Fonction pour récupérer la liste des évènements
+export const fetchEvents = async (setData, setIsLoading) => {
+    try {
+        const res = await axios.get('/api/even');
+        setData(res.data);
+    } catch (error) {
+        toast.error('Erreur lors du chargement des évènements.');
+    } finally {
+        if (setIsLoading) setIsLoading(false);
+    }
+};
+
+// 🟢 Fonction pour enregistrer un évènement
+export const submitForm = async ({
+    data,
+    onSuccess,
+    onError,
+    setLoading,
+    reload,
+    successMessage = 'Évènement enregistré avec succès.',
+    errorMessage = "Erreur lors de l'enregistrement de l'évènement.",
+}) => {
+    setLoading(true);
+    const toastDep = toast.loading("Enregistrement en cours...");
+
+    try {
+        const res = await axios({
+            method: 'post',
+            url: "/api/even",
+            data,
+            headers: {
+                'Content-Type': 'application/json',
+            },
+        });
+
+        toast.success(successMessage, { id: toastDep });
+
+        if (onSuccess) onSuccess(res.data);
+        if (reload) reload();
+
+    } catch (error) {
+        const message = error?.response?.data?.error || errorMessage;
+        toast.error(message, { id: toastDep });
+        if (onError) onError(error);
+    } finally {
+        setLoading(false);
+    }
+};
+
+// 🗑️ Fonction pour supprimer un évènement
+export const deleteEvent = async (id, reload = null) => {
+    const toastDep = toast.loading("Suppression en cours...");
+
+    try {
+        await axios.delete(`/api/even/${id}`);
+        toast.success("Évènement supprimé avec succès.", { id: toastDep });
+
+        if (reload) reload();
+    } catch (error) {
+        const message = error?.response?.data?.error || "Erreur lors de la suppression de l'évènement.";
+        toast.error(message, { id: toastDep });
+    }
+};
+
+// ✏️ Fonction pour modifier un évènement
+export const updateEvent = async (id, data, reload, setLoading, onClose) => {
+    const toastId = toast.loading("Mise à jour en cours...");
+
+    try {
+        await axios.patch(`/api/even/${id}`, data);
+        toast.success("Évènement mis à jour avec succès.", { id: toastId });
+        if (reload) reload();
+        if (onClose) onClose();
+    } catch (error) {
+        const message = error?.response?.data?.error || "Erreur lors de la mise à jour de l'évènement.";
+        toast.error(message, { id: toastId });
+    } finally {
+        setLoading(false);
+    }
+};
