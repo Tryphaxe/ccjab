@@ -27,10 +27,15 @@ export default function page() {
         montant: e.montant
     }));
 
+    const nbreven = events.length
+    const nbrevenprevus = events.filter(e => getEventStatus(e.date_debut, e.date_fin) === 'A venir').length
+    const nbrevenencours = events.filter(e => getEventStatus(e.date_debut, e.date_fin) === 'En cours').length
+    const nbreventermines = events.filter(e => getEventStatus(e.date_debut, e.date_fin) === 'Terminé').length
+
     const stats = [
         {
             title: 'Total Evènements',
-            value: 15,
+            value: nbreven,
             icon: PartyPopper,
             color: 'bg-green-500',
             bgColor: 'bg-green-50',
@@ -38,7 +43,7 @@ export default function page() {
         },
         {
             title: 'Prévus',
-            value: 15,
+            value: nbrevenprevus,
             icon: ClockAlert,
             color: 'bg-orange-500',
             bgColor: 'bg-orange-50',
@@ -46,7 +51,7 @@ export default function page() {
         },
         {
             title: 'En cours',
-            value: 15,
+            value: nbrevenencours,
             icon: Clock4,
             color: 'bg-purple-500',
             bgColor: 'bg-purple-50',
@@ -54,7 +59,7 @@ export default function page() {
         },
         {
             title: 'Terminé',
-            value: 15,
+            value: nbreventermines,
             icon: Clock12,
             color: 'bg-blue-500',
             bgColor: 'bg-blue-50',
@@ -64,7 +69,7 @@ export default function page() {
 
     return (
         <div>
-            <div className="bg-gray-100 border-2 border-gray-200 rounded-xl p-6 text-black mb-3">
+            <div className="bg-white border-1 border-gray-200 rounded-xl p-6 text-black mb-3">
                 <h1 className="text-2xl font-bold mb-2">Tableau de bord administrateur</h1>
                 <p className="text-gray-700">Vue d&apos;ensemble de la gestion des évènements</p>
             </div>

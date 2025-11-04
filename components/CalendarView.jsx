@@ -18,6 +18,7 @@ import {
 } from "@/components/ui/dialog";
 import { format, addMonths, subMonths, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay, parseISO } from "date-fns";
 import { fr } from "date-fns/locale";
+import { formatEventDate } from "@/lib/evenHelper";
 
 export default function CalendarView({ events }) {
   const [currentMonth, setCurrentMonth] = useState(new Date());
@@ -105,14 +106,12 @@ export default function CalendarView({ events }) {
               return (
                 <div
                   key={day.toString()}
-                  className={`min-h-24 p-2 border rounded-lg ${
-                    isToday ? "bg-green-50 border-green-500" : "bg-white border-gray-200"
-                  } hover:shadow-md transition-shadow`}
+                  className={`min-h-24 p-2 border rounded-lg ${isToday ? "bg-green-50 border-green-500" : "bg-white border-gray-200"
+                    } hover:shadow-md transition-shadow`}
                 >
                   <div
-                    className={`text-sm font-semibold mb-1 ${
-                      isToday ? "text-green-700" : "text-gray-700"
-                    }`}
+                    className={`text-sm font-semibold mb-1 ${isToday ? "text-green-700" : "text-gray-700"
+                      }`}
                   >
                     {format(day, "d")}
                   </div>
@@ -123,7 +122,8 @@ export default function CalendarView({ events }) {
                         className={`text-xs p-1 rounded border cursor-pointer hover:shadow-sm transition-all ${getStatusColor(event.statut)}`}
                         onClick={() => handleOpenModal(event)}
                       >
-                        <div className="font-semibold truncate">{event.nom_salle}</div>
+                        <div className="font-semibold" dangerouslySetInnerHTML={{ __html: formatEventDate(event.date_debut, event.date_fin) }}/>
+                        <div className="truncate">{event.nom_salle}</div>
                         <div className="truncate">{event.type_evenement}</div>
                       </div>
                     ))}

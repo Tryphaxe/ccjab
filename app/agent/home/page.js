@@ -82,6 +82,7 @@ export default function page() {
         }
     }, [filters]);
 
+
     return (
         <div>
             <div className="bg-white border border-gray-200 rounded-xl p-6 text-black mb-3">

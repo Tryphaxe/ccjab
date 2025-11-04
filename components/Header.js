@@ -3,7 +3,7 @@
 import { usePathname } from 'next/navigation';
 import Image from 'next/image';
 import Link from 'next/link';
-import { Home, Bell, ShieldUser, Warehouse, HatGlasses, PartyPopper, BellIcon, CheckCircleIcon } from 'lucide-react';
+import { Home, Bell, ShieldUser, Warehouse, HatGlasses, PartyPopper, BellIcon, CheckCircleIcon, Newspaper } from 'lucide-react';
 import { Menu, MenuButton, MenuItem, MenuItems } from '@headlessui/react';
 import { useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
@@ -17,6 +17,7 @@ const navigation = [
 	{ name: 'Salle', href: '/dashboard/salle', icon: Warehouse },
 	{ name: 'Agent', href: '/dashboard/agent', icon: HatGlasses },
 	{ name: 'Evènements', href: '/dashboard/evenements', icon: PartyPopper },
+	{ name: 'Comptabilité', href: '/dashboard/accounting', icon: Newspaper },
 	{ name: 'Admin', href: '/dashboard/admin', icon: ShieldUser },
 ];
 

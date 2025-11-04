@@ -23,12 +23,28 @@ export async function POST(req) {
         const { categorie, montant, date_debut, date_fin, description, nom_client, contact_client, type, salle_id, agent_id } = await req.json();
 
         // Vérification simple avant insertion
-        if (!nom_client || !categorie || !date_debut || !date_fin) {
+        if (!nom_client || !categorie || !salle_id || !agent_id || !type || !montant || !date_debut || !date_fin) {
             return NextResponse.json(
                 { error: "Certains champs obligatoires sont manquants." },
                 { status: 400 }
             );
         }
+
+        // Conversion en Date
+        const newStart = new Date(date_debut);
+        const newEnd = new Date(date_fin);
+
+        // vérifier avant create
+        const conflict = await prisma.even.findFirst({
+            where: {
+                salle_id,
+                AND: [
+                    { date_debut: { lt: newEnd } },
+                    { date_fin: { gt: newStart } }
+                ]
+            }
+        });
+        if (conflict) throw new Error("Conflit");
 
         const even = await prisma.even.create({
             data: {

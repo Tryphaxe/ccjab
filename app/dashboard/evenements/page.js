@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useMemo } from 'react'
-import { Info, Plus, Radius, Trash2, SquarePen, ChevronDownIcon, Share, CalendarCheck2, Phone, Pen } from 'lucide-react';
+import { Info, Plus, Radius, Trash2, SquarePen, ChevronDownIcon, Share, CalendarCheck2, Phone, Pen, User, PartyPopper, UserStar } from 'lucide-react';
 import { Button } from "@/components/ui/button"
 import {
     Dialog,
@@ -30,6 +30,7 @@ import { fetchAgents } from '@/utils/agentUtils';
 import { fetchSalles } from '@/utils/salleUtils';
 import { formatEventDate, getEventStatus } from '@/lib/evenHelper';
 import { exportEventsToPDF } from '@/lib/exportEvent';
+import { DateTimePicker } from '@/components/DateTimePicker';
 
 export default function page() {
     const [filters, setFilters] = useState({});
@@ -69,10 +70,35 @@ export default function page() {
     }, []);
 
     const reloadEvents = () => fetchEvents(setEvents, setIsLoading);
-    const onClose = () => setOpen(false);
+    const onClose = () => {
+        setOpen(false);
+        setForm({
+            categorie: '',
+            montant: '',
+            date_debut: '',
+            date_fin: '',
+            description: '',
+            nom_client: '',
+            contact_client: '',
+            type: '',
+            salle_id: '',
+            agent_id: '',
+        });
+    }
+
+    const hasConflict = (startIso, endIso, salleId) => {
+        if (!salleId) return false;
+        const start = new Date(startIso);
+        const end = new Date(endIso);
+        return events.some(e => e.salle_id === salleId && (start < new Date(e.date_fin) && end > new Date(e.date_debut)));
+    };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+        if (form.date_debut && form.date_fin && hasConflict(form.date_debut, form.date_fin, form.salle_id)) {
+            alert("Conflit : la salle est déjà réservée sur cette plage.");
+            return;
+        }
         await submitForm({
             data: form,
             setLoading,
@@ -106,6 +132,7 @@ export default function page() {
             return true;
         });
     }, [events, filters]);
+
     // 🔁 Afficher un petit loader à chaque changement de filtre
     useEffect(() => {
         if (Object.keys(filters).length > 0) {
@@ -127,6 +154,23 @@ export default function page() {
             () => setSelectedEvent(null) // Ferme le dialog
         );
     };
+
+    const getOccupiedSlots = (salleId) => {
+        if (!salleId) return [];
+        return events
+            .filter(e => e.salle_id === salleId)
+            .map(e => ({
+                start: new Date(e.date_debut),
+                end: new Date(e.date_fin)
+            }));
+    };
+
+    useEffect(() => {
+        // réinitialise les dates si la salle change
+        setForm(prev => ({ ...prev, date_debut: '', date_fin: '' }));
+        // optionnel : focus sur le DateTimePicker
+    }, [form.salle_id]);
+
 
     return (
         <div>
@@ -159,34 +203,6 @@ export default function page() {
                                     </div>
                                     <h1 className="text-lg font-medium text-gray-900 my-2">Informations sur l'évènement</h1>
                                     <div className="grid gap-4">
-                                        <div className="flex gap-4">
-                                            <div className="flex flex-col gap-3">
-                                                <Label htmlFor="datetimeDebut" className="px-1">
-                                                    Date debut
-                                                </Label>
-                                                <Input
-                                                    type="datetime-local"
-                                                    id="datetimeDebut"
-                                                    name="date_debut"
-                                                    value={form.date_debut}
-                                                    onChange={handleChange}
-                                                />
-                                            </div>
-                                        </div>
-                                        <div className="flex gap-4">
-                                            <div className="flex flex-col gap-3">
-                                                <Label htmlFor="date-picker" className="px-1">
-                                                    Date de fin
-                                                </Label>
-                                                <Input
-                                                    type="datetime-local"
-                                                    id="date-picker"
-                                                    name="date_fin"
-                                                    value={form.date_fin}
-                                                    onChange={handleChange}
-                                                />
-                                            </div>
-                                        </div>
                                         <Select
                                             value={form.salle_id}
                                             onValueChange={(value) => handleSelectChange("salle_id", value)}
@@ -205,6 +221,18 @@ export default function page() {
                                                 </SelectGroup>
                                             </SelectContent>
                                         </Select>
+                                        <DateTimePicker
+                                            label="Date début"
+                                            value={form.date_debut ? new Date(form.date_debut) : undefined}
+                                            onChange={(dateTime) => setForm(prev => ({ ...prev, date_debut: dateTime.toISOString() }))}
+                                            disabledSlots={getOccupiedSlots(form.salle_id)}
+                                        />
+                                        <DateTimePicker
+                                            label="Date fin"
+                                            value={form.date_fin ? new Date(form.date_fin) : undefined}
+                                            onChange={(dateTime) => setForm(prev => ({ ...prev, date_fin: dateTime.toISOString() }))}
+                                            disabledSlots={getOccupiedSlots(form.salle_id)}
+                                        />
                                         <Select
                                             value={form.type}
                                             onValueChange={(value) => handleSelectChange("type", value)}
@@ -436,12 +464,16 @@ export default function page() {
                                 </span>
                             </div>
 
-                            <p className="text-sm text-gray-500 mb-3 flex items-center gap-2">
-                                <CalendarCheck2 size={16} /> {formatEventDate(event.date_debut, event.date_fin)}
-                            </p>
+                            <div className="flex items-center gap-2">
+                                <CalendarCheck2 size={16} /> Date de l'évènement
+                            </div>
+
+                            <p className="text-sm text-gray-600 mb-4 min-h-[40px]"
+                                dangerouslySetInnerHTML={{ __html: formatEventDate(event.date_debut, event.date_fin) }}
+                            />
 
                             <div className="mb-4">
-                                <h3 className="text-sm font-medium text-gray-500 mb-1">Client</h3>
+                                <h3 className="text-sm bg-gray-100 px-2 py-1 rounded-md mb-1 gap-2 flex items-center"><User size={16} />Client</h3>
                                 <p className="text-lg font-semibold text-gray-900">{event.nom_client}</p>
                                 <p className="text-sm text-gray-600 flex items-center gap-2">
                                     <Phone size={14} /> {event.contact_client}
@@ -449,20 +481,20 @@ export default function page() {
                             </div>
 
                             <div className="mb-4">
-                                <h3 className="text-sm font-medium text-gray-500 mb-1">Évènement</h3>
+                                <h3 className="text-sm bg-gray-100 px-2 py-1 rounded-md mb-1 gap-2 flex items-center"><PartyPopper size={16} />Évènement</h3>
                                 <p className="text-lg font-semibold text-gray-900">{event.salle.nom_salle}</p>
                                 <p className="text-sm text-gray-600">Catégorie: {event.categorie}</p>
                             </div>
 
                             <div className="mb-4">
-                                <h3 className="text-sm font-medium text-gray-500 mb-1">Agent assigné</h3>
+                                <h3 className="text-sm bg-gray-100 px-2 py-1 rounded-md mb-1 gap-2 flex items-center"><UserStar size={16} />Agent assigné</h3>
                                 <p className="text-lg font-semibold text-gray-900">{event.agent.name}</p>
                                 <p className="text-sm text-gray-600 flex items-center gap-2">
                                     <Phone size={14} /> {event.agent.contact}
                                 </p>
                             </div>
 
-                            <div className="flex justify-end gap-3 mt-4">
+                            <div className="flex justify-end mt-auto gap-3 mt-4">
                                 <Button
                                     variant="destructive"
                                     size="icon"
@@ -509,9 +541,9 @@ export default function page() {
             <Dialog open={!!eventToDelete} onOpenChange={(open) => !open && setEventToDelete(null)}>
                 <DialogContent className="sm:max-w-[400px]">
                     <DialogHeader>
-                        <DialogTitle>Supprimer l'agent ?</DialogTitle>
+                        <DialogTitle>Supprimer l'évènement ?</DialogTitle>
                         <DialogDescription>
-                            Cette action est irréversible. L'agent {eventToDelete?.name} sera définitivement supprimé.
+                            Cette action est irréversible. L'évènement {eventToDelete?.name} sera définitivement supprimé.
                         </DialogDescription>
                     </DialogHeader>
                     <DialogFooter>
@@ -532,7 +564,7 @@ export default function page() {
             <Dialog open={!!selectedEvent} onOpenChange={(open) => !open && setSelectedEvent(null)}>
                 <DialogContent className="sm:max-w-[525px]">
                     <DialogHeader>
-                        <DialogTitle>Modifier l'agent</DialogTitle>
+                        <DialogTitle>Modifier l'évènement</DialogTitle>
                         <DialogDescription>
                             Modifie les informations de l'évènement ci-dessous.
                         </DialogDescription>
@@ -554,34 +586,16 @@ export default function page() {
                                 </div>
                                 <h1 className="text-lg font-medium text-gray-900 my-2">Informations sur l'évènement</h1>
                                 <div className="grid gap-4">
-                                    <div className="flex gap-4">
-                                        <div className="flex flex-col gap-3">
-                                            <Label htmlFor="datetimeDebut" className="px-1">
-                                                Date debut
-                                            </Label>
-                                            <Input
-                                                type="datetime-local"
-                                                id="datetimeDebut"
-                                                name="date_debut"
-                                                value={form.date_debut}
-                                                onChange={handleChange}
-                                            />
-                                        </div>
-                                    </div>
-                                    <div className="flex gap-4">
-                                        <div className="flex flex-col gap-3">
-                                            <Label htmlFor="date-picker" className="px-1">
-                                                Date de fin
-                                            </Label>
-                                            <Input
-                                                type="datetime-local"
-                                                id="date-picker"
-                                                name="date_fin"
-                                                value={form.date_fin}
-                                                onChange={handleChange}
-                                            />
-                                        </div>
-                                    </div>
+                                    <DateTimePicker
+                                        label="Date début"
+                                        value={form.date_debut ? new Date(form.date_debut) : undefined}
+                                        onChange={(dateTime) => setForm(prev => ({ ...prev, date_debut: dateTime.toISOString() }))}
+                                    />
+                                    <DateTimePicker
+                                        label="Date fin"
+                                        value={form.date_fin ? new Date(form.date_fin) : undefined}
+                                        onChange={(dateTime) => setForm(prev => ({ ...prev, date_fin: dateTime.toISOString() }))}
+                                    />
                                     <Select
                                         value={form.salle_id}
                                         onValueChange={(value) => handleSelectChange("salle_id", value)}
