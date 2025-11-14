@@ -15,7 +15,7 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select"
-import { eventCategories, eventTypes } from '@/lib/list';
+import { eventCategories, eventTypesByCategory } from '@/lib/list';
 import { fetchEventsAgent } from '@/utils/evenAgentUtils';
 import { fetchAgents } from '@/utils/agentUtils';
 import { fetchSalles } from '@/utils/salleUtils';
@@ -101,31 +101,35 @@ export default function page() {
             {/* 🔍 Barre de filtre responsive */}
             <div className="mb-6">
                 <div className="flex flex-wrap items-center gap-3 bg-white p-4 rounded-xl">
-
-                    {/* Filtrer par type */}
+                    {/* Filtrer par agent */}
                     <Select
-                        value={filters.type || ""}
-                        onValueChange={(value) => setFilters({ ...filters, type: value })}
+                        value={filters.agent || ""}
+                        onValueChange={(value) => setFilters({ ...filters, agent: value })}
                     >
                         <SelectTrigger className="w-full sm:w-40">
-                            <SelectValue placeholder="Type" />
+                            <SelectValue placeholder="Agent" />
                         </SelectTrigger>
                         <SelectContent>
                             <SelectGroup>
-                                <SelectLabel>Types</SelectLabel>
-                                {eventTypes.map((t) => (
-                                    <SelectItem key={t.value} value={t.value}>
-                                        {t.label}
+                                <SelectLabel>Agents</SelectLabel>
+                                {agents.map((agent) => (
+                                    <SelectItem key={agent.id} value={agent.name}>
+                                        {agent.name}
                                     </SelectItem>
                                 ))}
                             </SelectGroup>
                         </SelectContent>
                     </Select>
 
-                    {/* Filtrer par catégorie */}
                     <Select
                         value={filters.categorie || ""}
-                        onValueChange={(value) => setFilters({ ...filters, categorie: value })}
+                        onValueChange={(value) =>
+                            setFilters({
+                                ...filters,
+                                categorie: value,
+                                type: "", // Réinitialise le type quand la catégorie change
+                            })
+                        }
                     >
                         <SelectTrigger className="w-full sm:w-40">
                             <SelectValue placeholder="Catégorie" />
@@ -136,6 +140,34 @@ export default function page() {
                                 {eventCategories.map((cat) => (
                                     <SelectItem key={cat.value} value={cat.value}>
                                         {cat.label}
+                                    </SelectItem>
+                                ))}
+                            </SelectGroup>
+                        </SelectContent>
+                    </Select>
+
+                    {/* Filtrer par type (lié à la catégorie) */}
+                    <Select
+                        value={filters.type || ""}
+                        onValueChange={(value) => setFilters({ ...filters, type: value })}
+                        disabled={!filters.categorie} // Désactivé si aucune catégorie choisie
+                    >
+                        <SelectTrigger className="w-full sm:w-40">
+                            <SelectValue
+                                placeholder={
+                                    filters.categorie ? "Type" : "Choisissez une catégorie d'abord"
+                                }
+                            />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectGroup>
+                                <SelectLabel>Types</SelectLabel>
+                                {(filters.categorie
+                                    ? eventTypesByCategory[filters.categorie] || []
+                                    : []
+                                ).map((t) => (
+                                    <SelectItem key={t} value={t}>
+                                        {t}
                                     </SelectItem>
                                 ))}
                             </SelectGroup>
