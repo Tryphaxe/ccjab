@@ -12,6 +12,16 @@ import {
     DialogTitle,
     DialogTrigger,
 } from "@/components/ui/dialog"
+import {
+    Table,
+    TableBody,
+    TableCaption,
+    TableCell,
+    TableFooter,
+    TableHead,
+    TableHeader,
+    TableRow,
+} from "@/components/ui/table"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -126,64 +136,69 @@ export default function page() {
                     </div>
                 </div>
             ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-4">
-                    {agents.map((ag) => (
-                        <div key={ag.id} className="bg-white rounded-xl border border-gray-200 p-3">
-                            <div className="flex flex-col items-center justify-between gap-4">
-                                <div className="w-18 h-18 bg-green-100 rounded-xl flex items-center justify-center">
-                                    <span className="text-xl font-medium text-green-700">
-                                        {
-                                            (`${ag.name}`).split(' ').map(n => n[0]).join('')
-                                        }
-                                    </span>
-                                </div>
-                                <div className='flex items-center gap-3'>
-                                    <div className="text-center">
-                                        <p className="text-xl font-bold text-gray-900 mt-1">{ag.name}</p>
-                                        <p className="text-sm font-medium text-gray-600">
-                                            {ag.contact}
-                                        </p>
-                                        <p className="text-sm font-medium text-gray-600">
-                                            {ag.email}
-                                        </p>
-                                    </div>
-                                </div>
-                                <div className='flex items-center gap-3'>
-                                    {/* ✅ Bouton de suppression avec modal de confirmation */}
-                                    <Button
-                                        variant="destructive"
-                                        size="icon"
-                                        className="cursor-pointer"
-                                        onClick={() => {
-                                            setAgentToDelete(ag);
-                                            setOpenn(true);
-                                        }}
-                                    >
-                                        <Trash2 className="w-4 h-4" />
-                                    </Button>
+                <Table>
+                    <TableCaption>Liste des agents</TableCaption>
+                    <TableHeader>
+                        <TableRow>
+                            <TableHead className=""></TableHead>
+                            <TableHead className="">Nom et prénom(s)</TableHead>
+                            <TableHead>Contact</TableHead>
+                            <TableHead>Email</TableHead>
+                            <TableHead>Actions</TableHead>
+                        </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                        {agents.map((ag) => {
+                            return (
+                                <TableRow key={ag.id}>
+                                    <TableCell className="font-medium flex items-center">
+                                        <span className="text-xl flex items-center justify-center w-12 h-12 font-medium text-green-700 bg-green-200 rounded-lg">
+                                            {
+                                                (`${ag.name}`).split(' ').map(n => n[0]).join('')
+                                            }
+                                        </span>
+                                    </TableCell>
+                                    <TableCell>
+                                        {ag.name}
+                                    </TableCell>
+                                    <TableCell>{ag.contact}</TableCell>
+                                    <TableCell>{ag.email}</TableCell>
+                                    <TableCell className="flex items-center gap-2">
+                                        {/* ✅ Bouton de suppression avec modal de confirmation */}
+                                        <Button
+                                            variant="destructive"
+                                            size="icon"
+                                            className="cursor-pointer"
+                                            onClick={() => {
+                                                setAgentToDelete(ag);
+                                                setOpenn(true);
+                                            }}
+                                        >
+                                            <Trash2 className="w-4 h-4" />
+                                        </Button>
 
-                                    <Button
-                                        variant="outline"
-                                        size="icon"
-                                        className="cursor-pointer bg-gray-200 text-black hover:bg-gray-300"
-                                        onClick={() => {
-                                            setSelectedAgent(ag); // sélectionne l'agent
-                                            setForm({              // initialise le formulaire avec les infos existantes
-                                                name: ag.name || '',
-                                                email: ag.email || '',
-                                                contact: ag.contact || '',
-                                                password: ag.password || '',     // mot de passe vide par défaut
-                                            });
-                                        }}
-                                    >
-                                        <Pen className="w-4 h-4" />
-                                    </Button>
-
-                                </div>
-                            </div>
-                        </div>
-                    ))}
-                </div>
+                                        <Button
+                                            variant="outline"
+                                            size="icon"
+                                            className="cursor-pointer bg-gray-200 text-black hover:bg-gray-300"
+                                            onClick={() => {
+                                                setSelectedAgent(ag); // sélectionne l'agent
+                                                setForm({              // initialise le formulaire avec les infos existantes
+                                                    name: ag.name || '',
+                                                    email: ag.email || '',
+                                                    contact: ag.contact || '',
+                                                    password: ag.password || '',     // mot de passe vide par défaut
+                                                });
+                                            }}
+                                        >
+                                            <Pen className="w-4 h-4" />
+                                        </Button>
+                                    </TableCell>
+                                </TableRow>
+                            )
+                        })}
+                    </TableBody>
+                </Table>
             )}
 
             {/* Dialog global pour supprimer */}

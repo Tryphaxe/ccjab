@@ -24,7 +24,7 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select"
-import { eventCategories, eventTypes } from '@/lib/list';
+import { eventCategories, eventTypesByCategory } from '@/lib/list';
 import { submitForm, fetchEvents, deleteEvent, updateEvent } from '@/utils/evenUtils';
 import { fetchAgents } from '@/utils/agentUtils';
 import { fetchSalles } from '@/utils/salleUtils';
@@ -234,26 +234,12 @@ export default function page() {
                                             disabledSlots={getOccupiedSlots(form.salle_id)}
                                         />
                                         <Select
-                                            value={form.type}
-                                            onValueChange={(value) => handleSelectChange("type", value)}
-                                        >
-                                            <SelectTrigger className="w-full">
-                                                <SelectValue placeholder="Types d'évènements" />
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                                <SelectGroup>
-                                                    <SelectLabel>Types</SelectLabel>
-                                                    {eventTypes.map((type) => (
-                                                        <SelectItem key={type.value} value={type.value}>
-                                                            {type.label}
-                                                        </SelectItem>
-                                                    ))}
-                                                </SelectGroup>
-                                            </SelectContent>
-                                        </Select>
-                                        <Select
                                             value={form.categorie}
-                                            onValueChange={(value) => handleSelectChange("categorie", value)}
+                                            onValueChange={(value) => {
+                                                handleSelectChange("categorie", value);
+                                                // Réinitialiser le type si on change de catégorie
+                                                setForm((prev) => ({ ...prev, type: "" }));
+                                            }}
                                         >
                                             <SelectTrigger className="w-full">
                                                 <SelectValue placeholder="Catégorie" />
@@ -269,6 +255,29 @@ export default function page() {
                                                 </SelectGroup>
                                             </SelectContent>
                                         </Select>
+
+                                        {/* Sélecteur de type dépendant de la catégorie */}
+                                        <Select
+                                            value={form.type}
+                                            onValueChange={(value) => handleSelectChange("type", value)}
+                                            disabled={!form.categorie} // désactive tant qu'aucune catégorie n'est choisie
+                                        >
+                                            <SelectTrigger className="w-full">
+                                                <SelectValue placeholder="Type d'évènement" />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                <SelectGroup>
+                                                    <SelectLabel>Types</SelectLabel>
+                                                    {form.categorie &&
+                                                        eventTypesByCategory[form.categorie]?.map((type) => (
+                                                            <SelectItem key={type} value={type}>
+                                                                {type}
+                                                            </SelectItem>
+                                                        ))}
+                                                </SelectGroup>
+                                            </SelectContent>
+                                        </Select>
+
 
                                         <div className="grid gap-3">
                                             <Label htmlFor="Montant">Montant</Label>
@@ -342,30 +351,15 @@ export default function page() {
                         </SelectContent>
                     </Select>
 
-                    {/* Filtrer par type */}
-                    <Select
-                        value={filters.type || ""}
-                        onValueChange={(value) => setFilters({ ...filters, type: value })}
-                    >
-                        <SelectTrigger className="w-full sm:w-40">
-                            <SelectValue placeholder="Type" />
-                        </SelectTrigger>
-                        <SelectContent>
-                            <SelectGroup>
-                                <SelectLabel>Types</SelectLabel>
-                                {eventTypes.map((t) => (
-                                    <SelectItem key={t.value} value={t.value}>
-                                        {t.label}
-                                    </SelectItem>
-                                ))}
-                            </SelectGroup>
-                        </SelectContent>
-                    </Select>
-
-                    {/* Filtrer par catégorie */}
                     <Select
                         value={filters.categorie || ""}
-                        onValueChange={(value) => setFilters({ ...filters, categorie: value })}
+                        onValueChange={(value) =>
+                            setFilters({
+                                ...filters,
+                                categorie: value,
+                                type: "", // Réinitialise le type quand la catégorie change
+                            })
+                        }
                     >
                         <SelectTrigger className="w-full sm:w-40">
                             <SelectValue placeholder="Catégorie" />
@@ -376,6 +370,34 @@ export default function page() {
                                 {eventCategories.map((cat) => (
                                     <SelectItem key={cat.value} value={cat.value}>
                                         {cat.label}
+                                    </SelectItem>
+                                ))}
+                            </SelectGroup>
+                        </SelectContent>
+                    </Select>
+
+                    {/* Filtrer par type (lié à la catégorie) */}
+                    <Select
+                        value={filters.type || ""}
+                        onValueChange={(value) => setFilters({ ...filters, type: value })}
+                        disabled={!filters.categorie} // Désactivé si aucune catégorie choisie
+                    >
+                        <SelectTrigger className="w-full sm:w-40">
+                            <SelectValue
+                                placeholder={
+                                    filters.categorie ? "Type" : "Choisissez une catégorie d'abord"
+                                }
+                            />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectGroup>
+                                <SelectLabel>Types</SelectLabel>
+                                {(filters.categorie
+                                    ? eventTypesByCategory[filters.categorie] || []
+                                    : []
+                                ).map((t) => (
+                                    <SelectItem key={t} value={t}>
+                                        {t}
                                     </SelectItem>
                                 ))}
                             </SelectGroup>
@@ -543,7 +565,7 @@ export default function page() {
                     <DialogHeader>
                         <DialogTitle>Supprimer l'évènement ?</DialogTitle>
                         <DialogDescription>
-                            Cette action est irréversible. L'évènement {eventToDelete?.name} sera définitivement supprimé.
+                            Cette action est irréversible. L'évènement <b>{eventToDelete?.type}</b> pour le client <b>{eventToDelete?.nom_client}</b> sera définitivement supprimé.
                         </DialogDescription>
                     </DialogHeader>
                     <DialogFooter>
@@ -615,26 +637,11 @@ export default function page() {
                                         </SelectContent>
                                     </Select>
                                     <Select
-                                        value={form.type}
-                                        onValueChange={(value) => handleSelectChange("type", value)}
-                                    >
-                                        <SelectTrigger className="w-full">
-                                            <SelectValue placeholder="Types d'évènements" />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            <SelectGroup>
-                                                <SelectLabel>Types</SelectLabel>
-                                                {eventTypes.map((type) => (
-                                                    <SelectItem key={type.value} value={type.value}>
-                                                        {type.label}
-                                                    </SelectItem>
-                                                ))}
-                                            </SelectGroup>
-                                        </SelectContent>
-                                    </Select>
-                                    <Select
                                         value={form.categorie}
-                                        onValueChange={(value) => handleSelectChange("categorie", value)}
+                                        onValueChange={(value) => {
+                                            handleSelectChange("categorie", value)
+                                            setForm((prev) => ({ ...prev, type: "" })) // reset le type
+                                        }}
                                     >
                                         <SelectTrigger className="w-full">
                                             <SelectValue placeholder="Catégorie" />
@@ -647,6 +654,30 @@ export default function page() {
                                                         {cat.label}
                                                     </SelectItem>
                                                 ))}
+                                            </SelectGroup>
+                                        </SelectContent>
+                                    </Select>
+
+                                    {/* Type (lié dynamiquement à la catégorie) */}
+                                    <Select
+                                        value={form.type}
+                                        onValueChange={(value) =>
+                                            handleSelectChange("type", value)
+                                        }
+                                        disabled={!form.categorie}
+                                    >
+                                        <SelectTrigger className="w-full">
+                                            <SelectValue placeholder="Type d'évènement" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectGroup>
+                                                <SelectLabel>Types</SelectLabel>
+                                                {form.categorie &&
+                                                    eventTypesByCategory[form.categorie]?.map((type) => (
+                                                        <SelectItem key={type} value={type}>
+                                                            {type}
+                                                        </SelectItem>
+                                                    ))}
                                             </SelectGroup>
                                         </SelectContent>
                                     </Select>

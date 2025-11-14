@@ -1,34 +1,44 @@
 "use client";
 
 import React, { useEffect, useState } from 'react'
-
 import { Button } from "@/components/ui/button"
 import {
     Card,
     CardContent,
-    CardDescription,
-    CardFooter,
     CardHeader,
     CardTitle,
 } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import {
-    Tabs,
-    TabsContent,
-    TabsList,
-    TabsTrigger,
-} from "@/components/ui/tabs"
-import { Calendar, AlertCircle, PartyPopper, Clock4, ClockAlert, Clock12, Plus, Share } from 'lucide-react';
+import { PartyPopper, Clock4, ClockAlert, Clock12 } from 'lucide-react';
 import CalendarView from '@/components/CalendarView';
 import { fetchEvents } from '@/utils/evenUtils';
-
 import { getEventStatus } from '@/lib/evenHelper';
 import DayCalendar from '@/components/DayCalendar';
+import { ButtonGroup } from '@/components/ui/button-group';
 
-export default function page() {
-    const [isloading, setIsLoading] = useState(true)
+// 👉 Création du composant ButtonGroup simple
+function BtGroup({ activeView, onChange }) {
+    return (
+        <ButtonGroup>
+            <Button
+                variant={activeView === "jour" ? "default" : "outline"}
+                onClick={() => onChange("jour")}
+            >
+                Jour
+            </Button>
+            <Button
+                variant={activeView === "mois" ? "default" : "outline"}
+                onClick={() => onChange("mois")}
+            >
+                Mois
+            </Button>
+        </ButtonGroup>
+    );
+}
+
+export default function Page() {
+    const [isloading, setIsLoading] = useState(true);
     const [events, setEvents] = useState([]);
+    const [activeView, setActiveView] = useState("jour");
 
     useEffect(() => {
         fetchEvents(setEvents, setIsLoading);
@@ -46,49 +56,21 @@ export default function page() {
         montant: e.montant
     }));
 
-    const nbreven = events.length
-    const nbrevenprevus = events.filter(e => getEventStatus(e.date_debut, e.date_fin) === 'A venir').length
-    const nbrevenencours = events.filter(e => getEventStatus(e.date_debut, e.date_fin) === 'En cours').length
-    const nbreventermines = events.filter(e => getEventStatus(e.date_debut, e.date_fin) === 'Terminé').length
+    const nbreven = events.length;
+    const nbrevenprevus = events.filter(e => getEventStatus(e.date_debut, e.date_fin) === 'A venir').length;
+    const nbrevenencours = events.filter(e => getEventStatus(e.date_debut, e.date_fin) === 'En cours').length;
+    const nbreventermines = events.filter(e => getEventStatus(e.date_debut, e.date_fin) === 'Terminé').length;
 
     const stats = [
-        {
-            title: 'Total Evènements',
-            value: nbreven,
-            icon: PartyPopper,
-            color: 'bg-green-500',
-            bgColor: 'bg-green-50',
-            textColor: 'text-green-700'
-        },
-        {
-            title: 'Prévus',
-            value: nbrevenprevus,
-            icon: ClockAlert,
-            color: 'bg-orange-500',
-            bgColor: 'bg-orange-50',
-            textColor: 'text-orange-700'
-        },
-        {
-            title: 'En cours',
-            value: nbrevenencours,
-            icon: Clock4,
-            color: 'bg-purple-500',
-            bgColor: 'bg-purple-50',
-            textColor: 'text-purple-700'
-        },
-        {
-            title: 'Terminé',
-            value: nbreventermines,
-            icon: Clock12,
-            color: 'bg-blue-500',
-            bgColor: 'bg-blue-50',
-            textColor: 'text-blue-700'
-        }
+        { title: 'Total Evènements', value: nbreven, icon: PartyPopper, textColor: 'text-green-700', bgColor: 'bg-green-50' },
+        { title: 'Prévus', value: nbrevenprevus, icon: ClockAlert, textColor: 'text-orange-700', bgColor: 'bg-orange-50' },
+        { title: 'En cours', value: nbrevenencours, icon: Clock4, textColor: 'text-purple-700', bgColor: 'bg-purple-50' },
+        { title: 'Terminé', value: nbreventermines, icon: Clock12, textColor: 'text-blue-700', bgColor: 'bg-blue-50' }
     ];
 
     return (
         <div>
-            <div className="bg-white border-1 border-gray-200 rounded-xl p-6 text-black mb-3">
+            <div className="bg-white border border-gray-200 rounded-xl p-6 text-black mb-3">
                 <h1 className="text-2xl font-bold mb-2">Tableau de bord administrateur</h1>
                 <p className="text-gray-700">Vue d&apos;ensemble de la gestion des évènements</p>
             </div>
@@ -112,53 +94,34 @@ export default function page() {
                 })}
             </div>
 
-            <div className="flex w-full flex-col gap-6">
-                <Tabs defaultValue="jour">
-                    <TabsList>
-                        <TabsTrigger value="jour">Jour</TabsTrigger>
-                        <TabsTrigger value="mois">Mois</TabsTrigger>
-                    </TabsList>
-                    <TabsContent value="jour">
-                        <Card>
-                            <CardHeader>
-                                <CardTitle>Evènements jounaliers</CardTitle>
-                                <CardDescription>
-                                    Make changes to your account here. Click save when you&apos;re
-                                    done.
-                                </CardDescription>
-                            </CardHeader>
-                            <CardContent className="grid gap-6">
-                                <DayCalendar events={events} />
-                            </CardContent>
-                        </Card>
-                    </TabsContent>
-                    <TabsContent value="mois">
-                        <Card>
-                            <CardHeader>
-                                <CardTitle>Evènements mensuels</CardTitle>
-                                <CardDescription>
-                                    Change your password here. After saving, you&apos;ll be logged
-                                    out.
-                                </CardDescription>
-                            </CardHeader>
-                            <CardContent className="grid gap-6">
-                                <CalendarView events={formattedEvents} />
-                            </CardContent>
-                        </Card>
-                    </TabsContent>
-                </Tabs>
+            <div className="flex flex-col gap-6">
+                {/* 👉 Boutons à la place des Tabs */}
+                <div className="flex justify-between items-center">
+                    <h2 className="text-xl font-semibold">Vue des évènements</h2>
+                    <BtGroup activeView={activeView} onChange={setActiveView} />
+                </div>
+
+                {/* 🗓️ Contenu selon la vue choisie */}
+                {activeView === "jour" ? (
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>Évènements journaliers</CardTitle>
+                        </CardHeader>
+                        <CardContent className="grid gap-6">
+                            <DayCalendar events={events} />
+                        </CardContent>
+                    </Card>
+                ) : (
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>Évènements mensuels</CardTitle>
+                        </CardHeader>
+                        <CardContent className="grid gap-6">
+                            <CalendarView events={formattedEvents} />
+                        </CardContent>
+                    </Card>
+                )}
             </div>
-
-
-
-
-            <div>
-
-            </div>
-
-
-
-
         </div>
-    )
+    );
 }

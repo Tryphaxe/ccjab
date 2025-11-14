@@ -32,7 +32,7 @@ export default function DayCalendar({ events = [] }) {
             <div className="sticky top-0 z-30 bg-gradient-to-r from-green-600 to-green-500 text-white py-3 px-4 shadow-sm border-b border-gray-200 flex items-center justify-between">
                 <button
                     onClick={prevDay}
-                    className="bg-white/20 hover:bg-white/30 border-white text-white p-2 px-4 rounded-md"
+                    className="bg-white/20 hover:bg-white/30 border-white text-white p-4 rounded-md"
                 >
                     <ChevronLeft size={16} />
                 </button>
@@ -96,7 +96,7 @@ export default function DayCalendar({ events = [] }) {
                         return (
                             <div
                                 key={e.id}
-                                className="absolute flex flex-col left-18 right-4 border-l-5 border-green-500 bg-green-50 rounded-sm p-2 z-10"
+                                className="absolute flex flex-col cursor-pointer overflow-hidden left-18 right-4 border-l-5 border-green-500 bg-green-50 rounded-sm p-2 shadow-sm hover:shadow-md transition-shadow z-10"
                                 style={{ top: `${top}px`, height: `${height}px` }}
                             >
                                 <p className="font-semibold text-md text-green-800">{e.categorie}</p>
