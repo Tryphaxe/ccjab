@@ -20,7 +20,7 @@ export async function GET() {
 // ➕ POST : créer une nouvelle even
 export async function POST(req) {
     try {
-        const { categorie, montant, date_debut, date_fin, description, nom_client, contact_client, type, salle_id, agent_id } = await req.json();
+        const { categorie, montant, avance, date_debut, date_fin, description, nom_client, contact_client, type, salle_id, agent_id } = await req.json();
 
         // Vérification simple avant insertion
         if (!nom_client || !categorie || !salle_id || !agent_id || !type || !montant || !date_debut || !date_fin) {
@@ -50,6 +50,7 @@ export async function POST(req) {
             data: {
                 categorie,
                 montant: montant ? parseFloat(montant) : null,
+                avance: avance ? parseFloat(avance) : 0,
                 date_debut: new Date(date_debut),
                 date_fin: new Date(date_fin),
                 description,
@@ -64,7 +65,7 @@ export async function POST(req) {
         // Création de la notification
         const notificationsData = await prisma.notif.create({
             data: {
-                message: `Vous avez été assigné à un évènement pour le ${new Date(date_debut).toDateString()}.`,
+                message: `Vous avez été assigné à un évènement pour le ${new Date(date_debut).toDateString("fr-FR")}.`,
                 agent_id,
             },
         });

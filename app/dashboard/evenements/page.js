@@ -75,6 +75,7 @@ export default function page() {
         setForm({
             categorie: '',
             montant: '',
+            avance: '',
             date_debut: '',
             date_fin: '',
             description: '',
@@ -282,6 +283,10 @@ export default function page() {
                                         <div className="grid gap-3">
                                             <Label htmlFor="Montant">Montant</Label>
                                             <Input id="Montant" name="montant" value={form.montant} onChange={handleChange} />
+                                        </div>
+                                        <div className="grid gap-3">
+                                            <Label htmlFor="avance">Avance (optionnel)</Label>
+                                            <Input id="avance" name="avance" value={form.avance} onChange={handleChange} />
                                         </div>
                                         <div className="grid gap-3">
                                             <Label htmlFor="Description">Description</Label>
@@ -505,6 +510,8 @@ export default function page() {
                             <div className="mb-4">
                                 <h3 className="text-sm bg-gray-100 px-2 py-1 rounded-md mb-1 gap-2 flex items-center"><PartyPopper size={16} />Évènement</h3>
                                 <p className="text-lg font-semibold text-gray-900">{event.salle.nom_salle}</p>
+                                <p className="text-lg font-semibold text-gray-900">{event.montant.toLocaleString("fr-FR") + " Fcfa"}</p>
+                                <p className="text-md text-gray-600">Avance: {event.avance === 0 ? event.avance : 0 + " Fcfa"}</p>
                                 <p className="text-sm text-gray-600">Catégorie: {event.categorie}</p>
                             </div>
 
@@ -538,6 +545,7 @@ export default function page() {
                                         setForm({
                                             categorie: event.categorie || '',
                                             montant: event.montant || '',
+                                            avance: event.avance || '',
                                             date_debut: event.date_debut || '',
                                             date_fin: event.date_fin || '',
                                             description: event.description || '',
@@ -685,6 +693,10 @@ export default function page() {
                                     <div className="grid gap-3">
                                         <Label htmlFor="Montant">Montant</Label>
                                         <Input id="Montant" name="montant" value={form.montant} onChange={handleChange} />
+                                    </div>
+                                    <div className="grid gap-3">
+                                        <Label htmlFor="avance">Avance (optionnel)</Label>
+                                        <Input id="avance" name="avance" value={form.avance} onChange={handleChange} />
                                     </div>
                                     <div className="grid gap-3">
                                         <Label htmlFor="Description">Description</Label>
