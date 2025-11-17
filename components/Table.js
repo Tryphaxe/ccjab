@@ -60,7 +60,6 @@ export default function TableList() {
   return (
     <div className="space-y-4">
       <Table>
-        <TableCaption>La liste des récentes réservations</TableCaption>
         <TableHeader>
           <TableRow>
             <TableHead className="w-[120px]">Salle</TableHead>
