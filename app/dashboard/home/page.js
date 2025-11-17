@@ -14,6 +14,7 @@ import { fetchEvents } from '@/utils/evenUtils';
 import { getEventStatus } from '@/lib/evenHelper';
 import DayCalendar from '@/components/DayCalendar';
 import { ButtonGroup } from '@/components/ui/button-group';
+import WeeksEvents from '@/components/WeeksEvents';
 
 // 👉 Création du composant ButtonGroup simple
 function BtGroup({ activeView, onChange }) {
@@ -24,6 +25,12 @@ function BtGroup({ activeView, onChange }) {
                 onClick={() => onChange("jour")}
             >
                 Jour
+            </Button>
+            <Button
+                variant={activeView === "semaine" ? "default" : "outline"}
+                onClick={() => onChange("semaine")}
+            >
+                Semaine
             </Button>
             <Button
                 variant={activeView === "mois" ? "default" : "outline"}
@@ -109,6 +116,15 @@ export default function Page() {
                         </CardHeader>
                         <CardContent className="grid gap-6">
                             <DayCalendar events={events} />
+                        </CardContent>
+                    </Card>
+                ) : activeView === "semaine" ? (
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>Évènements de la semaine</CardTitle>
+                        </CardHeader>
+                        <CardContent className="grid gap-6">
+                            <WeeksEvents />
                         </CardContent>
                     </Card>
                 ) : (

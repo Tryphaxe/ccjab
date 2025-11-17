@@ -21,7 +21,7 @@ model User {
   contact  String
   email    String @unique
   password String
-  role     Role   @default(AGENT) // ADMIN ou AGENT
+  role     Role
 
   // Relations
   notifs Notif[]
@@ -31,6 +31,7 @@ model User {
 enum Role {
   ADMIN
   AGENT
+  FINANCIER
 }
 
 // ==========================

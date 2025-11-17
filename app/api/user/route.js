@@ -2,40 +2,39 @@ import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import bcrypt from 'bcryptjs';
 
-// 📄 GET : liste de toutes les admins
+// 📄 GET : liste de toutes les users
 export async function GET() {
     try {
-        const admins = await prisma.user.findMany({
-            where: { role: 'ADMIN' },
+        const users = await prisma.user.findMany({
             orderBy: { name: 'asc' },
         });
-        return NextResponse.json(admins);
+        return NextResponse.json(users);
     } catch (error) {
         return NextResponse.json({ error: 'Erreur lors de la récupération.' }, { status: 500 });
     }
 }
 
-// ➕ POST : créer une nouvelle admin
+// ➕ POST : créer user
 export async function POST(req) {
     try {
-        const { name, contact, email, password } = await req.json();
+        const { name, contact, email, password, role } = await req.json();
 
-        if (!name || !contact || !email || !password) {
+        if (!name || !contact || !email || !password || !role) {
             return NextResponse.json({ error: 'Tous les champs sont requis !' }, { status: 400 });
         }
         const hashedPassword = await bcrypt.hash(password, 10);
-        const admin = await prisma.user.create({
+        const user = await prisma.user.create({
             data: {
                 name,
                 contact,
                 email,
                 password: hashedPassword,
-                role: 'ADMIN',
+                role,
             },
         });
 
-        return NextResponse.json(admin, { status: 201 });
+        return NextResponse.json(user, { status: 201 });
     } catch (error) {
-        return NextResponse.json({ error: 'Erreur lors de la création de l\'admin .' }, { status: 500 });
+        return NextResponse.json({ error: 'Erreur lors de la création de l\'user .' }, { status: 500 });
     }
 }

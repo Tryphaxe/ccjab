@@ -15,10 +15,9 @@ import { useNotifications } from './useNotifications';
 const navigation = [
 	{ name: 'Dashboard', href: '/dashboard/home', icon: Home },
 	{ name: 'Salle', href: '/dashboard/salle', icon: Warehouse },
-	{ name: 'Agent', href: '/dashboard/agent', icon: HatGlasses },
 	{ name: 'Evènements', href: '/dashboard/evenements', icon: PartyPopper },
-	{ name: 'Comptabilité', href: '/dashboard/accounting', icon: Newspaper },
-	{ name: 'Admin', href: '/dashboard/admin', icon: ShieldUser },
+	{ name: 'Statistiques', href: '/dashboard/accounting', icon: Newspaper },
+	{ name: 'Utilisateurs', href: '/dashboard/users', icon: ShieldUser },
 ];
 
 function classNames(...classes) {

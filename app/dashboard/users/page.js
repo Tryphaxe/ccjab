@@ -22,31 +22,44 @@ import {
     TableHeader,
     TableRow,
 } from "@/components/ui/table"
+import {
+    Select,
+    SelectContent,
+    SelectGroup,
+    SelectItem,
+    SelectLabel,
+    SelectTrigger,
+    SelectValue,
+} from "@/components/ui/select"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { deleteAgent, submitForm, fetchAgents, updateAgent } from '@/utils/agentUtils';
+import { deleteUser, submitForm, fetchUsers, updateUser } from '@/utils/userUtils';
 
 export default function page() {
-    const [agents, setAgents] = useState([])
-    const [selectedAgent, setSelectedAgent] = useState(null);
-    const [agentToDelete, setAgentToDelete] = useState(null);
-    const [isloading, setIsLoading] = useState(true)
-    const [loading, setLoading] = useState(false)
+    const [selectedUser, setSelectedUser] = useState(null);
+    const [userToDelete, setUserToDelete] = useState(null);
     const [open, setOpen] = useState(false);
     const [openn, setOpenn] = useState(false);
+    const [users, setUsers] = useState([])
+    const [isloading, setIsLoading] = useState(true)
+    const [loading, setLoading] = useState(false)
     const [form, setForm] = useState({
         name: '',
         contact: '',
         email: '',
         password: '',
+        role: '',
     });
     const handleChange = (e) => {
         setForm({ ...form, [e.target.name]: e.target.value });
     };
+    const handleSelectChange = (name, value) => {
+        setForm({ ...form, [name]: value });
+    };
 
     useEffect(() => {
-        fetchAgents(setAgents, setIsLoading);
+        fetchUsers(setUsers, setIsLoading);
     }, []);
 
     // Fonction pour enregistrer un nouveau departement
@@ -55,23 +68,23 @@ export default function page() {
         await submitForm({
             data: form,
             setLoading,
-            reload: () => fetchAgents(setAgents, setIsLoading),
-            successMessage: "Agent ajouté avec succès.",
-            errorMessage: "Erreur lors de l'ajout de l'agent.",
+            reload: () => fetchUsers(setUsers, setIsLoading),
+            successMessage: "Utilisateur ajouté avec succès.",
+            errorMessage: "Erreur lors de l'ajout de l'utilisateur.",
         });
     };
 
-    const reloadAgents = () => fetchAgents(setAgents, setIsLoading);
+    const reloadUsers = () => fetchUsers(setUsers, setIsLoading);
     const handleUpdate = async (e) => {
         e.preventDefault();
-        if (!selectedAgent) return;
+        if (!selectedUser) return;
         setLoading(true);
-        await updateAgent(
-            selectedAgent.id,
+        await updateUser(
+            selectedUser.id,
             form,
-            reloadAgents,
+            reloadUsers,
             setLoading,
-            () => setSelectedAgent(null) // Ferme le dialog
+            () => setSelectedUser(null) // Ferme le dialog
         );
     };
 
@@ -91,22 +104,46 @@ export default function page() {
     return (
         <div>
             <div className="flex items-center justify-between mb-4 border-b border-gray-200 pb-2">
-                <h1 className="text-xl font-medium text-gray-900">Gestion des agents</h1>
+                <h1 className="text-xl font-medium text-gray-900">Gestion des utilisateurs</h1>
                 <Dialog>
                     <DialogTrigger asChild>
                         <Button variant="outline"><Plus size={16} />Ajouter</Button>
                     </DialogTrigger>
                     <DialogContent className="sm:max-w-[525px]">
                         <DialogHeader>
-                            <DialogTitle>Ajouter un agent</DialogTitle>
+                            <DialogTitle>Ajouter un utilisateur</DialogTitle>
                             <DialogDescription>
-                                Veuillez renseigner les informations ci-dessous pour ajouter un nouvel agent.
+                                Veuillez renseigner les informations ci-dessous pour ajouter un nouvel utilisateur.
                             </DialogDescription>
                         </DialogHeader>
                         <form onSubmit={handleSubmit}>
                             <div className='max-h-54 overflow-y-auto pr-3 mb-3'>
                                 {/* <h1 className="text-lg font-medium text-gray-900 my-2">Informations du client</h1> */}
                                 <div className="grid gap-4">
+                                    <div className="grid gap-4">
+                                        <Select
+                                            value={form.role}
+                                            onValueChange={(value) => handleSelectChange("role", value)}
+                                        >
+                                            <SelectTrigger className="w-full">
+                                                <SelectValue placeholder="Rôle" />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                <SelectGroup>
+                                                    <SelectLabel> Choisissez le rôle</SelectLabel>
+                                                    <SelectItem key="1" value="ADMIN">
+                                                        Admin
+                                                    </SelectItem>
+                                                    <SelectItem key="2" value="AGENT">
+                                                        Agent
+                                                    </SelectItem>
+                                                    <SelectItem key="3" value="FINANCIER">
+                                                        Financier
+                                                    </SelectItem>
+                                                </SelectGroup>
+                                            </SelectContent>
+                                        </Select>
+                                    </div>
                                     <div className="grid gap-3">
                                         <Label htmlFor="name-1">Nom et prénom(s)</Label>
                                         <Input id="name-1" name="name" value={form.name} onChange={handleChange} required />
@@ -141,17 +178,16 @@ export default function page() {
                     <Radius className='animate-spin w-4 h-4 text-blue-950' />
                     <span className="ml-2 text-gray-700">Chargement en cours...</span>
                 </div>
-            ) : agents.length === 0 ? (
+            ) : users.length === 0 ? (
                 <div className='flex flex-col items-center justify-center gap-3 p-3'>
                     <div className="flex items-center justify-center gap-2">
                         <Info className='w-4 h-4 text-red-800' />
-                        <span className="ml-2 text-gray-700">Aucun agent enrégistré !</span>
+                        <span className="ml-2 text-gray-700">Aucun utilisateur enrégistré !</span>
                     </div>
                 </div>
             ) : (
                 <div className="bg-white rounded-md border">
                     <Table>
-                        <TableCaption>Liste des agents</TableCaption>
                         <TableHeader>
                             <TableRow>
                                 <TableHead className=""></TableHead>
@@ -163,11 +199,11 @@ export default function page() {
                             </TableRow>
                         </TableHeader>
                         <TableBody>
-                            {agents.map((ag) => {
+                            {users.map((ag) => {
                                 return (
                                     <TableRow key={ag.id}>
                                         <TableCell className="font-medium flex items-center">
-                                            <span className="text-xl flex items-center justify-center w-12 h-12 font-medium text-green-700 bg-green-200 rounded-lg">
+                                            <span className="text-lg uppercase flex items-center justify-center w-10 h-10 font-medium text-gray-700 bg-gray-100 rounded-lg">
                                                 {
                                                     (`${ag.name}`).split(' ').map(n => n[0]).join('')
                                                 }
@@ -186,7 +222,7 @@ export default function page() {
                                                 size="icon"
                                                 className="cursor-pointer"
                                                 onClick={() => {
-                                                    setAgentToDelete(ag);
+                                                    setUserToDelete(ag);
                                                     setOpenn(true);
                                                 }}
                                             >
@@ -198,12 +234,13 @@ export default function page() {
                                                 size="icon"
                                                 className="cursor-pointer bg-gray-200 text-black hover:bg-gray-300"
                                                 onClick={() => {
-                                                    setSelectedAgent(ag); // sélectionne l'agent
+                                                    setSelectedUser(ag); // sélectionne l'agent
                                                     setForm({              // initialise le formulaire avec les infos existantes
                                                         name: ag.name || '',
                                                         email: ag.email || '',
                                                         contact: ag.contact || '',
                                                         password: ag.password || '',     // mot de passe vide par défaut
+                                                        role: ag.role || '',
                                                     });
                                                 }}
                                             >
@@ -219,21 +256,21 @@ export default function page() {
             )}
 
             {/* Dialog global pour supprimer */}
-            <Dialog open={!!agentToDelete} onOpenChange={(open) => !open && setAgentToDelete(null)}>
+            <Dialog open={!!userToDelete} onOpenChange={(open) => !open && setUserToDelete(null)}>
                 <DialogContent className="sm:max-w-[400px]">
                     <DialogHeader>
-                        <DialogTitle>Supprimer l'agent ?</DialogTitle>
+                        <DialogTitle>Supprimer l'utilisateur ?</DialogTitle>
                         <DialogDescription>
-                            Cette action est irréversible. L'agent {agentToDelete?.name} sera définitivement supprimé.
+                            Cette action est irréversible. L'utilisateur {userToDelete?.name} sera définitivement supprimé.
                         </DialogDescription>
                     </DialogHeader>
                     <DialogFooter>
-                        <Button variant="outline" onClick={() => setAgentToDelete(null)}>Annuler</Button>
+                        <Button variant="outline" onClick={() => setUserToDelete(null)}>Annuler</Button>
                         <Button
                             variant="destructive"
                             onClick={() => {
-                                deleteAgent(agentToDelete.id, reloadAgents);
-                                setAgentToDelete(null);
+                                deleteUser(userToDelete.id, reloadUsers);
+                                setUserToDelete(null);
                             }}
                         >
                             Supprimer
@@ -243,18 +280,42 @@ export default function page() {
             </Dialog>
 
             {/* Dialog global pour modifier un agent */}
-            <Dialog open={!!selectedAgent} onOpenChange={(open) => !open && setSelectedAgent(null)}>
+            <Dialog open={!!selectedUser} onOpenChange={(open) => !open && setSelectedUser(null)}>
                 <DialogContent className="sm:max-w-[525px]">
                     <DialogHeader>
-                        <DialogTitle>Modifier l'agent</DialogTitle>
+                        <DialogTitle>Modifier l'utilisateur</DialogTitle>
                         <DialogDescription>
-                            Modifie les informations de l'agent {selectedAgent?.name}.
+                            Modifie les informations de l'utilisateur {selectedUser?.name}.
                         </DialogDescription>
                     </DialogHeader>
 
-                    {selectedAgent && (
+                    {selectedUser && (
                         <form onSubmit={handleUpdate}>
                             <div className="grid gap-4 mb-3">
+                                <div className="grid gap-4">
+                                    <Select
+                                        value={form.role}
+                                        onValueChange={(value) => handleSelectChange("role", value)}
+                                    >
+                                        <SelectTrigger className="w-full">
+                                            <SelectValue placeholder="Rôle" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectGroup>
+                                                <SelectLabel> Choisissez le rôle</SelectLabel>
+                                                <SelectItem key="1" value="ADMIN">
+                                                    Admin
+                                                </SelectItem>
+                                                <SelectItem key="2" value="AGENT">
+                                                    Agent
+                                                </SelectItem>
+                                                <SelectItem key="3" value="FINACIER">
+                                                    Financier
+                                                </SelectItem>
+                                            </SelectGroup>
+                                        </SelectContent>
+                                    </Select>
+                                </div>
                                 <div className="grid gap-3">
                                     <Label>Nom et prénom(s)</Label>
                                     <Input name="name" value={form.name} onChange={handleChange} required />
@@ -285,7 +346,6 @@ export default function page() {
                     )}
                 </DialogContent>
             </Dialog>
-
         </div>
     )
 }

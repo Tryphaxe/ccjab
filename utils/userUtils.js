@@ -1,12 +1,12 @@
 import axios from 'axios';
 import toast from 'react-hot-toast';
 
-export const fetchAdmins = async (setData, setIsLoading) => {
+export const fetchUsers = async (setData, setIsLoading) => {
     try {
-        const res = await axios.get('/api/admin');
+        const res = await axios.get('/api/user');
         setData(res.data);
     } catch (error) {
-        toast.error('Erreur lors du chargement des Admins.');
+        toast.error('Erreur lors du chargement des Users.');
     } finally {
         if (setIsLoading) setIsLoading(false);
     }
@@ -27,7 +27,7 @@ export const submitForm = async ({
     try {
         const res = await axios({
             method: 'post',
-            url: "/api/admin",
+            url: "/api/user",
             data,
             headers: {
                 'Content-Type': 'application/json',
@@ -52,13 +52,13 @@ export const submitForm = async ({
 };
 
 //  Fonction pour supprimer
-export const deleteAdmin = async (id, reload = null) => {
+export const deleteUser = async (id, reload = null) => {
 
     const toastDep = toast.loading("Suppression en cours...");
 
     try {
-        await axios.delete(`/api/admin/${id}`);
-        toast.success("Admin supprimé avec succès.", { id: toastDep });
+        await axios.delete(`/api/user/${id}`);
+        toast.success("Utilisateur supprimé avec succès.", { id: toastDep });
 
         if (reload) reload();
     } catch (error) {
@@ -67,19 +67,19 @@ export const deleteAdmin = async (id, reload = null) => {
     }
 };
 
-export const updateAdmin = async (id, data, reload, setLoading, onClose) => {
-  const toastId = toast.loading("Mise à jour en cours...");
+export const updateUser = async (id, data, reload, setLoading, onClose) => {
+    const toastId = toast.loading("Mise à jour en cours...");
 
-  try {
-    await axios.patch(`/api/admin/${id}`, data);
-    toast.success("Admin mis à jour avec succès.", { id: toastId });
-    if (reload) reload();
-    if (onClose) onClose();
-  } catch (error) {
-    const message =
-      error?.response?.data?.error || "Erreur lors de la mise à jour.";
-    toast.error(message, { id: toastId });
-  } finally {
-    setLoading(false);
-  }
+    try {
+        await axios.patch(`/api/user/${id}`, data);
+        toast.success("Utilisateur mis à jour avec succès.", { id: toastId });
+        if (reload) reload();
+        if (onClose) onClose();
+    } catch (error) {
+        const message =
+            error?.response?.data?.error || "Erreur lors de la mise à jour.";
+        toast.error(message, { id: toastId });
+    } finally {
+        setLoading(false);
+    }
 };
