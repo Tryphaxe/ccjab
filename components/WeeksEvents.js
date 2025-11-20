@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from "react";
 import { startOfWeek, endOfWeek, addWeeks, format } from "date-fns";
 import { fr } from "date-fns/locale";
+import { PartyPopper } from "lucide-react";
 
 export default function WeeksEvents() {
     const [currentWeek, setCurrentWeek] = useState(new Date());
@@ -57,11 +58,12 @@ export default function WeeksEvents() {
                 {events.map((even) => (
                     <div
                         key={even.id}
-                        className="bg-white p-5 rounded-xl shadow-sm transition duration-300 border border-gray-100" // Carte améliorée
+                        className="bg-orange-50 p-5 rounded-xl border border-gray-100"
                     >
                         {/* En-tête de la carte : Catégorie et Type */}
                         <div className="flex justify-between items-center mb-4 pb-2 border-b border-gray-100">
-                            <h3 className="font-extrabold text-xl text-orange-600 capitalize">
+                            <h3 className="font-extrabold text-xl text-black capitalize">
+                                <PartyPopper className="w-5 h-5 inline mr-2" />
                                 {/* <TrophyIcon className="w-5 h-5 inline mr-2" /> (Exemple d'icône) */}
                                 {even.categorie}
                             </h3>
@@ -71,41 +73,35 @@ export default function WeeksEvents() {
                         </div>
 
                         {/* Détails du client */}
-                        <div className="mb-4 text-sm text-gray-700">
+                        <div className="mb-2 text-sm text-gray-700">
                             {/* <UserIcon className="w-4 h-4 inline mr-2 text-gray-500" /> */}
                             Client : <span className="font-semibold text-gray-900">{even.nom_client ?? "—"}</span>
                             <span className="ml-2">({even.contact_client ?? "—"})</span>
                         </div>
-                        <div className="mb-4 text-sm text-gray-700">
+                        <div className="mb-2 text-sm text-gray-700">
                             {/* <UserIcon className="w-4 h-4 inline mr-2 text-gray-500" /> */}
                             Agent assigné : <span className="font-semibold text-gray-900">{even.agent.name ?? "—"}</span>
                             <span className="ml-2">({even.agent.contact ?? "—"})</span>
                         </div>
 
                         {/* Dates de l'événement (Mise en page en grille pour un alignement propre) */}
-                        <div className="grid grid-cols-2 gap-4 text-sm text-gray-700 mb-4">
+                        <div className="text-sm text-gray-700 mb-2">
                             <div>
                                 <p className="font-medium text-gray-900 mb-1 flex items-center">
                                     {/* <ClockIcon className="w-4 h-4 inline mr-2 text-green-500" /> */}
-                                    Début :
-                                </p>
-                                <p className="pl-6">
-                                    {format(new Date(even.date_debut), "EEEE dd MMM yyyy HH:mm", { locale: fr })}
+                                    Début : {format(new Date(even.date_debut), "EEEE dd MMM yyyy HH:mm", { locale: fr })}
                                 </p>
                             </div>
                             <div>
                                 <p className="font-medium text-gray-900 mb-1 flex items-center">
                                     {/* <ClockIcon className="w-4 h-4 inline mr-2 text-red-500" /> */}
-                                    Fin :
-                                </p>
-                                <p className="pl-6">
-                                    {format(new Date(even.date_fin), "EEEE dd MMM yyyy HH:mm", { locale: fr })}
+                                    Fin : {format(new Date(even.date_fin), "EEEE dd MMM yyyy HH:mm", { locale: fr })}
                                 </p>
                             </div>
                         </div>
 
                         {/* Montant et Avance (Mise en évidence) */}
-                        <div className="pt-4 border-t border-gray-100">
+                        <div className="p-2 border-t border-gray-100 bg-white border border-gray-100 rounded-lg">
                             <div className="flex justify-between items-center text-sm">
                                 <p className="text-gray-700 font-medium">Montant Total :</p>
                                 <p className="text-lg font-bold text-green-600">

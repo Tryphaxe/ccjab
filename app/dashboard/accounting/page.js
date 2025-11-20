@@ -1,17 +1,29 @@
-"use client"
+"use client";
 
 import React, { useEffect, useState } from 'react'
 import { Button } from "@/components/ui/button"
 import { ButtonGroup } from "@/components/ui/button-group"
-import { EqualApproximately, HandCoins, HousePlus, MapPinHouse } from 'lucide-react';
+import { EqualApproximately, Filter, HandCoins, HousePlus, MapPinHouse } from 'lucide-react';
 import ChartAreaDefault from '@/components/Area';
 import TableList from '@/components/Table';
 import { fetchEvents } from '@/utils/evenUtils';
+import {
+    Dialog,
+    DialogClose,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+    DialogTrigger,
+} from "@/components/ui/dialog"
+import FiltreBar from '@/components/FiltreBar';
 
 export default function page() {
     const [events, setEvents] = useState([]);
     const [periode, setPeriode] = useState("semaine"); // semaine | mois | annee
     const [loading, setLoading] = useState(true);
+    const [open, setOpen] = useState(false);
 
     useEffect(() => {
         fetchEvents(setEvents, setLoading);
@@ -166,6 +178,28 @@ export default function page() {
             <div className="bg-white rounded-xl border border-gray-200 p-6 mt-3">
                 <TableList />
             </div>
+
+            <Button variant="outline" aria-label="Submit"
+                onClick={() => {
+                    setOpen(true);
+                }}
+                className="animate-bounce cursor-pointer fixed bottom-6 right-6 bg-orange-600 text-white p-4 shadow-xl hover:bg-orange-700 transition">
+                <Filter />
+                Filtre
+            </Button>
+
+            <Dialog open={open} onOpenChange={setOpen}>
+                <DialogContent className="sm:max-w-5xl h-[500px] overflow-y-scroll">
+                    <DialogHeader>
+                        <DialogTitle>
+                            <span className='flex items-center justify-center gap-2'><Filter size={14} />Filtres</span>
+                        </DialogTitle>
+                        <div className="py-4">
+                            <FiltreBar />
+                        </div>
+                    </DialogHeader>
+                </DialogContent>
+            </Dialog>
 
         </div>
     )
