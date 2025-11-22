@@ -6,6 +6,7 @@ export async function GET() {
   try {
     const salles = await prisma.salle.findMany({
       orderBy: { nom_salle: 'asc' },
+      include: { commodites: { include: { commodite: true } } }
     });
     return NextResponse.json(salles);
   } catch (error) {
@@ -17,7 +18,7 @@ export async function GET() {
 // ➕ POST : créer une nouvelle salle
 export async function POST(req) {
   try {
-    const { nom_salle, nombre_place } = await req.json();
+    const { nom_salle, nombre_place, commodites } = await req.json();
 
     if (!nom_salle) {
       return NextResponse.json({ error: 'Nom de la salle requis !' }, { status: 400 });
@@ -27,12 +28,17 @@ export async function POST(req) {
       data: {
         nom_salle,
         nombre_place: parseInt(nombre_place) || 0,
+        commodites: {
+          create: commodites.map((id) => ({
+            commodite: { connect: { id } },
+          })),
+        },
       },
     });
 
-    return NextResponse.json(salle, { status: 201 });
-  } catch (error) {
-    console.error('Erreur POST /api/salle:', error);
-    return NextResponse.json({ error: 'Erreur lors de la création de la salle.' }, { status: 500 });
-  }
+  return NextResponse.json(salle, { status: 201 });
+} catch (error) {
+  console.error('Erreur POST /api/salle:', error);
+  return NextResponse.json({ error: 'Erreur lors de la création de la salle.' }, { status: 500 });
+}
 }

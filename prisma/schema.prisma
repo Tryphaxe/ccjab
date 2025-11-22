@@ -43,6 +43,22 @@ model Salle {
   nombre_place Int?
 
   events Even[]
+  commodites  SalleCommodite[]
+}
+model Commodite {
+  id          Int              @id @default(autoincrement())
+  nom         String
+  salles      SalleCommodite[]
+}
+
+model SalleCommodite {
+  salle       Salle     @relation(fields: [salleId], references: [id])
+  salleId     String
+
+  commodite   Commodite @relation(fields: [commoditeId], references: [id])
+  commoditeId Int
+
+  @@id([salleId, commoditeId])
 }
 
 // ==========================

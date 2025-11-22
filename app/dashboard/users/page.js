@@ -103,7 +103,7 @@ export default function page() {
 
     return (
         <div>
-            <div className="flex items-center justify-between mb-4 border-b border-gray-200 pb-2">
+            <div className="flex items-center justify-between mb-4 pb-2">
                 <h1 className="text-xl font-medium text-gray-900">Gestion des utilisateurs</h1>
                 <Dialog>
                     <DialogTrigger asChild>
