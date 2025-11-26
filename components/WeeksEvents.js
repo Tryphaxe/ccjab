@@ -1,24 +1,43 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { startOfWeek, endOfWeek, addWeeks, format } from "date-fns";
+import { startOfWeek, endOfWeek, addWeeks, format, parseISO } from "date-fns";
 import { fr } from "date-fns/locale";
-import { PartyPopper } from "lucide-react";
+import { 
+    ChevronLeft, 
+    ChevronRight, 
+    CalendarRange, 
+    MapPin, 
+    User, 
+    Banknote, 
+    Clock, 
+    Loader2 
+} from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Separator } from "@/components/ui/separator";
 
 export default function WeeksEvents() {
     const [currentWeek, setCurrentWeek] = useState(new Date());
     const [events, setEvents] = useState([]);
+    const [isLoading, setIsLoading] = useState(true);
 
     const loadEvents = async (date) => {
+        setIsLoading(true);
         const start = startOfWeek(date, { weekStartsOn: 1 });
         const end = endOfWeek(date, { weekStartsOn: 1 });
 
-        const res = await fetch(
-            `/api/even/weeks?start=${start.toISOString()}&end=${end.toISOString()}`
-        );
-
-        const data = await res.json();
-        setEvents(data);
+        try {
+            const res = await fetch(
+                `/api/even/weeks?start=${start.toISOString()}&end=${end.toISOString()}`
+            );
+            const data = await res.json();
+            setEvents(data);
+        } catch (error) {
+            console.error("Erreur chargement events:", error);
+        } finally {
+            setIsLoading(false);
+        }
     };
 
     useEffect(() => {
@@ -32,92 +51,139 @@ export default function WeeksEvents() {
     const end = endOfWeek(currentWeek, { weekStartsOn: 1 });
 
     return (
-        <div className="">
-            {/* Navigation semaines */}
-            <div className="sticky top-0 z-30 rounded-2xl mb-3 bg-gradient-to-r from-green-600 to-green-500 text-white py-3 px-4 border-b border-gray-200 flex items-center justify-between">
-                <button onClick={previousWeek} className="bg-white/20 hover:bg-white/30 border-white text-white p-3 rounded-md">
-                    ←
-                </button>
+        <div className="flex flex-col h-full">
+            {/* --- En-tête de navigation --- */}
+            <div className="flex items-center justify-between mb-6 bg-white p-2 rounded-xl border border-gray-200 shadow-sm">
+                <Button 
+                    variant="ghost" 
+                    size="icon" 
+                    onClick={previousWeek}
+                    className="hover:bg-gray-100 text-gray-600"
+                >
+                    <ChevronLeft className="w-5 h-5" />
+                </Button>
 
-                <h2 className="font-bold text-lg">
-                    Semaine du {format(start, "dd MMM", { locale: fr })} au{" "}
-                    {format(end, "dd MMM yyyy", { locale: fr })}
-                </h2>
+                <div className="flex items-center gap-2">
+                    <div className="bg-orange-50 p-2 rounded-lg">
+                        <CalendarRange className="w-5 h-5 text-orange-600" />
+                    </div>
+                    <div className="text-center">
+                        <p className="text-sm text-gray-500 font-medium uppercase tracking-wide">Semaine du</p>
+                        <h2 className="text-sm sm:text-base font-bold text-gray-900">
+                            {format(start, "d MMM", { locale: fr })} - {format(end, "d MMM yyyy", { locale: fr })}
+                        </h2>
+                    </div>
+                </div>
 
-                <button onClick={nextWeek} className="bg-white/20 hover:bg-white/30 border-white text-white p-3 rounded-md">
-                    →
-                </button>
+                <Button 
+                    variant="ghost" 
+                    size="icon" 
+                    onClick={nextWeek}
+                    className="hover:bg-gray-100 text-gray-600"
+                >
+                    <ChevronRight className="w-5 h-5" />
+                </Button>
             </div>
 
-            {/* Liste des événements */}
-            <div className="space-y-3">
-                {events.length === 0 && (
-                    <p className="text-red-500 italic">Aucun évènement cette semaine.</p>
-                )}
-
-                {events.map((even) => (
-                    <div
-                        key={even.id}
-                        className="bg-orange-50 p-5 rounded-xl border border-gray-100"
-                    >
-                        {/* En-tête de la carte : Catégorie et Type */}
-                        <div className="flex justify-between items-center mb-4 pb-2 border-b border-gray-100">
-                            <h3 className="font-extrabold text-xl text-black capitalize">
-                                <PartyPopper className="w-5 h-5 inline mr-2" />
-                                {/* <TrophyIcon className="w-5 h-5 inline mr-2" /> (Exemple d'icône) */}
-                                {even.categorie}
-                            </h3>
-                            <span className="bg-indigo-100 text-indigo-800 text-xs font-semibold px-3 py-1 rounded-full">
-                                {even.type}
-                            </span>
-                        </div>
-
-                        {/* Détails du client */}
-                        <div className="mb-2 text-sm text-gray-700">
-                            {/* <UserIcon className="w-4 h-4 inline mr-2 text-gray-500" /> */}
-                            Client : <span className="font-semibold text-gray-900">{even.nom_client ?? "—"}</span>
-                            <span className="ml-2">({even.contact_client ?? "—"})</span>
-                        </div>
-                        <div className="mb-2 text-sm text-gray-700">
-                            {/* <UserIcon className="w-4 h-4 inline mr-2 text-gray-500" /> */}
-                            Agent assigné : <span className="font-semibold text-gray-900">{even.agent.name ?? "—"}</span>
-                            <span className="ml-2">({even.agent.contact ?? "—"})</span>
-                        </div>
-
-                        {/* Dates de l'événement (Mise en page en grille pour un alignement propre) */}
-                        <div className="text-sm text-gray-700 mb-2">
-                            <div>
-                                <p className="font-medium text-gray-900 mb-1 flex items-center">
-                                    {/* <ClockIcon className="w-4 h-4 inline mr-2 text-green-500" /> */}
-                                    Début : {format(new Date(even.date_debut), "EEEE dd MMM yyyy HH:mm", { locale: fr })}
-                                </p>
-                            </div>
-                            <div>
-                                <p className="font-medium text-gray-900 mb-1 flex items-center">
-                                    {/* <ClockIcon className="w-4 h-4 inline mr-2 text-red-500" /> */}
-                                    Fin : {format(new Date(even.date_fin), "EEEE dd MMM yyyy HH:mm", { locale: fr })}
-                                </p>
-                            </div>
-                        </div>
-
-                        {/* Montant et Avance (Mise en évidence) */}
-                        <div className="p-2 border-t border-gray-100 bg-white border border-gray-100 rounded-lg">
-                            <div className="flex justify-between items-center text-sm">
-                                <p className="text-gray-700 font-medium">Montant Total :</p>
-                                <p className="text-lg font-bold text-green-600">
-                                    {/* Utilisation de toLocaleString pour un meilleur format monétaire */}
-                                    {(even.montant ?? 0).toLocaleString('fr-FR')} FCFA
-                                </p>
-                            </div>
-                            <div className="flex justify-between items-center text-sm mt-1">
-                                <p className="text-gray-700 font-medium">Avance Reçue :</p>
-                                <p className="text-base font-bold text-yellow-600">
-                                    {(even.avance ?? 0).toLocaleString('fr-FR')} FCFA
-                                </p>
-                            </div>
-                        </div>
+            {/* --- Liste des événements --- */}
+            <div className="space-y-4">
+                {isLoading ? (
+                    <div className="flex flex-col items-center justify-center py-12 text-gray-400">
+                        <Loader2 className='animate-spin w-8 h-8 mb-2 text-orange-600' />
+                        <span className="text-sm">Chargement du planning...</span>
                     </div>
-                ))}
+                ) : events.length === 0 ? (
+                    <div className="flex flex-col items-center justify-center py-12 bg-gray-50 border border-dashed border-gray-200 rounded-xl">
+                        <div className="bg-white p-3 rounded-full mb-3 shadow-sm">
+                            <CalendarRange className="w-6 h-6 text-gray-400" />
+                        </div>
+                        <p className="text-gray-500 font-medium">Aucun évènement prévu cette semaine</p>
+                    </div>
+                ) : (
+                    events.map((even) => (
+                        <div
+                            key={even.id}
+                            className="group bg-white rounded-xl border border-gray-200 p-4 sm:p-5 shadow-sm hover:shadow-md transition-all duration-200 hover:border-orange-200 relative overflow-hidden"
+                        >
+                            {/* Bandeau latéral de couleur selon statut (optionnel, ici bleu par défaut) */}
+                            <div className="absolute left-0 top-0 bottom-0 w-1 bg-orange-500 group-hover:bg-orange-600 transition-colors"></div>
+
+                            <div className="flex flex-col sm:flex-row gap-4 sm:items-start justify-between pl-3">
+                                
+                                {/* Colonne Gauche : Date & Titre */}
+                                <div className="space-y-3 flex-1">
+                                    <div className="flex flex-wrap items-center gap-2">
+                                        <Badge variant="outline" className="bg-orange-50 text-orange-700 border-orange-100">
+                                            {even.categorie}
+                                        </Badge>
+                                        <Badge variant="secondary" className="text-gray-600 bg-gray-100">
+                                            {even.type}
+                                        </Badge>
+                                    </div>
+                                    
+                                    <div>
+                                        <h3 className="text-lg font-bold text-gray-900 group-hover:text-orange-700 transition-colors">
+                                            {even.salle?.nom_salle || "Lieu non spécifié"}
+                                        </h3>
+                                        <div className="flex items-center gap-2 text-sm text-gray-500 mt-1">
+                                            <Clock className="w-4 h-4" />
+                                            <span className="capitalize">
+                                                {format(new Date(even.date_debut), "EEEE d MMMM", { locale: fr })} 
+                                                <span className="mx-1">•</span> 
+                                                {format(new Date(even.date_debut), "HH:mm")} - {format(new Date(even.date_fin), "HH:mm")}
+                                            </span>
+                                        </div>
+                                    </div>
+
+                                    {/* Infos Client & Agent */}
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
+                                        <div className="flex items-start gap-2 text-sm">
+                                            <User className="w-4 h-4 text-gray-400 mt-0.5" />
+                                            <div>
+                                                <p className="text-gray-500 text-xs uppercase font-semibold">Client</p>
+                                                <p className="text-gray-900 font-medium">{even.nom_client || "—"}</p>
+                                                <p className="text-gray-500 text-xs">{even.contact_client}</p>
+                                            </div>
+                                        </div>
+                                        <div className="flex items-start gap-2 text-sm">
+                                            <div className="w-4 h-4 rounded-full bg-gray-100 flex items-center justify-center mt-0.5">
+                                                <span className="text-[10px] font-bold text-gray-600">A</span>
+                                            </div>
+                                            <div>
+                                                <p className="text-gray-500 text-xs uppercase font-semibold">Agent</p>
+                                                <p className="text-gray-900 font-medium">{even.agent?.name || "—"}</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Colonne Droite : Finances */}
+                                <div className="sm:text-right flex flex-row sm:flex-col justify-between sm:justify-start items-center sm:items-end gap-1 sm:border-l sm:border-gray-100 sm:pl-5 sm:min-w-[140px]">
+                                    <div className="flex flex-col items-start sm:items-end">
+                                        <span className="text-xs text-gray-500 font-medium mb-0.5 flex items-center gap-1">
+                                            <Banknote className="w-3 h-3" /> Total
+                                        </span>
+                                        <span className="text-lg font-bold text-gray-900">
+                                            {(even.montant ?? 0).toLocaleString('fr-FR')} <span className="text-xs font-normal text-gray-500">FCFA</span>
+                                        </span>
+                                    </div>
+
+                                    <Separator className="hidden sm:block my-2 w-full" />
+                                    
+                                    {/* Séparateur mobile */}
+                                    <div className="h-8 w-px bg-gray-200 sm:hidden mx-2"></div>
+
+                                    <div className="flex flex-col items-start sm:items-end">
+                                        <span className="text-xs text-gray-500 font-medium mb-0.5">Avance</span>
+                                        <span className={`text-sm font-bold ${(even.avance ?? 0) > 0 ? "text-emerald-600" : "text-gray-400"}`}>
+                                            {(even.avance ?? 0).toLocaleString('fr-FR')} FCFA
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    ))
+                )}
             </div>
         </div>
     );

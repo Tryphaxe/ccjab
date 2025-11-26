@@ -1,7 +1,20 @@
 "use client";
 
 import React, { useState, useEffect } from 'react'
-import { Info, Pen, Plus, Radius, Trash2 } from 'lucide-react';
+import { 
+    Info, 
+    Pen, 
+    Plus, 
+    Trash2, 
+    Loader, 
+    Search, 
+    User, 
+    Mail, 
+    Phone, 
+    Shield, 
+    Lock,
+    UserCog
+} from 'lucide-react';
 import {
     Dialog,
     DialogClose,
@@ -15,9 +28,7 @@ import {
 import {
     Table,
     TableBody,
-    TableCaption,
     TableCell,
-    TableFooter,
     TableHead,
     TableHeader,
     TableRow,
@@ -34,16 +45,18 @@ import {
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { Badge } from "@/components/ui/badge"
 import { deleteUser, submitForm, fetchUsers, updateUser } from '@/utils/userUtils';
 
-export default function page() {
+export default function UsersPage() {
     const [selectedUser, setSelectedUser] = useState(null);
     const [userToDelete, setUserToDelete] = useState(null);
-    const [open, setOpen] = useState(false);
-    const [openn, setOpenn] = useState(false);
     const [users, setUsers] = useState([])
     const [isloading, setIsLoading] = useState(true)
     const [loading, setLoading] = useState(false)
+    const [isAddOpen, setIsAddOpen] = useState(false);
+    
+    // État du formulaire
     const [form, setForm] = useState({
         name: '',
         contact: '',
@@ -51,9 +64,11 @@ export default function page() {
         password: '',
         role: '',
     });
+
     const handleChange = (e) => {
         setForm({ ...form, [e.target.name]: e.target.value });
     };
+    
     const handleSelectChange = (name, value) => {
         setForm({ ...form, [name]: value });
     };
@@ -62,19 +77,22 @@ export default function page() {
         fetchUsers(setUsers, setIsLoading);
     }, []);
 
-    // Fonction pour enregistrer un nouveau departement
+    const reloadUsers = () => fetchUsers(setUsers, setIsLoading);
+
     const handleSubmit = async (e) => {
         e.preventDefault();
         await submitForm({
             data: form,
             setLoading,
-            reload: () => fetchUsers(setUsers, setIsLoading),
+            reload: reloadUsers,
             successMessage: "Utilisateur ajouté avec succès.",
-            errorMessage: "Erreur lors de l'ajout de l'utilisateur.",
+            errorMessage: "Erreur lors de l'ajout.",
         });
+        setIsAddOpen(false);
+        // Reset form
+        setForm({ name: '', contact: '', email: '', password: '', role: '' });
     };
 
-    const reloadUsers = () => fetchUsers(setUsers, setIsLoading);
     const handleUpdate = async (e) => {
         e.preventDefault();
         if (!selectedUser) return;
@@ -84,268 +102,253 @@ export default function page() {
             form,
             reloadUsers,
             setLoading,
-            () => setSelectedUser(null) // Ferme le dialog
+            () => setSelectedUser(null)
         );
     };
 
-    const getRole = (role) => {
+    // Helper pour le badge de rôle
+    const RoleBadge = ({ role }) => {
         switch (role) {
-            case "AGENT":
-                return "text-yellow-700 bg-yellow-100 px-2 py-1 rounded-full text-xs font-medium";
             case "ADMIN":
-                return "text-blue-700 bg-blue-100 px-2 py-1 rounded-full text-xs font-medium";
+                return <Badge className="bg-purple-100 text-purple-700 hover:bg-purple-200 border-purple-200 shadow-none">Administrateur</Badge>;
             case "FINANCIER":
-                return "text-green-700 bg-green-100 px-2 py-1 rounded-full text-xs font-medium";
+                return <Badge className="bg-emerald-100 text-emerald-700 hover:bg-emerald-200 border-emerald-200 shadow-none">Financier</Badge>;
+            case "AGENT":
+                return <Badge className="bg-blue-100 text-blue-700 hover:bg-blue-200 border-blue-200 shadow-none">Agent</Badge>;
             default:
-                return "";
+                return <Badge variant="outline" className="text-gray-500">{role}</Badge>;
         }
     };
 
+    // Composant de formulaire réutilisable (pour éviter la duplication de code)
+    const UserFormFields = () => (
+        <div className="grid gap-4 py-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-2 sm:col-span-2">
+                    <Label htmlFor="role" className="text-xs font-medium text-gray-500">Rôle & Permissions</Label>
+                    <Select value={form.role} onValueChange={(value) => handleSelectChange("role", value)}>
+                        <SelectTrigger className="w-full">
+                            <SelectValue placeholder="Sélectionner un rôle" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="ADMIN">Administrateur</SelectItem>
+                            <SelectItem value="AGENT">Agent</SelectItem>
+                            <SelectItem value="FINANCIER">Financier</SelectItem>
+                        </SelectContent>
+                    </Select>
+                </div>
+
+                <div className="space-y-2">
+                    <Label htmlFor="name" className="text-xs font-medium text-gray-500">Nom complet</Label>
+                    <div className="relative">
+                        <User className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-400" />
+                        <Input id="name" name="name" className="pl-9" value={form.name} onChange={handleChange} required />
+                    </div>
+                </div>
+
+                <div className="space-y-2">
+                    <Label htmlFor="contact" className="text-xs font-medium text-gray-500">Téléphone</Label>
+                    <div className="relative">
+                        <Phone className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-400" />
+                        <Input id="contact" name="contact" className="pl-9" value={form.contact} onChange={handleChange} required />
+                    </div>
+                </div>
+
+                <div className="space-y-2 sm:col-span-2">
+                    <Label htmlFor="email" className="text-xs font-medium text-gray-500">Adresse Email</Label>
+                    <div className="relative">
+                        <Mail className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-400" />
+                        <Input id="email" name="email" type="email" className="pl-9" value={form.email} onChange={handleChange} required />
+                    </div>
+                </div>
+
+                <div className="space-y-2 sm:col-span-2">
+                    <Label htmlFor="password" className="text-xs font-medium text-gray-500">Mot de passe</Label>
+                    <div className="relative">
+                        <Lock className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-400" />
+                        <Input id="password" name="password" type="password" className="pl-9" value={form.password} onChange={handleChange} required={!selectedUser} placeholder={selectedUser ? "Laisser vide pour ne pas changer" : "••••••••"} />
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
+
     return (
-        <div>
-            <div className="flex items-center justify-between mb-4 pb-2">
-                <h1 className="text-xl font-medium text-gray-900">Gestion des utilisateurs</h1>
-                <Dialog>
-                    <DialogTrigger asChild>
-                        <Button variant="outline"><Plus size={16} />Ajouter</Button>
-                    </DialogTrigger>
-                    <DialogContent className="sm:max-w-[525px]">
+        <div className="min-h-screen bg-gray-50/50 p-4 text-gray-900">
+            <div className="max-w-7xl mx-auto space-y-6">
+                
+                {/* Header */}
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                    <div>
+                        <h1 className="text-2xl font-bold tracking-tight text-gray-900">Équipe & Utilisateurs</h1>
+                        <p className="text-sm text-gray-500 mt-1">Gérez les accès et les rôles de vos collaborateurs.</p>
+                    </div>
+                    
+                    <Dialog open={isAddOpen} onOpenChange={setIsAddOpen}>
+                        <DialogTrigger asChild>
+                            <Button className="bg-gray-900 hover:bg-gray-800 shadow-lg shadow-gray-900/20">
+                                <Plus className="w-4 h-4 mr-2" /> Ajouter un membre
+                            </Button>
+                        </DialogTrigger>
+                        <DialogContent className="sm:max-w-[500px]">
+                            <DialogHeader>
+                                <DialogTitle>Nouveau Membre</DialogTitle>
+                                <DialogDescription>Ajoutez un nouvel utilisateur et définissez ses permissions.</DialogDescription>
+                            </DialogHeader>
+                            <form onSubmit={handleSubmit}>
+                                <UserFormFields />
+                                <DialogFooter>
+                                    <DialogClose asChild>
+                                        <Button variant="outline" type="button">Annuler</Button>
+                                    </DialogClose>
+                                    <Button type="submit" disabled={loading}>
+                                        {loading && <Loader className="mr-2 h-4 w-4 animate-spin" />}
+                                        Créer le compte
+                                    </Button>
+                                </DialogFooter>
+                            </form>
+                        </DialogContent>
+                    </Dialog>
+                </div>
+
+                {/* Content */}
+                <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+                    {isloading ? (
+                        <div className="flex flex-col items-center justify-center py-20 text-gray-400">
+                            <Loader className='animate-spin w-6 h-6 mb-3 text-green-600' />
+                            <span className="font-medium">Chargement des utilisateurs...</span>
+                        </div>
+                    ) : users.length === 0 ? (
+                        <div className='flex flex-col items-center justify-center py-20'>
+                            <div className="bg-gray-50 p-4 rounded-full mb-4">
+                                <UserCog className='w-8 h-8 text-gray-400' />
+                            </div>
+                            <h3 className="text-lg font-semibold text-gray-900">Aucun utilisateur</h3>
+                            <p className="text-gray-500 max-w-sm text-center mt-1">
+                                Il n'y a pas encore d'utilisateurs enregistrés dans le système.
+                            </p>
+                        </div>
+                    ) : (
+                        <Table>
+                            <TableHeader className="bg-gray-50/50">
+                                <TableRow>
+                                    <TableHead className="w-[80px] text-center">Avatar</TableHead>
+                                    <TableHead>Identité</TableHead>
+                                    <TableHead>Contact</TableHead>
+                                    <TableHead>Rôle</TableHead>
+                                    <TableHead className="text-right pr-6">Actions</TableHead>
+                                </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                                {users.map((user) => (
+                                    <TableRow key={user.id} className="hover:bg-gray-50/50 transition-colors">
+                                        <TableCell className="text-center">
+                                            <div className="mx-auto w-10 h-10 rounded-full bg-gradient-to-br from-gray-100 to-gray-200 border border-gray-200 flex items-center justify-center text-sm font-bold text-gray-600 uppercase shadow-sm">
+                                                {user.name?.split(' ').map(n => n[0]).slice(0, 2).join('')}
+                                            </div>
+                                        </TableCell>
+                                        <TableCell>
+                                            <div className="flex flex-col">
+                                                <span className="font-semibold text-gray-900">{user.name}</span>
+                                                <span className="text-xs text-gray-500">{user.email}</span>
+                                            </div>
+                                        </TableCell>
+                                        <TableCell>
+                                            <div className="flex items-center gap-2 text-sm text-gray-600">
+                                                <Phone size={14} className="text-gray-400" />
+                                                {user.contact}
+                                            </div>
+                                        </TableCell>
+                                        <TableCell>
+                                            <RoleBadge role={user.role} />
+                                        </TableCell>
+                                        <TableCell className="text-right pr-6">
+                                            <div className="flex items-center justify-end gap-2">
+                                                <Button
+                                                    variant="ghost"
+                                                    size="icon"
+                                                    className="h-8 w-8 text-gray-500 hover:text-blue-600 hover:bg-blue-50"
+                                                    onClick={() => {
+                                                        setSelectedUser(user);
+                                                        setForm({
+                                                            name: user.name || '',
+                                                            email: user.email || '',
+                                                            contact: user.contact || '',
+                                                            password: '', // On ne pré-remplit pas le password par sécurité
+                                                            role: user.role || '',
+                                                        });
+                                                    }}
+                                                >
+                                                    <Pen size={14} />
+                                                </Button>
+                                                <Button
+                                                    variant="ghost"
+                                                    size="icon"
+                                                    className="h-8 w-8 text-gray-500 hover:text-red-600 hover:bg-red-50"
+                                                    onClick={() => setUserToDelete(user)}
+                                                >
+                                                    <Trash2 size={14} />
+                                                </Button>
+                                            </div>
+                                        </TableCell>
+                                    </TableRow>
+                                ))}
+                            </TableBody>
+                        </Table>
+                    )}
+                </div>
+
+                {/* --- MODALES --- */}
+
+                {/* Delete Confirmation */}
+                <Dialog open={!!userToDelete} onOpenChange={(open) => !open && setUserToDelete(null)}>
+                    <DialogContent className="sm:max-w-[400px]">
                         <DialogHeader>
-                            <DialogTitle>Ajouter un utilisateur</DialogTitle>
-                            <DialogDescription>
-                                Veuillez renseigner les informations ci-dessous pour ajouter un nouvel utilisateur.
+                            <DialogTitle className="text-red-600 flex items-center gap-2">
+                                <Shield className="w-5 h-5" /> Suppression d'accès
+                            </DialogTitle>
+                            <DialogDescription className="pt-2">
+                                Êtes-vous sûr de vouloir supprimer l'utilisateur <strong>{userToDelete?.name}</strong> ?<br />
+                                Cette action révoquera immédiatement ses accès.
                             </DialogDescription>
                         </DialogHeader>
-                        <form onSubmit={handleSubmit}>
-                            <div className='max-h-54 overflow-y-auto pr-3 mb-3'>
-                                {/* <h1 className="text-lg font-medium text-gray-900 my-2">Informations du client</h1> */}
-                                <div className="grid gap-4">
-                                    <div className="grid gap-4">
-                                        <Select
-                                            value={form.role}
-                                            onValueChange={(value) => handleSelectChange("role", value)}
-                                        >
-                                            <SelectTrigger className="w-full">
-                                                <SelectValue placeholder="Rôle" />
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                                <SelectGroup>
-                                                    <SelectLabel> Choisissez le rôle</SelectLabel>
-                                                    <SelectItem key="1" value="ADMIN">
-                                                        Admin
-                                                    </SelectItem>
-                                                    <SelectItem key="2" value="AGENT">
-                                                        Agent
-                                                    </SelectItem>
-                                                    <SelectItem key="3" value="FINANCIER">
-                                                        Financier
-                                                    </SelectItem>
-                                                </SelectGroup>
-                                            </SelectContent>
-                                        </Select>
-                                    </div>
-                                    <div className="grid gap-3">
-                                        <Label htmlFor="name-1">Nom et prénom(s)</Label>
-                                        <Input id="name-1" name="name" value={form.name} onChange={handleChange} required />
-                                    </div>
-                                    <div className="grid gap-3">
-                                        <Label htmlFor="email">Email</Label>
-                                        <Input id="email" name="email" value={form.email} onChange={handleChange} required />
-                                    </div>
-                                    <div className="grid gap-3">
-                                        <Label htmlFor="password">Mot de passe</Label>
-                                        <Input id="password" type="password" name="password" value={form.password} onChange={handleChange} required />
-                                    </div>
-                                    <div className="grid gap-3">
-                                        <Label htmlFor="contact">Contact</Label>
-                                        <Input id="contact" name="contact" value={form.contact} onChange={handleChange} required />
-                                    </div>
-                                </div>
-                            </div>
+                        <DialogFooter className="mt-2">
+                            <Button variant="outline" onClick={() => setUserToDelete(null)}>Annuler</Button>
+                            <Button
+                                variant="destructive"
+                                onClick={() => {
+                                    deleteUser(userToDelete.id, reloadUsers);
+                                    setUserToDelete(null);
+                                }}
+                            >
+                                Confirmer la suppression
+                            </Button>
+                        </DialogFooter>
+                    </DialogContent>
+                </Dialog>
+
+                {/* Edit Modal */}
+                <Dialog open={!!selectedUser} onOpenChange={(open) => !open && setSelectedUser(null)}>
+                    <DialogContent className="sm:max-w-[500px]">
+                        <DialogHeader>
+                            <DialogTitle>Modifier l'utilisateur</DialogTitle>
+                            <DialogDescription>Mettez à jour les informations de {selectedUser?.name}.</DialogDescription>
+                        </DialogHeader>
+                        <form onSubmit={handleUpdate}>
+                            <UserFormFields />
                             <DialogFooter>
                                 <DialogClose asChild>
-                                    <Button variant="outline">Annuler</Button>
+                                    <Button variant="outline" type="button">Annuler</Button>
                                 </DialogClose>
-                                <Button type="submit">{loading ? 'Ajout en cours...' : 'Ajouter'}</Button>
+                                <Button type="submit" disabled={loading}>
+                                    {loading ? <Loader className="mr-2 h-4 w-4 animate-spin" /> : "Enregistrer"}
+                                </Button>
                             </DialogFooter>
                         </form>
                     </DialogContent>
                 </Dialog>
+
             </div>
-
-            {isloading ? (
-                <div className="flex items-center justify-center gap-3 p-3">
-                    <Radius className='animate-spin w-4 h-4 text-blue-950' />
-                    <span className="ml-2 text-gray-700">Chargement en cours...</span>
-                </div>
-            ) : users.length === 0 ? (
-                <div className='flex flex-col items-center justify-center gap-3 p-3'>
-                    <div className="flex items-center justify-center gap-2">
-                        <Info className='w-4 h-4 text-red-800' />
-                        <span className="ml-2 text-gray-700">Aucun utilisateur enrégistré !</span>
-                    </div>
-                </div>
-            ) : (
-                <div className="bg-white rounded-md border">
-                    <Table>
-                        <TableHeader>
-                            <TableRow>
-                                <TableHead className=""></TableHead>
-                                <TableHead className="">Nom et prénom(s)</TableHead>
-                                <TableHead>Contact</TableHead>
-                                <TableHead>Email</TableHead>
-                                <TableHead>Rôle</TableHead>
-                                <TableHead>Actions</TableHead>
-                            </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                            {users.map((ag) => {
-                                return (
-                                    <TableRow key={ag.id}>
-                                        <TableCell className="font-medium flex items-center">
-                                            <span className="text-lg uppercase flex items-center justify-center w-10 h-10 font-medium text-gray-700 bg-gray-100 rounded-lg">
-                                                {
-                                                    (`${ag.name}`).split(' ').map(n => n[0]).join('')
-                                                }
-                                            </span>
-                                        </TableCell>
-                                        <TableCell>
-                                            {ag.name}
-                                        </TableCell>
-                                        <TableCell>{ag.contact}</TableCell>
-                                        <TableCell>{ag.email}</TableCell>
-                                        <TableCell><span className={getRole(ag.role)}>{ag.role}</span></TableCell>
-                                        <TableCell className="flex items-center gap-2">
-                                            {/* ✅ Bouton de suppression avec modal de confirmation */}
-                                            <Button
-                                                variant="destructive"
-                                                size="icon"
-                                                className="cursor-pointer"
-                                                onClick={() => {
-                                                    setUserToDelete(ag);
-                                                    setOpenn(true);
-                                                }}
-                                            >
-                                                <Trash2 className="w-4 h-4" />
-                                            </Button>
-
-                                            <Button
-                                                variant="outline"
-                                                size="icon"
-                                                className="cursor-pointer bg-gray-200 text-black hover:bg-gray-300"
-                                                onClick={() => {
-                                                    setSelectedUser(ag); // sélectionne l'agent
-                                                    setForm({              // initialise le formulaire avec les infos existantes
-                                                        name: ag.name || '',
-                                                        email: ag.email || '',
-                                                        contact: ag.contact || '',
-                                                        password: ag.password || '',     // mot de passe vide par défaut
-                                                        role: ag.role || '',
-                                                    });
-                                                }}
-                                            >
-                                                <Pen className="w-4 h-4" />
-                                            </Button>
-                                        </TableCell>
-                                    </TableRow>
-                                )
-                            })}
-                        </TableBody>
-                    </Table>
-                </div>
-            )}
-
-            {/* Dialog global pour supprimer */}
-            <Dialog open={!!userToDelete} onOpenChange={(open) => !open && setUserToDelete(null)}>
-                <DialogContent className="sm:max-w-[400px]">
-                    <DialogHeader>
-                        <DialogTitle>Supprimer l'utilisateur ?</DialogTitle>
-                        <DialogDescription>
-                            Cette action est irréversible. L'utilisateur {userToDelete?.name} sera définitivement supprimé.
-                        </DialogDescription>
-                    </DialogHeader>
-                    <DialogFooter>
-                        <Button variant="outline" onClick={() => setUserToDelete(null)}>Annuler</Button>
-                        <Button
-                            variant="destructive"
-                            onClick={() => {
-                                deleteUser(userToDelete.id, reloadUsers);
-                                setUserToDelete(null);
-                            }}
-                        >
-                            Supprimer
-                        </Button>
-                    </DialogFooter>
-                </DialogContent>
-            </Dialog>
-
-            {/* Dialog global pour modifier un agent */}
-            <Dialog open={!!selectedUser} onOpenChange={(open) => !open && setSelectedUser(null)}>
-                <DialogContent className="sm:max-w-[525px]">
-                    <DialogHeader>
-                        <DialogTitle>Modifier l'utilisateur</DialogTitle>
-                        <DialogDescription>
-                            Modifie les informations de l'utilisateur {selectedUser?.name}.
-                        </DialogDescription>
-                    </DialogHeader>
-
-                    {selectedUser && (
-                        <form onSubmit={handleUpdate}>
-                            <div className="grid gap-4 mb-3">
-                                <div className="grid gap-4">
-                                    <Select
-                                        value={form.role}
-                                        onValueChange={(value) => handleSelectChange("role", value)}
-                                    >
-                                        <SelectTrigger className="w-full">
-                                            <SelectValue placeholder="Rôle" />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            <SelectGroup>
-                                                <SelectLabel> Choisissez le rôle</SelectLabel>
-                                                <SelectItem key="1" value="ADMIN">
-                                                    Admin
-                                                </SelectItem>
-                                                <SelectItem key="2" value="AGENT">
-                                                    Agent
-                                                </SelectItem>
-                                                <SelectItem key="3" value="FINACIER">
-                                                    Financier
-                                                </SelectItem>
-                                            </SelectGroup>
-                                        </SelectContent>
-                                    </Select>
-                                </div>
-                                <div className="grid gap-3">
-                                    <Label>Nom et prénom(s)</Label>
-                                    <Input name="name" value={form.name} onChange={handleChange} required />
-                                </div>
-                                <div className="grid gap-3">
-                                    <Label>Email</Label>
-                                    <Input name="email" value={form.email} onChange={handleChange} required />
-                                </div>
-                                <div className="grid gap-3">
-                                    <Label>Mot de passe</Label>
-                                    <Input type="password" name="password" value={form.password} onChange={handleChange} />
-                                </div>
-                                <div className="grid gap-3">
-                                    <Label>Contact</Label>
-                                    <Input name="contact" value={form.contact} onChange={handleChange} required />
-                                </div>
-                            </div>
-
-                            <DialogFooter>
-                                <DialogClose asChild>
-                                    <Button variant="outline">Annuler</Button>
-                                </DialogClose>
-                                <Button type="submit" disabled={loading}>
-                                    {loading ? "Mise à jour..." : "Mettre à jour"}
-                                </Button>
-                            </DialogFooter>
-                        </form>
-                    )}
-                </DialogContent>
-            </Dialog>
         </div>
     )
 }

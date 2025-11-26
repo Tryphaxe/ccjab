@@ -1,14 +1,14 @@
 'use client';
+
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
-import { Loader2 } from 'lucide-react';
+import { Loader, Mail, Lock } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 import { Button } from "@/components/ui/button"
 import {
     Card,
-    CardAction,
     CardContent,
     CardDescription,
     CardFooter,
@@ -37,63 +37,94 @@ export default function LoginPage() {
 
             const user = await res.json();
 
-            if (res.ok && user?.role === "ADMIN") {
+            if (res.ok) {
                 localStorage.setItem('user', JSON.stringify(user));
                 toast.success('Connexion réussie 🎉');
-                router.push('/dashboard/home');
-            } else if (res.ok && user?.role === "AGENT") {
-                localStorage.setItem('user', JSON.stringify(user));
-                toast.success('Connexion réussie 🎉');
-                router.push('/agent/home');
+                
+                // Redirection basée sur le rôle
+                if (user?.role === "ADMIN") {
+                    router.push('/dashboard/home');
+                } else if (user?.role === "AGENT") {
+                    router.push('/agent/home');
+                } else {
+                    // Fallback ou autre rôle
+                    router.push('/dashboard/home');
+                }
             } else {
                 toast.error(user.error || 'Email ou mot de passe incorrect');
             }
         } catch (err) {
             toast.error('Erreur de connexion au serveur.');
+            console.error(err);
         } finally {
             setLoading(false);
         }
     };
-    return (
-        <Card className="w-full max-w-sm">
-            <CardHeader>
-                <CardTitle className="text-2xl">Connexion</CardTitle>
-                <CardDescription className="text-md">
-                    Entrez les informations de votre compte personnel
-                </CardDescription>
-                <CardAction>
 
-                </CardAction>
-            </CardHeader>
-            <form onSubmit={handleLogin}>
-                <CardContent>
-                    <div className="flex flex-col gap-6">
-                        <div className="grid gap-2">
+    return (
+        <div className="min-h-screen w-full flex items-center justify-center bg-gray-50/50 p-4">
+            <Card className="w-full max-w-sm shadow-xl border-gray-200 bg-white">
+                <CardHeader className="space-y-2 text-center pb-6">
+                    <div className="mx-auto w-20 h-20 relative mb-2">
+                        <Image 
+                            src="/images/favicon.png" 
+                            alt="Logo CCJAB" 
+                            fill
+                            className="object-contain"
+                            priority
+                        />
+                    </div>
+                    <CardTitle className="text-2xl font-bold text-gray-900">Connexion</CardTitle>
+                    <CardDescription>
+                        Entrez vos identifiants pour accéder à votre espace
+                    </CardDescription>
+                </CardHeader>
+                <form onSubmit={handleLogin}>
+                    <CardContent className="space-y-4">
+                        <div className="space-y-2">
                             <Label htmlFor="email">Email</Label>
-                            <Input
-                                id="email"
-                                type="email"
-                                name="email"
-                                value={email} onChange={e => setEmail(e.target.value)}
-                                placeholder="m@example.com"
-                                required
-                            />
+                            <div className="relative">
+                                <Mail className="absolute left-3 top-2.5 h-4 w-4 text-gray-400" />
+                                <Input
+                                    id="email"
+                                    type="email"
+                                    placeholder="nom@exemple.com"
+                                    className="pl-9 bg-gray-50 border-gray-200 focus:bg-white transition-colors"
+                                    value={email}
+                                    onChange={e => setEmail(e.target.value)}
+                                    required
+                                />
+                            </div>
                         </div>
-                        <div className="grid gap-2">
-                            <div className="flex items-center">
+                        <div className="space-y-2">
+                            <div className="flex items-center justify-between">
                                 <Label htmlFor="password">Mot de passe</Label>
                             </div>
-                            <Input id="password" name="password" type="password" value={password} onChange={e => setPassword(e.target.value)} required />
+                            <div className="relative">
+                                <Lock className="absolute left-3 top-2.5 h-4 w-4 text-gray-400" />
+                                <Input
+                                    id="password"
+                                    type="password"
+                                    className="pl-9 bg-gray-50 border-gray-200 focus:bg-white transition-colors"
+                                    value={password}
+                                    onChange={e => setPassword(e.target.value)}
+                                    required
+                                />
+                            </div>
                         </div>
-                    </div>
-                </CardContent>
-                <CardFooter className="flex-col gap-2 mt-3">
-                    <Button type="submit" variant="outline" className="bg-green-700 text-white">
-                        {loading ? (<Loader2 className="h-4 w-4 animate-spin" />) : ""}
-                        Se connecter
-                    </Button>
-                </CardFooter>
-            </form>
-        </Card>
-    )
+                    </CardContent>
+                    <CardFooter className="pt-2">
+                        <Button 
+                            type="submit" 
+                            className="w-full bg-green-700 hover:bg-green-800 text-white font-semibold shadow-md transition-all duration-200"
+                            disabled={loading}
+                        >
+                            {loading && <Loader className="mr-2 h-4 w-4 animate-spin" />}
+                            Se connecter
+                        </Button>
+                    </CardFooter>
+                </form>
+            </Card>
+        </div>
+    );
 }

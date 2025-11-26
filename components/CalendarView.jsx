@@ -1,12 +1,20 @@
 "use client";
 
 import { useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Separator } from "@/components/ui/separator";
 import {
   ChevronLeft,
   ChevronRight,
   Calendar as CalendarIcon,
+  Clock,
+  MapPin,
+  User,
+  Info,
+  Tag,
+  CreditCard
 } from "lucide-react";
 import {
   Dialog,
@@ -16,7 +24,7 @@ import {
   DialogDescription,
   DialogFooter,
 } from "@/components/ui/dialog";
-import { format, addMonths, subMonths, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay, parseISO } from "date-fns";
+import { format, addMonths, subMonths, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay, parseISO, isToday } from "date-fns";
 import { fr } from "date-fns/locale";
 import { formatEventDate } from "@/lib/evenHelper";
 
@@ -29,23 +37,27 @@ export default function CalendarView({ events }) {
   const monthEnd = endOfMonth(currentMonth);
   const daysInMonth = eachDayOfInterval({ start: monthStart, end: monthEnd });
 
+  // Calcul pour le remplissage des jours vides avant le début du mois
+  const startDayIndex = (monthStart.getDay() + 6) % 7; // Lundi = 0
+
   const getEventsForDay = (day) => {
     return events.filter((event) => {
+      if (!event.date_debut) return false;
       const eventStart = parseISO(event.date_debut);
       return isSameDay(eventStart, day);
     });
   };
 
-  const getStatusColor = (statut) => {
+  const getStatusStyles = (statut) => {
     switch (statut) {
       case "A venir":
-        return "bg-blue-100 text-blue-700 border-blue-300";
+        return "bg-orange-50 text-orange-700 border-orange-200 hover:bg-orange-100";
       case "En cours":
-        return "bg-yellow-100 text-yellow-700 border-yellow-300";
+        return "bg-orange-50 text-orange-700 border-orange-200 hover:bg-orange-100";
       case "Terminé":
-        return "bg-green-100 text-green-700 border-green-300";
+        return "bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100";
       default:
-        return "bg-gray-100 text-gray-700 border-gray-300";
+        return "bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100";
     }
   };
 
@@ -56,113 +68,193 @@ export default function CalendarView({ events }) {
 
   return (
     <>
-      <Card className="border-1 border-gray-200 p-0">
-        <CardHeader className="bg-gradient-to-r from-green-600 to-green-500 text-white rounded-t-lg">
-          <div className="flex items-center justify-between p-3">
-            <div className="flex items-center space-x-3">
-              <CalendarIcon className="w-6 h-6" />
-              <CardTitle className="text-2xl">Calendrier des événements</CardTitle>
-            </div>
-            <div className="flex items-center space-x-2">
-              <Button
-                onClick={() => setCurrentMonth(subMonths(currentMonth, 1))}
-                variant="outline"
-                size="icon"
-                className="bg-white/20 hover:bg-white/30 border-white/30 text-white"
-              >
-                <ChevronLeft className="w-5 h-5" />
-              </Button>
-              <span className="text-xl font-semibold px-4">
+      <div className="flex flex-col h-full">
+        {/* En-tête du calendrier */}
+        <div className="flex items-center justify-between mb-4 px-1">
+          <div className="flex items-center gap-3">
+             <div className="p-2 bg-white border border-gray-200 rounded-lg shadow-sm">
+                <CalendarIcon className="w-5 h-5 text-gray-700" />
+             </div>
+             <h2 className="text-xl font-bold text-gray-900 capitalize">
                 {format(currentMonth, "MMMM yyyy", { locale: fr })}
-              </span>
-              <Button
-                onClick={() => setCurrentMonth(addMonths(currentMonth, 1))}
-                variant="outline"
-                size="icon"
-                className="bg-white/20 hover:bg-white/30 border-white/30 text-white"
-              >
-                <ChevronRight className="w-5 h-5" />
-              </Button>
-            </div>
+             </h2>
           </div>
-        </CardHeader>
+          
+          <div className="flex items-center gap-1 bg-white border border-gray-200 rounded-lg p-1 shadow-sm">
+            <Button
+              onClick={() => setCurrentMonth(subMonths(currentMonth, 1))}
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8 hover:bg-gray-100 text-gray-600"
+            >
+              <ChevronLeft className="w-4 h-4" />
+            </Button>
+            <div className="w-px h-4 bg-gray-200 mx-1"></div>
+            <Button
+              onClick={() => setCurrentMonth(addMonths(currentMonth, 1))}
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8 hover:bg-gray-100 text-gray-600"
+            >
+              <ChevronRight className="w-4 h-4" />
+            </Button>
+          </div>
+        </div>
 
-        <CardContent className="p-6">
-          <div className="grid grid-cols-7 gap-2">
-            {["Lun", "Mar", "Mer", "Jeu", "Ven", "Sam", "Dim"].map((day) => (
-              <div key={day} className="text-center font-semibold text-gray-700 py-2 text-sm">
-                {day}
-              </div>
-            ))}
-
-            {Array.from({ length: (monthStart.getDay() + 6) % 7 }).map((_, idx) => (
-              <div key={`empty-${idx}`} className="p-2"></div>
-            ))}
-
-            {daysInMonth.map((day) => {
-              const dayEvents = getEventsForDay(day);
-              const isToday = isSameDay(day, new Date());
-
-              return (
-                <div
-                  key={day.toString()}
-                  className={`min-h-24 p-2 border rounded-lg ${isToday ? "bg-green-50 border-green-500" : "bg-white border-gray-200"
-                    } hover:shadow-md transition-shadow`}
-                >
-                  <div
-                    className={`text-sm font-semibold mb-1 ${isToday ? "text-green-700" : "text-gray-700"
-                      }`}
-                  >
-                    {format(day, "d")}
-                  </div>
-                  <div className="space-y-1">
-                    {dayEvents.map((event) => (
-                      <div
-                        key={event.id}
-                        className={`text-xs p-1 rounded border cursor-pointer hover:shadow-sm transition-all ${getStatusColor(event.statut)}`}
-                        onClick={() => handleOpenModal(event)}
-                      >
-                        <div className="font-semibold" dangerouslySetInnerHTML={{ __html: formatEventDate(event.date_debut, event.date_fin) }}/>
-                        <div className="truncate">{event.nom_salle}</div>
-                        <div className="truncate">{event.type_evenement}</div>
-                      </div>
-                    ))}
-                  </div>
+        {/* Grille du calendrier */}
+        <Card className="border border-gray-200 shadow-sm rounded-xl overflow-hidden flex-1">
+          <CardContent className="p-0">
+            {/* Jours de la semaine */}
+            <div className="grid grid-cols-7 border-b border-gray-200 bg-gray-50/50">
+              {["Lun", "Mar", "Mer", "Jeu", "Ven", "Sam", "Dim"].map((day) => (
+                <div key={day} className="py-3 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                  {day}
                 </div>
-              );
-            })}
-          </div>
-        </CardContent>
-      </Card>
+              ))}
+            </div>
+
+            {/* Jours du mois */}
+            <div className="grid grid-cols-7 auto-rows-[minmax(120px,auto)] bg-gray-200 gap-px border-b border-gray-200">
+              {/* Cases vides début de mois */}
+              {Array.from({ length: startDayIndex }).map((_, idx) => (
+                <div key={`empty-${idx}`} className="bg-gray-50/30 min-h-[120px]"></div>
+              ))}
+
+              {/* Jours */}
+              {daysInMonth.map((day) => {
+                const dayEvents = getEventsForDay(day);
+                const isCurrentDay = isToday(day);
+
+                return (
+                  <div
+                    key={day.toString()}
+                    className={`bg-white min-h-[120px] p-2 transition-colors hover:bg-gray-50 flex flex-col gap-1 group relative`}
+                  >
+                    {/* Numéro du jour */}
+                    <div className="flex justify-between items-start mb-1">
+                        <span
+                        className={`
+                            text-sm font-medium w-7 h-7 flex items-center justify-center rounded-full
+                            ${isCurrentDay 
+                                ? "bg-orange-600 text-white shadow-sm" 
+                                : "text-gray-700 group-hover:bg-gray-200/50"
+                            }
+                        `}
+                        >
+                        {format(day, "d")}
+                        </span>
+                        {dayEvents.length > 0 && (
+                            <span className="text-[10px] font-bold text-gray-400 bg-gray-100 px-1.5 py-0.5 rounded-full">
+                                {dayEvents.length}
+                            </span>
+                        )}
+                    </div>
+
+                    {/* Liste des événements */}
+                    <div className="flex flex-col gap-1.5 overflow-y-auto max-h-[100px] no-scrollbar">
+                      {dayEvents.map((event) => (
+                        <button
+                          key={event.id}
+                          onClick={() => handleOpenModal(event)}
+                          className={`
+                            text-left w-full px-2 py-1.5 rounded-md border text-xs font-medium transition-all shadow-sm
+                            flex flex-col gap-0.5
+                            ${getStatusStyles(event.statut)}
+                          `}
+                        >
+                            <div className="flex items-center justify-between w-full">
+                                <span className="truncate leading-tight font-bold">{event.nom_salle || "Salle inconnue"}</span>
+                            </div>
+                            <span className="truncate opacity-80 font-normal leading-tight">{event.type}</span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })}
+              
+              {/* Remplissage fin de grille pour esthétique (optionnel) */}
+              {Array.from({ length: (7 - (daysInMonth.length + startDayIndex) % 7) % 7 }).map((_, idx) => (
+                 <div key={`end-empty-${idx}`} className="bg-gray-50/30 min-h-[120px]"></div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
 
       {/* Modal de détails */}
       <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>Détails de l’évènement</DialogTitle>
-            <DialogDescription>
-              Consultez les informations de cet évènement.
+        <DialogContent className="sm:max-w-[500px] p-0 overflow-hidden gap-0">
+          <DialogHeader className="p-6 pb-4 bg-gray-50/50 border-b border-gray-100">
+            <div className="flex items-center gap-2 mb-2">
+                <Badge variant="outline" className={`
+                    ${selectedEvent?.statut === 'En cours' ? 'bg-orange-50 text-orange-700 border-orange-200' : 
+                      selectedEvent?.statut === 'A venir' ? 'bg-orange-50 text-orange-700 border-orange-200' : 
+                      'bg-emerald-50 text-emerald-700 border-emerald-200'}
+                `}>
+                    {selectedEvent?.statut}
+                </Badge>
+                <span className="text-xs text-gray-500 font-medium">#{selectedEvent?.type_evenement}</span>
+            </div>
+            <DialogTitle className="text-xl text-gray-900">
+                {selectedEvent?.salle?.nom_salle || "Salle"}
+            </DialogTitle>
+            <DialogDescription className="mt-1">
+                {selectedEvent && (
+                    <span dangerouslySetInnerHTML={{ __html: formatEventDate(selectedEvent.date_debut, selectedEvent.date_fin) }} />
+                )}
             </DialogDescription>
           </DialogHeader>
 
           {selectedEvent && (
-            <div className="space-y-3 mt-3">
-              <p><strong>Agent assigné :</strong> {selectedEvent.agent?.nom ?? "Non spécifié"}</p>
-              <p><strong>Nom de la salle :</strong> {selectedEvent.nom_salle}</p>
-              <p><strong>Type d’évènement :</strong> {selectedEvent.type_evenement}</p>
-              <p><strong>Catégorie :</strong> {selectedEvent.categorie}</p>
-              <p><strong>Statut :</strong> {selectedEvent.statut}</p>
-              <p><strong>Date de début :</strong> {format(parseISO(selectedEvent.date_debut), "dd/MM/yyyy - HH:mm")}</p>
-              <p><strong>Date de fin :</strong> {format(parseISO(selectedEvent.date_fin), "dd/MM/yyyy - HH:mm")}</p>
-              <p><strong>Montant :</strong> {selectedEvent.montant.toLocaleString('fr-FR')} FCFA</p>
-              {selectedEvent.description && (
-                <p><strong>Description :</strong> {selectedEvent.description}</p>
-              )}
+            <div className="p-6 grid gap-6">
+                
+                {/* Infos principales */}
+                <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-1">
+                        <span className="flex items-center gap-2 text-xs font-medium text-gray-500">
+                            <User className="w-3.5 h-3.5" /> Agent Responsable
+                        </span>
+                        <p className="text-sm font-semibold text-gray-900">{selectedEvent.agent?.nom || "Non assigné"}</p>
+                    </div>
+                    <div className="space-y-1">
+                        <span className="flex items-center gap-2 text-xs font-medium text-gray-500">
+                            <Tag className="w-3.5 h-3.5" /> Catégorie
+                        </span>
+                        <p className="text-sm font-semibold text-gray-900">{selectedEvent.categorie}</p>
+                    </div>
+                </div>
+
+                <Separator />
+
+                {/* Infos Financières & Description */}
+                <div className="space-y-4">
+                    <div className="flex items-center justify-between bg-gray-50 p-3 rounded-lg border border-gray-100">
+                        <div className="flex items-center gap-2">
+                            <CreditCard className="w-4 h-4 text-gray-500" />
+                            <span className="text-sm font-medium text-gray-700">Montant Total</span>
+                        </div>
+                        <span className="text-lg font-bold text-gray-900">
+                            {selectedEvent.montant?.toLocaleString('fr-FR')} FCFA
+                        </span>
+                    </div>
+
+                    {selectedEvent.description && (
+                        <div className="space-y-2">
+                            <span className="flex items-center gap-2 text-xs font-medium text-gray-500">
+                                <Info className="w-3.5 h-3.5" /> Notes / Description
+                            </span>
+                            <p className="text-sm text-gray-700 bg-gray-50 p-3 rounded-md border border-gray-100 italic leading-relaxed">
+                                {selectedEvent.description}
+                            </p>
+                        </div>
+                    )}
+                </div>
             </div>
           )}
 
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsModalOpen(false)}>
+          <DialogFooter className="p-4 pt-0">
+            <Button className="w-full sm:w-auto" variant="outline" onClick={() => setIsModalOpen(false)}>
               Fermer
             </Button>
           </DialogFooter>

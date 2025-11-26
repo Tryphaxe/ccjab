@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useMemo } from 'react'
-import { Info, Plus, Radius, Trash2, SquarePen, ChevronDownIcon, Share, CalendarCheck2, Phone, Pen, User, PartyPopper, UserStar } from 'lucide-react';
+import { Info, Plus, Loader, Trash2, Share, CalendarCheck2, Phone, Pen, User, PartyPopper, UserStar, FilterX, FileText } from 'lucide-react';
 import { Button } from "@/components/ui/button"
 import {
     Dialog,
@@ -24,6 +24,7 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select"
+import { Badge } from "@/components/ui/badge";
 import { eventCategories, eventTypesByCategory } from '@/lib/list';
 import { submitForm, fetchEvents, deleteEvent, updateEvent } from '@/utils/evenUtils';
 import { fetchAgents } from '@/utils/agentUtils';
@@ -46,6 +47,7 @@ export default function page() {
     const [form, setForm] = useState({
         categorie: '',
         montant: '',
+        avance: '',
         date_debut: '',
         date_fin: '',
         description: '',
@@ -55,6 +57,7 @@ export default function page() {
         salle_id: '',
         agent_id: '',
     });
+
     const handleChange = (e) => {
         setForm({ ...form, [e.target.name]: e.target.value });
     };
@@ -70,6 +73,7 @@ export default function page() {
     }, []);
 
     const reloadEvents = () => fetchEvents(setEvents, setIsLoading);
+    
     const onClose = () => {
         setOpen(false);
         setForm({
@@ -113,32 +117,21 @@ export default function page() {
     const filteredEvents = useMemo(() => {
         return events.filter((e) => {
             const statut = getEventStatus(e.date_debut, e.date_fin);
-
-            // ✅ Filtrage par agent
             if (filters.agent && e.agent.name !== filters.agent) return false;
-
-            // ✅ Filtrage par type
             if (filters.type && e.type !== filters.type) return false;
-
-            // ✅ Filtrage par catégorie
             if (filters.categorie && e.categorie !== filters.categorie) return false;
-
-            // ✅ Filtrage par statut
             if (filters.statut && statut !== filters.statut) return false;
-
-            // ✅ Filtrage par date de début / fin
             if (filters.date_debut && new Date(e.date_debut) < new Date(filters.date_debut)) return false;
             if (filters.date_fin && new Date(e.date_fin) > new Date(filters.date_fin)) return false;
-
             return true;
         });
     }, [events, filters]);
 
-    // 🔁 Afficher un petit loader à chaque changement de filtre
+    // Petit loader visuel lors du filtrage
     useEffect(() => {
         if (Object.keys(filters).length > 0) {
             setLoading(true);
-            const timer = setTimeout(() => setLoading(false), 400); // 400 ms pour un effet smooth
+            const timer = setTimeout(() => setLoading(false), 300);
             return () => clearTimeout(timer);
         }
     }, [filters]);
@@ -152,7 +145,7 @@ export default function page() {
             form,
             reloadEvents,
             setLoading,
-            () => setSelectedEvent(null) // Ferme le dialog
+            () => setSelectedEvent(null)
         );
     };
 
@@ -167,379 +160,340 @@ export default function page() {
     };
 
     useEffect(() => {
-        // réinitialise les dates si la salle change
-        setForm(prev => ({ ...prev, date_debut: '', date_fin: '' }));
-        // optionnel : focus sur le DateTimePicker
+        if (open || selectedEvent) {
+             // Reset form dates if needed or handle side effects
+        }
     }, [form.salle_id]);
 
+    // Composant réutilisable pour le formulaire pour éviter la duplication
+    const EventFormFields = () => (
+        <div className='grid gap-4 py-2'>
+            {/* Section Client */}
+            <div className="space-y-3">
+                <h3 className="text-sm font-semibold text-gray-900 bg-gray-50 p-2 rounded-md border border-gray-100 flex items-center gap-2">
+                    <User size={14} /> Informations Client
+                </h3>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div className="space-y-1">
+                        <Label htmlFor="name-1" className="text-xs text-gray-500">Nom complet</Label>
+                        <Input id="name-1" name="nom_client" value={form.nom_client} onChange={handleChange} placeholder="ex: Jean Dupont" />
+                    </div>
+                    <div className="space-y-1">
+                        <Label htmlFor="contact" className="text-xs text-gray-500">Contact</Label>
+                        <Input id="contact" name="contact_client" value={form.contact_client} onChange={handleChange} placeholder="ex: 0102030405" />
+                    </div>
+                </div>
+            </div>
+
+            {/* Section Évènement */}
+            <div className="space-y-3">
+                <h3 className="text-sm font-semibold text-gray-900 bg-gray-50 p-2 rounded-md border border-gray-100 flex items-center gap-2">
+                    <PartyPopper size={14} /> Détails de l'évènement
+                </h3>
+                
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div className="space-y-1 sm:col-span-2">
+                         <Label className="text-xs text-gray-500">Lieu</Label>
+                        <Select value={form.salle_id} onValueChange={(value) => handleSelectChange("salle_id", value)}>
+                            <SelectTrigger>
+                                <SelectValue placeholder="Sélectionner une salle" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectGroup>
+                                    <SelectLabel>Salles disponibles</SelectLabel>
+                                    {salles.map((salle) => (
+                                        <SelectItem key={salle.id} value={salle.id}>{salle.nom_salle}</SelectItem>
+                                    ))}
+                                </SelectGroup>
+                            </SelectContent>
+                        </Select>
+                    </div>
+
+                    <div className="space-y-1">
+                        <DateTimePicker
+                            label="Date début"
+                            value={form.date_debut ? new Date(form.date_debut) : undefined}
+                            onChange={(dateTime) => setForm(prev => ({ ...prev, date_debut: dateTime.toISOString() }))}
+                            disabledSlots={getOccupiedSlots(form.salle_id)}
+                        />
+                    </div>
+                    <div className="space-y-1">
+                        <DateTimePicker
+                            label="Date fin"
+                            value={form.date_fin ? new Date(form.date_fin) : undefined}
+                            onChange={(dateTime) => setForm(prev => ({ ...prev, date_fin: dateTime.toISOString() }))}
+                            disabledSlots={getOccupiedSlots(form.salle_id)}
+                        />
+                    </div>
+
+                    <div className="space-y-1">
+                        <Label className="text-xs text-gray-500">Catégorie</Label>
+                        <Select value={form.categorie} onValueChange={(value) => { handleSelectChange("categorie", value); setForm(prev => ({ ...prev, type: "" })) }}>
+                            <SelectTrigger>
+                                <SelectValue placeholder="Catégorie" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                {eventCategories.map((cat) => (
+                                    <SelectItem key={cat.value} value={cat.value}>{cat.label}</SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                    </div>
+
+                    <div className="space-y-1">
+                        <Label className="text-xs text-gray-500">Type</Label>
+                        <Select value={form.type} onValueChange={(value) => handleSelectChange("type", value)} disabled={!form.categorie}>
+                            <SelectTrigger>
+                                <SelectValue placeholder="Type" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                {form.categorie && eventTypesByCategory[form.categorie]?.map((type) => (
+                                    <SelectItem key={type} value={type}>{type}</SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                    </div>
+
+                    <div className="space-y-1">
+                        <Label htmlFor="Montant" className="text-xs text-gray-500">Montant Total (FCFA)</Label>
+                        <Input id="Montant" name="montant" type="number" value={form.montant} onChange={handleChange} />
+                    </div>
+                     <div className="space-y-1">
+                        <Label htmlFor="avance" className="text-xs text-gray-500">Avance reçue</Label>
+                        <Input id="avance" name="avance" type="number" value={form.avance} onChange={handleChange} />
+                    </div>
+
+                    <div className="space-y-1 sm:col-span-2">
+                         <Label htmlFor="description" className="text-xs text-gray-500">Description / Notes</Label>
+                        <textarea id="description" name="description" value={form.description} onChange={handleChange} rows="2" className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 resize-none" />
+                    </div>
+                </div>
+            </div>
+
+             {/* Section Agent */}
+             <div className="space-y-3">
+                <h3 className="text-sm font-semibold text-gray-900 bg-gray-50 p-2 rounded-md border border-gray-100 flex items-center gap-2">
+                    <UserStar size={14} /> Agent Responsable
+                </h3>
+                <Select value={form.agent_id} onValueChange={(value) => handleSelectChange("agent_id", value)}>
+                    <SelectTrigger className="w-full">
+                        <SelectValue placeholder="Sélectionner un agent" />
+                    </SelectTrigger>
+                    <SelectContent>
+                         {agents.map((agent) => (
+                            <SelectItem key={agent.id} value={agent.id}>{agent.name}</SelectItem>
+                        ))}
+                    </SelectContent>
+                </Select>
+            </div>
+        </div>
+    );
 
     return (
-        <div>
-            <div className="flex items-center justify-between mb-4 border-b border-gray-200 pb-2">
-                <h1 className="text-xl font-medium text-gray-900">Gestion des évènements</h1>
-                <div className="flex items-center gap-2 mb-4">
-                    <Dialog open={open} onOpenChange={setOpen}>
-                        <DialogTrigger asChild>
-                            <Button variant="outline"><Plus size={16} />Ajouter</Button>
-                        </DialogTrigger>
-                        <DialogContent className="sm:max-w-[525px]">
-                            <DialogHeader>
-                                <DialogTitle>Ajouter un évènement</DialogTitle>
-                                <DialogDescription>
-                                    Veuillez renseigner les informations ci-dessous pour ajouter un nouvel évènement.
-                                </DialogDescription>
-                            </DialogHeader>
-                            <form onSubmit={handleSubmit}>
-                                <div className='max-h-54 overflow-y-auto pr-3 mb-3'>
-                                    <h1 className="text-lg font-medium text-gray-900 my-2">Informations du client</h1>
-                                    <div className="grid gap-4">
-                                        <div className="grid gap-3">
-                                            <Label htmlFor="name-1">Nom et prénom(s)</Label>
-                                            <Input id="name-1" name="nom_client" value={form.nom_client} onChange={handleChange} />
-                                        </div>
-                                        <div className="grid gap-3">
-                                            <Label htmlFor="contact">Contact</Label>
-                                            <Input id="contact" name="contact_client" value={form.contact_client} onChange={handleChange} />
-                                        </div>
-                                    </div>
-                                    <h1 className="text-lg font-medium text-gray-900 my-2">Informations sur l'évènement</h1>
-                                    <div className="grid gap-4">
-                                        <Select
-                                            value={form.salle_id}
-                                            onValueChange={(value) => handleSelectChange("salle_id", value)}
-                                        >
-                                            <SelectTrigger className="w-full">
-                                                <SelectValue placeholder="Nom de la salle" />
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                                <SelectGroup>
-                                                    <SelectLabel>Salles</SelectLabel>
-                                                    {salles.map((salle) => (
-                                                        <SelectItem key={salle.id} value={salle.id}>
-                                                            {salle.nom_salle}
-                                                        </SelectItem>
-                                                    ))}
-                                                </SelectGroup>
-                                            </SelectContent>
-                                        </Select>
-                                        <DateTimePicker
-                                            label="Date début"
-                                            value={form.date_debut ? new Date(form.date_debut) : undefined}
-                                            onChange={(dateTime) => setForm(prev => ({ ...prev, date_debut: dateTime.toISOString() }))}
-                                            disabledSlots={getOccupiedSlots(form.salle_id)}
-                                        />
-                                        <DateTimePicker
-                                            label="Date fin"
-                                            value={form.date_fin ? new Date(form.date_fin) : undefined}
-                                            onChange={(dateTime) => setForm(prev => ({ ...prev, date_fin: dateTime.toISOString() }))}
-                                            disabledSlots={getOccupiedSlots(form.salle_id)}
-                                        />
-                                        <Select
-                                            value={form.categorie}
-                                            onValueChange={(value) => {
-                                                handleSelectChange("categorie", value);
-                                                // Réinitialiser le type si on change de catégorie
-                                                setForm((prev) => ({ ...prev, type: "" }));
-                                            }}
-                                        >
-                                            <SelectTrigger className="w-full">
-                                                <SelectValue placeholder="Catégorie" />
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                                <SelectGroup>
-                                                    <SelectLabel>Catégories</SelectLabel>
-                                                    {eventCategories.map((cat) => (
-                                                        <SelectItem key={cat.value} value={cat.value}>
-                                                            {cat.label}
-                                                        </SelectItem>
-                                                    ))}
-                                                </SelectGroup>
-                                            </SelectContent>
-                                        </Select>
-
-                                        {/* Sélecteur de type dépendant de la catégorie */}
-                                        <Select
-                                            value={form.type}
-                                            onValueChange={(value) => handleSelectChange("type", value)}
-                                            disabled={!form.categorie} // désactive tant qu'aucune catégorie n'est choisie
-                                        >
-                                            <SelectTrigger className="w-full">
-                                                <SelectValue placeholder="Type d'évènement" />
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                                <SelectGroup>
-                                                    <SelectLabel>Types</SelectLabel>
-                                                    {form.categorie &&
-                                                        eventTypesByCategory[form.categorie]?.map((type) => (
-                                                            <SelectItem key={type} value={type}>
-                                                                {type}
-                                                            </SelectItem>
-                                                        ))}
-                                                </SelectGroup>
-                                            </SelectContent>
-                                        </Select>
-
-
-                                        <div className="grid gap-3">
-                                            <Label htmlFor="Montant">Montant</Label>
-                                            <Input id="Montant" name="montant" value={form.montant} onChange={handleChange} />
-                                        </div>
-                                        <div className="grid gap-3">
-                                            <Label htmlFor="avance">Avance (optionnel)</Label>
-                                            <Input id="avance" name="avance" value={form.avance} onChange={handleChange} />
-                                        </div>
-                                        <div className="grid gap-3">
-                                            <Label htmlFor="Description">Description</Label>
-                                            <textarea id="description" name="description" value={form.description} onChange={handleChange} rows="2" className="resize-none px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gray-300 focus:border-transparent" />
-                                        </div>
-                                    </div>
-                                    <h1 className="text-lg font-medium text-gray-900 my-2">Informations sur l'agent</h1>
-
-                                    <Select
-                                        value={form.agent_id}
-                                        onValueChange={(value) => handleSelectChange("agent_id", value)}>
-                                        <SelectTrigger className="w-full">
-                                            <SelectValue placeholder="Nom et prénom(s) de l'agent" />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            <SelectGroup>
-                                                <SelectLabel>Choisissez l'agent</SelectLabel>
-                                                {agents.map((agent) => (
-                                                    <SelectItem key={agent.id} value={agent.id}>
-                                                        {agent.name}
-                                                    </SelectItem>
-                                                ))}
-                                            </SelectGroup>
-                                        </SelectContent>
-                                    </Select>
+        <div className="min-h-screen bg-gray-50/50 p-4 text-gray-900">
+            <div className="max-w-7xl mx-auto">
+                
+                {/* Header */}
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
+                    <div>
+                        <h1 className="text-2xl font-bold tracking-tight text-gray-900">Gestion des Évènements</h1>
+                        <p className="text-sm text-gray-500 mt-1">Planifiez, filtrez et gérez tous vos évènements en un clin d'œil.</p>
+                    </div>
+                    <div className="flex items-center gap-3">
+                        <Dialog open={open} onOpenChange={setOpen}>
+                            <DialogTrigger asChild>
+                                <Button className="bg-gray-900 hover:bg-gray-800 shadow-lg shadow-gray-900/20">
+                                    <Plus size={16} className="mr-2" /> Nouvel Évènement
+                                </Button>
+                            </DialogTrigger>
+                            <DialogContent className="sm:max-w-[600px] max-h-[90vh] flex flex-col p-0 gap-0">
+                                <DialogHeader className="p-6 pb-2">
+                                    <DialogTitle>Ajouter un évènement</DialogTitle>
+                                    <DialogDescription>Remplissez les détails ci-dessous pour créer une nouvelle réservation.</DialogDescription>
+                                </DialogHeader>
+                                <div className="p-6 pt-2 overflow-y-auto">
+                                    <form id="add-event-form" onSubmit={handleSubmit}>
+                                        <EventFormFields />
+                                    </form>
                                 </div>
-                                <DialogFooter>
+                                <DialogFooter className="p-6 pt-2 border-t bg-gray-50/50">
                                     <DialogClose asChild>
                                         <Button variant="outline">Annuler</Button>
                                     </DialogClose>
-                                    <Button type="submit">Sauvegarder</Button>
+                                    <Button type="submit" form="add-event-form" disabled={loading}>
+                                        {loading && <Loader className="mr-2 h-4 w-4 animate-spin" />}
+                                        Sauvegarder
+                                    </Button>
                                 </DialogFooter>
-                            </form>
-                        </DialogContent>
-                    </Dialog>
-                    <button
-                        onClick={() => exportEventsToPDF(events)}
-                        disabled={isloading || events.length === 0}
-                        className="flex items-center cursor-pointer gap-2 px-4 py-2 border border-green-700 bg-gray-50 text-green-800 rounded-lg hover:bg-gray-100 transition-colors"
-                    >
-                        <Share className="w-4 h-4" />
-                        Exporter Pdf
-                    </button>
-                </div>
-            </div>
+                            </DialogContent>
+                        </Dialog>
 
-            {/* 🔍 Barre de filtre responsive */}
-            <div className="mb-6">
-                <div className="flex flex-wrap items-center gap-3 bg-white p-4 rounded-xl">
-                    {/* Filtrer par agent */}
-                    <Select
-                        value={filters.agent || ""}
-                        onValueChange={(value) => setFilters({ ...filters, agent: value })}
-                    >
-                        <SelectTrigger className="w-full sm:w-40">
-                            <SelectValue placeholder="Agent" />
-                        </SelectTrigger>
-                        <SelectContent>
-                            <SelectGroup>
-                                <SelectLabel>Agents</SelectLabel>
-                                {agents.map((agent) => (
-                                    <SelectItem key={agent.id} value={agent.name}>
-                                        {agent.name}
-                                    </SelectItem>
-                                ))}
-                            </SelectGroup>
-                        </SelectContent>
-                    </Select>
-
-                    <Select
-                        value={filters.categorie || ""}
-                        onValueChange={(value) =>
-                            setFilters({
-                                ...filters,
-                                categorie: value,
-                                type: "", // Réinitialise le type quand la catégorie change
-                            })
-                        }
-                    >
-                        <SelectTrigger className="w-full sm:w-40">
-                            <SelectValue placeholder="Catégorie" />
-                        </SelectTrigger>
-                        <SelectContent>
-                            <SelectGroup>
-                                <SelectLabel>Catégories</SelectLabel>
-                                {eventCategories.map((cat) => (
-                                    <SelectItem key={cat.value} value={cat.value}>
-                                        {cat.label}
-                                    </SelectItem>
-                                ))}
-                            </SelectGroup>
-                        </SelectContent>
-                    </Select>
-
-                    {/* Filtrer par type (lié à la catégorie) */}
-                    <Select
-                        value={filters.type || ""}
-                        onValueChange={(value) => setFilters({ ...filters, type: value })}
-                        disabled={!filters.categorie} // Désactivé si aucune catégorie choisie
-                    >
-                        <SelectTrigger className="w-full sm:w-40">
-                            <SelectValue
-                                placeholder={
-                                    filters.categorie ? "Type" : "Choisissez une catégorie d'abord"
-                                }
-                            />
-                        </SelectTrigger>
-                        <SelectContent>
-                            <SelectGroup>
-                                <SelectLabel>Types</SelectLabel>
-                                {(filters.categorie
-                                    ? eventTypesByCategory[filters.categorie] || []
-                                    : []
-                                ).map((t) => (
-                                    <SelectItem key={t} value={t}>
-                                        {t}
-                                    </SelectItem>
-                                ))}
-                            </SelectGroup>
-                        </SelectContent>
-                    </Select>
-
-                    {/* Filtrer par statut */}
-                    <Select
-                        value={filters.statut || ""}
-                        onValueChange={(value) => setFilters({ ...filters, statut: value })}
-                    >
-                        <SelectTrigger className="w-full sm:w-40">
-                            <SelectValue placeholder="Statut" />
-                        </SelectTrigger>
-                        <SelectContent>
-                            <SelectGroup>
-                                <SelectLabel>Statut</SelectLabel>
-                                <SelectItem value="A venir">À venir</SelectItem>
-                                <SelectItem value="En cours">En cours</SelectItem>
-                                <SelectItem value="Terminé">Terminé</SelectItem>
-                            </SelectGroup>
-                        </SelectContent>
-                    </Select>
-
-                    {/* Date de début */}
-                    <div className="flex flex-col">
-                        <Label className="text-xs text-gray-500">Début</Label>
-                        <Input
-                            type="date"
-                            value={filters.date_debut || ""}
-                            onChange={(e) =>
-                                setFilters({ ...filters, date_debut: e.target.value })
-                            }
-                            className="w-full sm:w-40"
-                        />
-                    </div>
-
-                    {/* Date de fin */}
-                    <div className="flex flex-col">
-                        <Label className="text-xs text-gray-500">Fin</Label>
-                        <Input
-                            type="date"
-                            value={filters.date_fin || ""}
-                            onChange={(e) =>
-                                setFilters({ ...filters, date_fin: e.target.value })
-                            }
-                            className="w-full sm:w-40"
-                        />
-                    </div>
-
-                    {/* Bouton de reset */}
-                    <Button
-                        variant="outline"
-                        className="mt-2 sm:mt-0"
-                        onClick={() => setFilters({})}
-                    >
-                        Réinitialiser
-                    </Button>
-                </div>
-            </div>
-
-
-            {isloading || loading ? (
-                <div className="flex items-center justify-center gap-3 p-3">
-                    <Radius className='animate-spin w-4 h-4 text-blue-950' />
-                    <span className="ml-2 text-gray-700">Chargement en cours...</span>
-                </div>
-            ) : filteredEvents.length === 0 ? (
-                <div className='flex flex-col items-center justify-center gap-3 p-3'>
-                    <div className="flex items-center justify-center gap-2">
-                        <Info className='w-4 h-4 text-red-800' />
-                        <span className="ml-2 text-gray-700">Aucun évènement enrégistré !</span>
+                        <Button 
+                            variant="outline"
+                            onClick={() => exportEventsToPDF(events)}
+                            disabled={isloading || events.length === 0}
+                            className="bg-white"
+                        >
+                            <Share className="w-4 h-4 mr-2" /> Exporter PDF
+                        </Button>
                     </div>
                 </div>
-            ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-4">
-                    {filteredEvents.map((event) => (
-                        <div key={event.id} className="bg-white rounded-2xl shadow-lg border border-gray-100 p-6 hover:shadow-xl transition-shadow duration-300">
-                            <div className="flex justify-between items-start mb-4">
-                                <span className="text-lg font-semibold text-gray-800">{event.type}</span>
-                                <span className={`text-sm font-medium px-3 py-1 rounded-full ${getEventStatus(event.date_debut, event.date_fin) === 'En cours' ? 'text-yellow-700 bg-yellow-100' :
+
+                {/* Filtres */}
+                <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm mb-6">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 items-end">
+                        <div className="space-y-1.5">
+                            <Label className="text-xs font-medium text-gray-500">Agent</Label>
+                            <Select value={filters.agent || ""} onValueChange={(value) => setFilters({ ...filters, agent: value })}>
+                                <SelectTrigger className="w-full bg-gray-50/50 border-gray-200">
+                                    <SelectValue placeholder="Tous les agents" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {agents.map((agent) => (
+                                        <SelectItem key={agent.id} value={agent.name}>{agent.name}</SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                        </div>
+                        
+                        <div className="space-y-1.5">
+                            <Label className="text-xs font-medium text-gray-500">Catégorie & Type</Label>
+                            <div className="flex gap-1">
+                                <Select value={filters.categorie || ""} onValueChange={(value) => setFilters({ ...filters, categorie: value, type: "" })}>
+                                    <SelectTrigger className="w-1/2 bg-gray-50/50 border-gray-200">
+                                        <SelectValue placeholder="Cat." />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {eventCategories.map((cat) => (
+                                            <SelectItem key={cat.value} value={cat.value}>{cat.label}</SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                                <Select value={filters.type || ""} onValueChange={(value) => setFilters({ ...filters, type: value })} disabled={!filters.categorie}>
+                                    <SelectTrigger className="w-1/2 bg-gray-50/50 border-gray-200">
+                                        <SelectValue placeholder="Type" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {filters.categorie && eventTypesByCategory[filters.categorie]?.map((t) => (
+                                            <SelectItem key={t} value={t}>{t}</SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                        </div>
+
+                        <div className="space-y-1.5">
+                             <Label className="text-xs font-medium text-gray-500">Période</Label>
+                             <div className="flex gap-2 items-center">
+                                <Input type="date" className="bg-gray-50/50 border-gray-200 text-xs px-2" value={filters.date_debut || ""} onChange={(e) => setFilters({ ...filters, date_debut: e.target.value })} />
+                                <span className="text-gray-300">-</span>
+                                <Input type="date" className="bg-gray-50/50 border-gray-200 text-xs px-2" value={filters.date_fin || ""} onChange={(e) => setFilters({ ...filters, date_fin: e.target.value })} />
+                             </div>
+                        </div>
+
+                        <div className="space-y-1.5">
+                            <Label className="text-xs font-medium text-gray-500">Statut</Label>
+                            <Select value={filters.statut || ""} onValueChange={(value) => setFilters({ ...filters, statut: value })}>
+                                <SelectTrigger className="w-full bg-gray-50/50 border-gray-200">
+                                    <SelectValue placeholder="Tous" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="A venir">À venir</SelectItem>
+                                    <SelectItem value="En cours">En cours</SelectItem>
+                                    <SelectItem value="Terminé">Terminé</SelectItem>
+                                </SelectContent>
+                            </Select>
+                        </div>
+
+                        <Button variant="ghost" className="text-red-600 hover:text-red-700 hover:bg-red-50" onClick={() => setFilters({})}>
+                            <FilterX className="w-4 h-4 mr-2" /> Reset
+                        </Button>
+                    </div>
+                </div>
+
+                {/* Contenu Principal */}
+                {isloading ? (
+                     <div className="flex flex-col items-center justify-center py-20 text-gray-400">
+                        <Loader className='animate-spin w-6 h-6 mb-3 text-green-600' />
+                        <span className="font-medium">Chargement des données...</span>
+                    </div>
+                ) : filteredEvents.length === 0 ? (
+                    <div className='flex flex-col items-center justify-center py-20 bg-white rounded-xl border border-dashed border-gray-300'>
+                        <div className="bg-gray-50 p-4 rounded-full mb-4">
+                            <Info className='w-8 h-8 text-gray-400' />
+                        </div>
+                        <h3 className="text-lg font-semibold text-gray-900">Aucun évènement trouvé</h3>
+                        <p className="text-gray-500 max-w-sm text-center mt-1">
+                            Essayez de modifier vos filtres ou créez un nouvel évènement pour commencer.
+                        </p>
+                    </div>
+                ) : (
+                    <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                        {filteredEvents.map((event) => (
+                            <div key={event.id} className="group p-4 border-b border-gray-100 last:border-b-0 hover:bg-gray-50 transition-all duration-200 flex flex-col md:flex-row md:items-center gap-4 justify-between">
+                            
+                            {/* 1. Bloc Informations Principales */}
+                            <div className="md:w-1/4 min-w-0">
+                                <div className="flex items-center gap-2 mb-1">
+                                <span className="text-base font-bold text-gray-900 truncate">{event.type}</span>
+                                <span className={`text-[10px] uppercase font-bold px-2 py-0.5 rounded-full ${
+                                    getEventStatus(event.date_debut, event.date_fin) === 'En cours' ? 'text-yellow-700 bg-yellow-100' :
                                     getEventStatus(event.date_debut, event.date_fin) === 'A venir' ? 'text-blue-700 bg-blue-100' :
-                                        'text-green-700 bg-green-100'
-                                    }`}>
+                                    'text-green-700 bg-green-100'
+                                }`}>
                                     {getEventStatus(event.date_debut, event.date_fin)}
                                 </span>
+                                </div>
+                                <div className="text-sm text-gray-500 flex gap-2 items-start">
+                                    <CalendarCheck2 size={14} className="mt-0.5 shrink-0" />
+                                    <span 
+                                        className="line-clamp-2"
+                                        dangerouslySetInnerHTML={{ __html: formatEventDate(event.date_debut, event.date_fin) }} 
+                                    />
+                                </div>
                             </div>
 
-                            <div className="flex items-center gap-2">
-                                <CalendarCheck2 size={16} /> Date de l'évènement
+                            {/* 2. Bloc Détails & Finances */}
+                            <div className="md:w-1/4">
+                                <div className="flex items-center gap-1.5 text-gray-900 font-semibold text-sm mb-0.5">
+                                    <PartyPopper size={14} className="text-gray-400" />
+                                    {event.salle.nom_salle}
+                                </div>
+                                <div className="pl-5">
+                                    <p className="text-sm font-medium text-gray-700">
+                                        {event.montant.toLocaleString("fr-FR")} Fcfa
+                                    </p>
+                                    <p className="text-xs text-gray-500">
+                                        Avance: {event.avance === 0 ? event.avance : (event.avance || 0) + " Fcfa"} • <span className="italic">{event.categorie}</span>
+                                    </p>
+                                </div>
                             </div>
 
-                            <p className="text-sm text-gray-600 mb-4 min-h-[40px]"
-                                dangerouslySetInnerHTML={{ __html: formatEventDate(event.date_debut, event.date_fin) }}
-                            />
-
-                            <div className="mb-4">
-                                <h3 className="text-sm bg-gray-100 px-2 py-1 rounded-md mb-1 gap-2 flex items-center"><User size={16} />Client</h3>
-                                <p className="text-lg font-semibold text-gray-900">{event.nom_client}</p>
-                                <p className="text-sm text-gray-600 flex items-center gap-2">
-                                    <Phone size={14} /> {event.contact_client}
-                                </p>
+                            {/* 3. Bloc Intervenants */}
+                            <div className="md:w-1/4 flex flex-col gap-2">
+                                <div className="flex items-start gap-2">
+                                    <User size={14} className="mt-0.5 text-gray-400" />
+                                    <div>
+                                        <p className="text-sm font-semibold text-gray-900 leading-none">{event.nom_client}</p>
+                                        <p className="text-xs text-gray-500 mt-0.5 flex items-center gap-1">
+                                            <Phone size={10} /> {event.contact_client}
+                                        </p>
+                                    </div>
+                                </div>
+                                <div className="flex items-start gap-2">
+                                    <UserStar size={14} className="mt-0.5 text-gray-400" />
+                                    <div>
+                                        <p className="text-sm font-medium text-gray-700 leading-none">{event.agent.name}</p>
+                                    </div>
+                                </div>
                             </div>
 
-                            <div className="mb-4">
-                                <h3 className="text-sm bg-gray-100 px-2 py-1 rounded-md mb-1 gap-2 flex items-center"><PartyPopper size={16} />Évènement</h3>
-                                <p className="text-lg font-semibold text-gray-900">{event.salle.nom_salle}</p>
-                                <p className="text-lg font-semibold text-gray-900">{event.montant.toLocaleString("fr-FR") + " Fcfa"}</p>
-                                <p className="text-md text-gray-600">Avance: {event.avance === 0 ? event.avance : 0 + " Fcfa"}</p>
-                                <p className="text-sm text-gray-600">Catégorie: {event.categorie}</p>
-                            </div>
-
-                            <div className="mb-4">
-                                <h3 className="text-sm bg-gray-100 px-2 py-1 rounded-md mb-1 gap-2 flex items-center"><UserStar size={16} />Agent assigné</h3>
-                                <p className="text-lg font-semibold text-gray-900">{event.agent.name}</p>
-                                <p className="text-sm text-gray-600 flex items-center gap-2">
-                                    <Phone size={14} /> {event.agent.contact}
-                                </p>
-                            </div>
-
-                            <div className="flex justify-end gap-3 mt-4">
-                                <Button
-                                    variant="destructive"
-                                    size="icon"
-                                    className="hover:bg-red-100 transition-colors"
-                                    onClick={() => {
-                                        setEventToDelete(event);
-                                        setOpenn(true);
-                                    }}
-                                >
-                                    <Trash2 className="w-4 h-4" />
-                                </Button>
-
+                            {/* 4. Bloc Actions */}
+                            <div className="flex items-center md:justify-end gap-2 md:w-auto mt-2 md:mt-0 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
                                 <Button
                                     variant="outline"
                                     size="icon"
-                                    className="bg-gray-100 text-gray-800 hover:bg-gray-200 transition-colors"
+                                    className="h-8 w-8 bg-white text-gray-600 hover:text-blue-600 hover:bg-blue-50 border-gray-200"
                                     onClick={() => {
                                         setSelectedEvent(event);
                                         setForm({
@@ -557,187 +511,75 @@ export default function page() {
                                         });
                                     }}
                                 >
-                                    <Pen className="w-4 h-4" />
+                                    <Pen className="w-3.5 h-3.5" />
+                                </Button>
+
+                                <Button
+                                    variant="destructive"
+                                    size="icon"
+                                    className="h-8 w-8 bg-white text-red-500 border border-red-100 hover:bg-red-50 hover:text-red-700 shadow-sm"
+                                    onClick={() => {
+                                        setEventToDelete(event);
+                                        setOpenn(true);
+                                    }}
+                                >
+                                    <Trash2 className="w-3.5 h-3.5" />
                                 </Button>
                             </div>
+
+                            </div>
+                        ))}
+                    </div>
+                )}
+
+                {/* --- MODALES --- */}
+
+                {/* Dialog Suppression */}
+                <Dialog open={!!eventToDelete} onOpenChange={(open) => !open && setEventToDelete(null)}>
+                    <DialogContent className="sm:max-w-[400px]">
+                        <DialogHeader>
+                            <DialogTitle className="text-red-600 flex items-center gap-2">
+                                <Trash2 size={18} /> Supprimer l'évènement ?
+                            </DialogTitle>
+                            <DialogDescription className="pt-2">
+                                Vous êtes sur le point de supprimer l'évènement <strong>{eventToDelete?.type}</strong> du client <strong>{eventToDelete?.nom_client}</strong>.<br/>
+                                Cette action est irréversible.
+                            </DialogDescription>
+                        </DialogHeader>
+                        <DialogFooter className="mt-4">
+                            <Button variant="outline" onClick={() => setEventToDelete(null)}>Annuler</Button>
+                            <Button variant="destructive" onClick={() => { deleteEvent(eventToDelete.id, reloadEvents); setEventToDelete(null); }}>
+                                Confirmer la suppression
+                            </Button>
+                        </DialogFooter>
+                    </DialogContent>
+                </Dialog>
+
+                {/* Dialog Modification */}
+                <Dialog open={!!selectedEvent} onOpenChange={(open) => !open && setSelectedEvent(null)}>
+                    <DialogContent className="sm:max-w-[600px] max-h-[90vh] flex flex-col p-0 gap-0">
+                        <DialogHeader className="p-6 pb-2">
+                            <DialogTitle>Modifier l'évènement</DialogTitle>
+                            <DialogDescription>Mettez à jour les informations ci-dessous.</DialogDescription>
+                        </DialogHeader>
+                        <div className="p-6 pt-2 overflow-y-auto">
+                            <form id="edit-event-form" onSubmit={handleUpdate}>
+                                <EventFormFields />
+                            </form>
                         </div>
+                        <DialogFooter className="p-6 pt-2 border-t bg-gray-50/50">
+                            <DialogClose asChild>
+                                <Button variant="outline">Annuler</Button>
+                            </DialogClose>
+                            <Button type="submit" form="edit-event-form" disabled={loading}>
+                                {loading ? <Loader className="mr-2 h-4 w-4 animate-spin" /> : <Pen className="mr-2 h-4 w-4" />}
+                                Mettre à jour
+                            </Button>
+                        </DialogFooter>
+                    </DialogContent>
+                </Dialog>
 
-                    ))}
-                </div>
-            )
-            }
-
-            {/* Dialog global pour supprimer */}
-            <Dialog open={!!eventToDelete} onOpenChange={(open) => !open && setEventToDelete(null)}>
-                <DialogContent className="sm:max-w-[400px]">
-                    <DialogHeader>
-                        <DialogTitle>Supprimer l'évènement ?</DialogTitle>
-                        <DialogDescription>
-                            Cette action est irréversible. L'évènement <b>{eventToDelete?.type}</b> pour le client <b>{eventToDelete?.nom_client}</b> sera définitivement supprimé.
-                        </DialogDescription>
-                    </DialogHeader>
-                    <DialogFooter>
-                        <Button variant="outline" onClick={() => setEventToDelete(null)}>Annuler</Button>
-                        <Button
-                            variant="destructive"
-                            onClick={() => {
-                                deleteEvent(eventToDelete.id, reloadEvents);
-                                setEventToDelete(null);
-                            }}
-                        >
-                            Supprimer
-                        </Button>
-                    </DialogFooter>
-                </DialogContent>
-            </Dialog>
-
-            <Dialog open={!!selectedEvent} onOpenChange={(open) => !open && setSelectedEvent(null)}>
-                <DialogContent className="sm:max-w-[525px]">
-                    <DialogHeader>
-                        <DialogTitle>Modifier l'évènement</DialogTitle>
-                        <DialogDescription>
-                            Modifie les informations de l'évènement ci-dessous.
-                        </DialogDescription>
-                    </DialogHeader>
-
-                    {selectedEvent && (
-                        <form onSubmit={handleUpdate}>
-                            <div className='max-h-54 overflow-y-auto pr-3 mb-3'>
-                                <h1 className="text-lg font-medium text-gray-900 my-2">Informations du client</h1>
-                                <div className="grid gap-4">
-                                    <div className="grid gap-3">
-                                        <Label htmlFor="name-1">Nom et prénom(s)</Label>
-                                        <Input id="name-1" name="nom_client" value={form.nom_client} onChange={handleChange} />
-                                    </div>
-                                    <div className="grid gap-3">
-                                        <Label htmlFor="contact">Contact</Label>
-                                        <Input id="contact" name="contact_client" value={form.contact_client} onChange={handleChange} />
-                                    </div>
-                                </div>
-                                <h1 className="text-lg font-medium text-gray-900 my-2">Informations sur l'évènement</h1>
-                                <div className="grid gap-4">
-                                    <DateTimePicker
-                                        label="Date début"
-                                        value={form.date_debut ? new Date(form.date_debut) : undefined}
-                                        onChange={(dateTime) => setForm(prev => ({ ...prev, date_debut: dateTime.toISOString() }))}
-                                    />
-                                    <DateTimePicker
-                                        label="Date fin"
-                                        value={form.date_fin ? new Date(form.date_fin) : undefined}
-                                        onChange={(dateTime) => setForm(prev => ({ ...prev, date_fin: dateTime.toISOString() }))}
-                                    />
-                                    <Select
-                                        value={form.salle_id}
-                                        onValueChange={(value) => handleSelectChange("salle_id", value)}
-                                    >
-                                        <SelectTrigger className="w-full">
-                                            <SelectValue placeholder="Nom de la salle" />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            <SelectGroup>
-                                                <SelectLabel>Salles</SelectLabel>
-                                                {salles.map((salle) => (
-                                                    <SelectItem key={salle.id} value={salle.id}>
-                                                        {salle.nom_salle}
-                                                    </SelectItem>
-                                                ))}
-                                            </SelectGroup>
-                                        </SelectContent>
-                                    </Select>
-                                    <Select
-                                        value={form.categorie}
-                                        onValueChange={(value) => {
-                                            handleSelectChange("categorie", value)
-                                            setForm((prev) => ({ ...prev, type: "" })) // reset le type
-                                        }}
-                                    >
-                                        <SelectTrigger className="w-full">
-                                            <SelectValue placeholder="Catégorie" />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            <SelectGroup>
-                                                <SelectLabel>Catégories</SelectLabel>
-                                                {eventCategories.map((cat) => (
-                                                    <SelectItem key={cat.value} value={cat.value}>
-                                                        {cat.label}
-                                                    </SelectItem>
-                                                ))}
-                                            </SelectGroup>
-                                        </SelectContent>
-                                    </Select>
-
-                                    {/* Type (lié dynamiquement à la catégorie) */}
-                                    <Select
-                                        value={form.type}
-                                        onValueChange={(value) =>
-                                            handleSelectChange("type", value)
-                                        }
-                                        disabled={!form.categorie}
-                                    >
-                                        <SelectTrigger className="w-full">
-                                            <SelectValue placeholder="Type d'évènement" />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            <SelectGroup>
-                                                <SelectLabel>Types</SelectLabel>
-                                                {form.categorie &&
-                                                    eventTypesByCategory[form.categorie]?.map((type) => (
-                                                        <SelectItem key={type} value={type}>
-                                                            {type}
-                                                        </SelectItem>
-                                                    ))}
-                                            </SelectGroup>
-                                        </SelectContent>
-                                    </Select>
-
-                                    <div className="grid gap-3">
-                                        <Label htmlFor="Montant">Montant</Label>
-                                        <Input id="Montant" name="montant" value={form.montant} onChange={handleChange} />
-                                    </div>
-                                    <div className="grid gap-3">
-                                        <Label htmlFor="avance">Avance (optionnel)</Label>
-                                        <Input id="avance" name="avance" value={form.avance} onChange={handleChange} />
-                                    </div>
-                                    <div className="grid gap-3">
-                                        <Label htmlFor="Description">Description</Label>
-                                        <textarea id="description" name="description" value={form.description} onChange={handleChange} rows="2" className="resize-none px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gray-300 focus:border-transparent" />
-                                    </div>
-                                </div>
-                                <h1 className="text-lg font-medium text-gray-900 my-2">Informations sur l'agent</h1>
-
-                                <Select
-                                    value={form.agent_id}
-                                    onValueChange={(value) => handleSelectChange("agent_id", value)}>
-                                    <SelectTrigger className="w-full">
-                                        <SelectValue placeholder="Nom et prénom(s) de l'agent" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectGroup>
-                                            <SelectLabel>Choisissez l'agent</SelectLabel>
-                                            {agents.map((agent) => (
-                                                <SelectItem key={agent.id} value={agent.id}>
-                                                    {agent.name}
-                                                </SelectItem>
-                                            ))}
-                                        </SelectGroup>
-                                    </SelectContent>
-                                </Select>
-                            </div>
-
-                            <DialogFooter>
-                                <DialogClose asChild>
-                                    <Button variant="outline" type="button">
-                                        Annuler
-                                    </Button>
-                                </DialogClose>
-                                <Button type="submit" disabled={loading}>
-                                    {loading ? "Mise à jour..." : "Mettre à jour"}
-                                </Button>
-                            </DialogFooter>
-                        </form>
-                    )}
-                </DialogContent>
-            </Dialog>
-        </div >
+            </div>
+        </div>
     )
 }
