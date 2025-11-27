@@ -44,11 +44,11 @@ export default function LoginPage() {
                 // Redirection basée sur le rôle
                 if (user?.role === "ADMIN") {
                     router.push('/dashboard/home');
-                } else if (user?.role === "AGENT") {
-                    router.push('/agent/home');
+                } else if (user?.role === "FINANCIER") {
+                    router.push('/financial/home');
                 } else {
                     // Fallback ou autre rôle
-                    router.push('/dashboard/home');
+                    router.push('/agent/home');
                 }
             } else {
                 toast.error(user.error || 'Email ou mot de passe incorrect');

@@ -1,17 +1,17 @@
 "use client";
 
 import React, { useState, useEffect } from 'react'
-import { 
-    Info, 
-    Pen, 
-    Plus, 
-    Trash2, 
-    Loader, 
-    Search, 
-    User, 
-    Mail, 
-    Phone, 
-    Shield, 
+import {
+    Info,
+    Pen,
+    Plus,
+    Trash2,
+    Loader,
+    Search,
+    User,
+    Mail,
+    Phone,
+    Shield,
     Lock,
     UserCog
 } from 'lucide-react';
@@ -48,6 +48,61 @@ import { Label } from "@/components/ui/label"
 import { Badge } from "@/components/ui/badge"
 import { deleteUser, submitForm, fetchUsers, updateUser } from '@/utils/userUtils';
 
+
+// Composant de formulaire réutilisable (pour éviter la duplication de code)
+const UserFormFields = React.memo(({ form, handleChange, handleSelectChange, selectedUser }) => (
+    <div className="grid gap-4 py-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="space-y-2 sm:col-span-2">
+                <Label htmlFor="role" className="text-xs font-medium text-gray-500">Rôle & Permissions</Label>
+                <Select value={form.role} onValueChange={(value) => handleSelectChange("role", value)}>
+                    <SelectTrigger className="w-full">
+                        <SelectValue placeholder="Sélectionner un rôle" />
+                    </SelectTrigger>
+                    <SelectContent>
+                        <SelectItem value="ADMIN">Administrateur</SelectItem>
+                        <SelectItem value="AGENT">Agent</SelectItem>
+                        <SelectItem value="FINANCIER">Financier</SelectItem>
+                    </SelectContent>
+                </Select>
+            </div>
+
+            <div className="space-y-2">
+                <Label htmlFor="name" className="text-xs font-medium text-gray-500">Nom complet</Label>
+                <div className="relative">
+                    <User className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-400" />
+                    <Input id="name" name="name" className="pl-9" value={form.name} onChange={handleChange} required />
+                </div>
+            </div>
+
+            <div className="space-y-2">
+                <Label htmlFor="contact" className="text-xs font-medium text-gray-500">Téléphone</Label>
+                <div className="relative">
+                    <Phone className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-400" />
+                    <Input id="contact" name="contact" className="pl-9" value={form.contact} onChange={handleChange} required />
+                </div>
+            </div>
+
+            <div className="space-y-2 sm:col-span-2">
+                <Label htmlFor="email" className="text-xs font-medium text-gray-500">Adresse Email</Label>
+                <div className="relative">
+                    <Mail className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-400" />
+                    <Input id="email" name="email" type="email" className="pl-9" value={form.email} onChange={handleChange} required />
+                </div>
+            </div>
+
+            <div className="space-y-2 sm:col-span-2">
+                <Label htmlFor="password" className="text-xs font-medium text-gray-500">Mot de passe</Label>
+                <div className="relative">
+                    <Lock className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-400" />
+                    <Input id="password" name="password" type="password" className="pl-9" value={form.password} onChange={handleChange} required={!selectedUser} placeholder={selectedUser ? "Laisser vide pour ne pas changer" : "••••••••"} />
+                </div>
+            </div>
+        </div>
+    </div>
+));
+
+
 export default function UsersPage() {
     const [selectedUser, setSelectedUser] = useState(null);
     const [userToDelete, setUserToDelete] = useState(null);
@@ -55,7 +110,7 @@ export default function UsersPage() {
     const [isloading, setIsLoading] = useState(true)
     const [loading, setLoading] = useState(false)
     const [isAddOpen, setIsAddOpen] = useState(false);
-    
+
     // État du formulaire
     const [form, setForm] = useState({
         name: '',
@@ -68,7 +123,7 @@ export default function UsersPage() {
     const handleChange = (e) => {
         setForm({ ...form, [e.target.name]: e.target.value });
     };
-    
+
     const handleSelectChange = (name, value) => {
         setForm({ ...form, [name]: value });
     };
@@ -120,70 +175,17 @@ export default function UsersPage() {
         }
     };
 
-    // Composant de formulaire réutilisable (pour éviter la duplication de code)
-    const UserFormFields = () => (
-        <div className="grid gap-4 py-4">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="space-y-2 sm:col-span-2">
-                    <Label htmlFor="role" className="text-xs font-medium text-gray-500">Rôle & Permissions</Label>
-                    <Select value={form.role} onValueChange={(value) => handleSelectChange("role", value)}>
-                        <SelectTrigger className="w-full">
-                            <SelectValue placeholder="Sélectionner un rôle" />
-                        </SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="ADMIN">Administrateur</SelectItem>
-                            <SelectItem value="AGENT">Agent</SelectItem>
-                            <SelectItem value="FINANCIER">Financier</SelectItem>
-                        </SelectContent>
-                    </Select>
-                </div>
-
-                <div className="space-y-2">
-                    <Label htmlFor="name" className="text-xs font-medium text-gray-500">Nom complet</Label>
-                    <div className="relative">
-                        <User className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-400" />
-                        <Input id="name" name="name" className="pl-9" value={form.name} onChange={handleChange} required />
-                    </div>
-                </div>
-
-                <div className="space-y-2">
-                    <Label htmlFor="contact" className="text-xs font-medium text-gray-500">Téléphone</Label>
-                    <div className="relative">
-                        <Phone className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-400" />
-                        <Input id="contact" name="contact" className="pl-9" value={form.contact} onChange={handleChange} required />
-                    </div>
-                </div>
-
-                <div className="space-y-2 sm:col-span-2">
-                    <Label htmlFor="email" className="text-xs font-medium text-gray-500">Adresse Email</Label>
-                    <div className="relative">
-                        <Mail className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-400" />
-                        <Input id="email" name="email" type="email" className="pl-9" value={form.email} onChange={handleChange} required />
-                    </div>
-                </div>
-
-                <div className="space-y-2 sm:col-span-2">
-                    <Label htmlFor="password" className="text-xs font-medium text-gray-500">Mot de passe</Label>
-                    <div className="relative">
-                        <Lock className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-400" />
-                        <Input id="password" name="password" type="password" className="pl-9" value={form.password} onChange={handleChange} required={!selectedUser} placeholder={selectedUser ? "Laisser vide pour ne pas changer" : "••••••••"} />
-                    </div>
-                </div>
-            </div>
-        </div>
-    );
-
     return (
         <div className="min-h-screen bg-gray-50/50 p-4 text-gray-900">
             <div className="max-w-7xl mx-auto space-y-6">
-                
+
                 {/* Header */}
                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                     <div>
                         <h1 className="text-2xl font-bold tracking-tight text-gray-900">Équipe & Utilisateurs</h1>
                         <p className="text-sm text-gray-500 mt-1">Gérez les accès et les rôles de vos collaborateurs.</p>
                     </div>
-                    
+
                     <Dialog open={isAddOpen} onOpenChange={setIsAddOpen}>
                         <DialogTrigger asChild>
                             <Button className="bg-gray-900 hover:bg-gray-800 shadow-lg shadow-gray-900/20">
@@ -196,7 +198,11 @@ export default function UsersPage() {
                                 <DialogDescription>Ajoutez un nouvel utilisateur et définissez ses permissions.</DialogDescription>
                             </DialogHeader>
                             <form onSubmit={handleSubmit}>
-                                <UserFormFields />
+                                <UserFormFields
+                                    form={form}
+                                    handleChange={handleChange}
+                                    handleSelectChange={handleSelectChange}
+                                    selectedUser={selectedUser} />
                                 <DialogFooter>
                                     <DialogClose asChild>
                                         <Button variant="outline" type="button">Annuler</Button>
@@ -335,7 +341,11 @@ export default function UsersPage() {
                             <DialogDescription>Mettez à jour les informations de {selectedUser?.name}.</DialogDescription>
                         </DialogHeader>
                         <form onSubmit={handleUpdate}>
-                            <UserFormFields />
+                            <UserFormFields
+                                form={form}
+                                handleChange={handleChange}
+                                handleSelectChange={handleSelectChange}
+                                selectedUser={selectedUser} />
                             <DialogFooter>
                                 <DialogClose asChild>
                                     <Button variant="outline" type="button">Annuler</Button>

@@ -34,8 +34,14 @@ const navigation = [
     { name: 'Utilisateurs', href: '/dashboard/users', icon: ShieldUser },
 ];
 
+const finance = [
+    { name: 'Dashboard', href: '/financial/home', icon: Home },
+    { name: 'Évènements', href: '/financial/evenements', icon: PartyPopper },
+    { name: 'Statistiques', href: '/financial/accounting', icon: Newspaper },
+];
+
 export default function Header() {
-    const { user, logout, isAdmin } = useAuth();
+    const { user, logout, isAdmin, isFinancial } = useAuth();
     const pathname = usePathname();
     const [loading, setLoading] = useState(true);
     const [openDrawer, setOpenDrawer] = useState(false);
@@ -91,7 +97,7 @@ export default function Header() {
                     <div className="flex items-center gap-3">
                         
                         {/* Notifications Bell */}
-                        {!loading && !isAdmin && (
+                        {!loading && !isAdmin && !isFinancial && (
                             <button
                                 onClick={() => setOpenDrawer(true)}
                                 className="relative p-2 rounded-full text-gray-500 hover:bg-gray-100 hover:text-gray-900 transition-colors focus:outline-none"
@@ -183,6 +189,27 @@ export default function Header() {
                             ))
                         ) : isAdmin ? (
                             navigation.map((item) => {
+                                const active = isActive(item.href);
+                                const Icon = item.icon;
+                                return (
+                                    <Link
+                                        key={item.name}
+                                        href={item.href}
+                                        className={`
+                                            flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-md transition-all whitespace-nowrap
+                                            ${active 
+                                                ? 'bg-green-700 text-white shadow-md' 
+                                                : 'text-gray-500 hover:text-gray-900 hover:bg-gray-100'
+                                            }
+                                        `}
+                                    >
+                                        <Icon size={16} className={active ? "text-gray-300" : "text-gray-400"} />
+                                        {item.name}
+                                    </Link>
+                                );
+                            })
+                        ) : isFinancial ? (
+                            finance.map((item) => {
                                 const active = isActive(item.href);
                                 const Icon = item.icon;
                                 return (

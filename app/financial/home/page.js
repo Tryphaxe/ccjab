@@ -2,6 +2,14 @@
 
 import React, { useEffect, useState, useMemo } from 'react'
 import { PartyPopper, Clock4, ClockAlert, Clock12, CalendarDays, CalendarRange, Calendar, Loader } from 'lucide-react';
+import {
+    Card,
+    CardContent,
+    CardHeader,
+    CardTitle,
+    CardDescription
+} from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
 import CalendarView from '@/components/CalendarView';
 import DayCalendar from '@/components/DayCalendar';
 import WeeksEvents from '@/components/WeeksEvents';
@@ -27,8 +35,8 @@ const ViewToggle = ({ activeView, onChange }) => {
                         onClick={() => onChange(view.id)}
                         className={`
                             flex items-center gap-2 px-3 py-1.5 text-sm font-medium rounded-md transition-all duration-200
-                            ${isActive
-                                ? 'bg-white text-gray-900 shadow-sm ring-1 ring-black/5'
+                            ${isActive 
+                                ? 'bg-white text-gray-900 shadow-sm ring-1 ring-black/5' 
                                 : 'text-gray-500 hover:text-gray-900 hover:bg-gray-200/50'
                             }
                         `}
@@ -88,7 +96,7 @@ export default function Page() {
     return (
         <div className="min-h-screen bg-gray-50/50 p-4 text-gray-900">
             <div className="max-w-7xl mx-auto space-y-8">
-
+                
                 {/* Header */}
                 <div>
                     <h1 className="text-2xl font-bold tracking-tight text-gray-900">Tableau de bord</h1>
@@ -133,7 +141,7 @@ export default function Page() {
                                 <DayCalendar events={events} />
                             </div>
                         )}
-
+                        
                         {activeView === "semaine" && (
                             <div className="p-4 md:p-6 animate-in fade-in duration-300">
                                 <WeeksEvents />

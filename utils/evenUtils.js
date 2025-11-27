@@ -81,3 +81,34 @@ export const updateEvent = async (id, data, reload, setLoading, onClose) => {
         setLoading(false);
     }
 };
+
+// Ajoutez ceci à vos imports si besoin
+// import { toast } from "sonner" ou votre lib de notification
+
+export const deleteManyEvents = async (ids, reloadCallback) => {
+  try {
+    const response = await fetch('/api/even/bulk-delete', {
+      method: 'POST', // On utilise POST souvent pour envoyer un body complexe, ou DELETE si votre backend le supporte avec body
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ ids }),
+    });
+
+    if (!response.ok) {
+      throw new Error('Erreur lors de la suppression');
+    }
+
+    const data = await response.json();
+    
+    // Notification de succès (exemple avec alert, remplacez par toast si vous avez)
+    // alert(data.message); 
+    toast.success("Suppression réussie.");
+    
+    // Recharger la liste
+    if (reloadCallback) reloadCallback();
+
+  } catch (error) {
+    toast.error("Impossible de supprimer les évènements sélectionnés.");
+  }
+};
