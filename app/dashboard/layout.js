@@ -7,7 +7,7 @@ export default function DashboardLayout({ children }) {
     <AuthProvider>
       <Header />
       <div className="w-full p-4 sm:p-6 bg-gray-50">
-        <ProtectedRoute adminOnly>
+        <ProtectedRoute allowedRoles={['ADMIN']}>
           {children}
         </ProtectedRoute>
       </div>

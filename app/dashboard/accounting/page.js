@@ -2,17 +2,17 @@
 
 import React, { useEffect, useState, useMemo } from 'react'
 import { Button } from "@/components/ui/button"
-import { 
-    EqualApproximately, 
-    Filter, 
-    HandCoins, 
-    HousePlus, 
-    MapPinHouse, 
-    TrendingUp, 
+import {
+    EqualApproximately,
+    Filter,
+    HandCoins,
+    HousePlus,
+    MapPinHouse,
+    TrendingUp,
     TrendingDown,
-    Calendar, 
-    CalendarDays, 
-    CalendarRange, 
+    Calendar,
+    CalendarDays,
+    CalendarRange,
     Loader
 } from 'lucide-react';
 import ChartAreaDefault from '@/components/Area';
@@ -26,6 +26,7 @@ import {
     DialogTitle,
 } from "@/components/ui/dialog"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import TopSalles from '@/components/SalleDonut';
 
 // Composant Sélecteur de Période (Style Pillule)
 const PeriodSelector = ({ activePeriod, onChange }) => {
@@ -46,8 +47,8 @@ const PeriodSelector = ({ activePeriod, onChange }) => {
                         onClick={() => onChange(p.id)}
                         className={`
                             flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-md transition-all duration-200
-                            ${isActive 
-                                ? 'bg-gray-900 text-white shadow-md' 
+                            ${isActive
+                                ? 'bg-gray-900 text-white shadow-md'
                                 : 'text-gray-500 hover:text-gray-900 hover:bg-gray-100'
                             }
                         `}
@@ -63,7 +64,7 @@ const PeriodSelector = ({ activePeriod, onChange }) => {
 
 export default function FinancePage() {
     const [events, setEvents] = useState([]);
-    const [periode, setPeriode] = useState("semaine"); 
+    const [periode, setPeriode] = useState("semaine");
     const [loading, setLoading] = useState(true);
     const [open, setOpen] = useState(false);
 
@@ -131,23 +132,23 @@ export default function FinancePage() {
             endCurrent = new Date(now);
             startCurrent = new Date(now);
             startCurrent.setDate(now.getDate() - 6);
-            startCurrent.setHours(0,0,0,0);
-            
+            startCurrent.setHours(0, 0, 0, 0);
+
             // Période précédente
             endPrev = new Date(startCurrent);
             endPrev.setDate(startCurrent.getDate() - 1);
-            endPrev.setHours(23,59,59,999);
-            
+            endPrev.setHours(23, 59, 59, 999);
+
             startPrev = new Date(endPrev);
             startPrev.setDate(endPrev.getDate() - 6);
-            startPrev.setHours(0,0,0,0);
-            
+            startPrev.setHours(0, 0, 0, 0);
+
             periodLabel = "vs 7j préc.";
         } else if (periode === "mois") {
             // Mois civil courant
             startCurrent = new Date(now.getFullYear(), now.getMonth(), 1);
             endCurrent = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59);
-            
+
             // Mois précédent
             startPrev = new Date(now.getFullYear(), now.getMonth() - 1, 1);
             endPrev = new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59);
@@ -182,10 +183,10 @@ export default function FinancePage() {
         // 4. Calcul des valeurs actuelles et précédentes
         const currRev = sumRevenue(currentEvents);
         const prevRev = sumRevenue(prevEvents);
-        
+
         const currCount = countEvents(currentEvents);
         const prevCount = countEvents(prevEvents);
-        
+
         const currAvg = avgRevenue(currentEvents);
         const prevAvg = avgRevenue(prevEvents);
 
@@ -205,10 +206,10 @@ export default function FinancePage() {
             if (name) acc[name] = (acc[name] || 0) + 1;
             return acc;
         }, {});
-        
+
         const mostRentedEntry = Object.entries(salleCounts).sort((a, b) => b[1] - a[1])[0];
         const mostRentedSalle = mostRentedEntry ? mostRentedEntry[0] : "Aucune";
-        
+
         // Tendance Top Salle (comparaison du volume de cette salle avec la période précédente)
         let trendSalle = 0;
         if (mostRentedSalle !== "Aucune") {
@@ -277,7 +278,7 @@ export default function FinancePage() {
     return (
         <div className="min-h-screen bg-gray-50/50 p-4 text-gray-900 pb-24">
             <div className="max-w-7xl mx-auto space-y-8">
-                
+
                 {/* Header */}
                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
                     <div>
@@ -314,7 +315,10 @@ export default function FinancePage() {
                 </div>
 
                 {/* Graphique */}
-                <ChartAreaDefault data={chartData} />
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <ChartAreaDefault data={chartData} />
+                    <TopSalles />
+                </div>
 
                 {/* Tableau */}
                 <div className="space-y-4">
@@ -328,7 +332,7 @@ export default function FinancePage() {
                 </div>
 
                 {/* Bouton Filtre Flottant */}
-                <Button 
+                <Button
                     onClick={() => setOpen(true)}
                     className="fixed bottom-8 right-8 h-10 w-10 cursor-pointer rounded-full bg-gray-900 hover:bg-gray-800 text-white shadow-xl hover:shadow-2xl transition-all duration-300 z-50 flex items-center justify-center group"
                 >
