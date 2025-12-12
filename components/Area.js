@@ -20,7 +20,7 @@ export default function ChartAreaDefault({ data }) {
                 <CardDescription>Montants des réservations</CardDescription>
             </CardHeader>
             <CardContent>
-                <ChartContainer config={chartConfig} className="w-full h-60">
+                <ChartContainer config={chartConfig} className="w-full h-65">
                     <AreaChart
                         data={data}
                         margin={{ left: 12, right: 12 }}

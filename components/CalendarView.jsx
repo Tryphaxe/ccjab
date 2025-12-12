@@ -197,7 +197,7 @@ export default function CalendarView({ events }) {
               <span className="text-xs text-gray-500 font-medium">#{selectedEvent?.type_evenement}</span>
             </div>
             <DialogTitle className="text-xl text-gray-900">
-              {selectedEvent?.salle?.nom_salle || "Non spécifié"}
+              {selectedEvent?.nom_salle || selectedEvent?.salle?.nom || "Non spécifié"}
             </DialogTitle>
             <DialogDescription className="mt-1">
               {selectedEvent && (
