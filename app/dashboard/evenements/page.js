@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useMemo } from 'react'
-import { Info, Plus, Loader, Trash2, Share, CalendarCheck2, Phone, Pen, User, PartyPopper, UserStar, FilterX, FileText } from 'lucide-react';
+import { Info, Plus, Loader, Trash2, Share, CalendarCheck2, Phone, Pen, User, PartyPopper, UserStar, FilterX, FileText, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Button } from "@/components/ui/button"
 import {
     Dialog,
@@ -32,6 +32,8 @@ import { fetchSalles } from '@/utils/salleUtils';
 import { formatEventDate, getEventStatus } from '@/lib/evenHelper';
 import { exportEventsToPDF } from '@/lib/exportEvent';
 import { DateTimePicker } from '@/components/DateTimePicker';
+
+const ITEMS_PER_PAGE = 10; // Nombre d'éléments par page
 
 const EventFormFields = React.memo(
     ({ form, handleChange, handleSelectChange, setForm, salles, agents, getOccupiedSlots }) => (
@@ -182,6 +184,9 @@ export default function page() {
         agent_id: '',
     });
 
+    // Pagination state
+    const [currentPage, setCurrentPage] = useState(1);
+
     // États pour la sélection multiple
     const [selectedIds, setSelectedIds] = useState([]);
     const [isBulkDeleteDialogOpen, setIsBulkDeleteDialogOpen] = useState(false);
@@ -263,6 +268,17 @@ export default function page() {
             return true;
         });
     }, [events, filters]);
+
+    // Réinitialiser la page quand les filtres changent
+    useEffect(() => {
+        setCurrentPage(1);
+    }, [filters]);
+
+    // Logique de pagination
+    const totalPages = Math.ceil(filteredEvents.length / ITEMS_PER_PAGE);
+    const indexOfLastItem = currentPage * ITEMS_PER_PAGE;
+    const indexOfFirstItem = indexOfLastItem - ITEMS_PER_PAGE;
+    const currentEvents = filteredEvents.slice(indexOfFirstItem, indexOfLastItem);
 
     // Petit loader visuel lors du filtrage
     useEffect(() => {
@@ -494,7 +510,7 @@ export default function page() {
                     </div>
                 ) : (
 
-                    <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                    <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden flex flex-col">
                         <div className="flex items-center justify-between p-4 bg-gray-50 border-b border-gray-100">
                             {/* Checkbox "Tout sélectionner" ajoutée ici */}
                             <div className="flex items-center justify-between h-7 w-full">
@@ -522,7 +538,7 @@ export default function page() {
                                 )}
                             </div>
                         </div>
-                        {filteredEvents.map((event) => (
+                        {currentEvents.map((event) => (
                             <div key={event.id} className="group p-4 border-b border-gray-100 last:border-b-0 hover:bg-gray-50 transition-all duration-200 flex flex-col md:flex-row md:items-center gap-4 justify-between">
                                 <div className="flex items-center h-full">
                                     <input
@@ -629,6 +645,36 @@ export default function page() {
 
                             </div>
                         ))}
+
+                        {/* Barre de pagination */}
+                        <div className="flex items-center justify-between p-4 border-t border-gray-200 bg-gray-50">
+                            <div className="text-xs text-gray-500 hidden sm:block">
+                                Affichage de <span className="font-medium">{indexOfFirstItem + 1}</span> à <span className="font-medium">{Math.min(indexOfLastItem, filteredEvents.length)}</span> sur <span className="font-medium">{filteredEvents.length}</span> résultats
+                            </div>
+                            <div className="flex items-center gap-2 mx-auto sm:mx-0">
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                                    disabled={currentPage === 1}
+                                    className="h-8 px-2"
+                                >
+                                    <ChevronLeft className="h-4 w-4" /> <span className="hidden sm:inline ml-1">Précédent</span>
+                                </Button>
+                                <span className="text-sm font-medium mx-2">
+                                    Page {currentPage} / {totalPages > 0 ? totalPages : 1}
+                                </span>
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                                    disabled={currentPage === totalPages || totalPages === 0}
+                                    className="h-8 px-2"
+                                >
+                                    <span className="hidden sm:inline mr-1">Suivant</span> <ChevronRight className="h-4 w-4" />
+                                </Button>
+                            </div>
+                        </div>
                     </div>
                 )}
 
