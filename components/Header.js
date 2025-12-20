@@ -3,14 +3,14 @@
 import { usePathname } from 'next/navigation';
 import Image from 'next/image';
 import Link from 'next/link';
-import { 
-    Home, 
-    Bell, 
-    ShieldUser, 
-    Warehouse, 
-    PartyPopper, 
-    Newspaper, 
-    LogOut, 
+import {
+    Home,
+    Bell,
+    ShieldUser,
+    Warehouse,
+    PartyPopper,
+    Newspaper,
+    LogOut,
     Slash, // Icône pour le style breadcrumb
     X
 } from 'lucide-react';
@@ -69,11 +69,11 @@ export default function Header() {
             {/* 1. NIVEAU SUPÉRIEUR : Identité & Actions */}
             <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
                 <div className="flex h-16 items-center justify-between">
-                    
+
                     {/* Gauche : Logo + Breadcrumb */}
                     <div className="flex items-center">
                         <Link href="/" className="flex items-center hover:opacity-80 transition-opacity">
-                             <Image
+                            <Image
                                 alt="Logo CCJAB"
                                 src="/images/favicon.png"
                                 width={32}
@@ -82,13 +82,13 @@ export default function Header() {
                                 priority
                             />
                         </Link>
-                        
+
                         {/* Séparateur Slash Vercel */}
                         <Slash className="mx-3 h-5 w-5 text-gray-300 transform -rotate-12" />
-                        
+
                         <div className="flex items-center gap-2">
                             <span className="text-sm font-semibold text-gray-900 tracking-tight">CCJAB</span>
-                            
+
                             {!loading && user && (
                                 <Badge variant="outline" className="hidden sm:flex ml-2 border-gray-200 bg-gray-50 text-gray-500 text-[10px] uppercase tracking-wider font-medium px-2 py-0.5 h-5">
                                     {user.role}
@@ -99,7 +99,7 @@ export default function Header() {
 
                     {/* Droite : Notifications & Profile */}
                     <div className="flex items-center gap-4">
-                        
+
                         {/* Notifications */}
                         {!loading && !isAdmin && !isFinancial && (
                             <button
@@ -126,7 +126,7 @@ export default function Header() {
                                         {user?.name?.charAt(0).toUpperCase()}
                                     </div>
                                 </MenuButton>
-                                
+
                                 <Transition
                                     as={Fragment}
                                     enter="transition ease-out duration-100"
@@ -146,9 +146,8 @@ export default function Header() {
                                                 {({ active }) => (
                                                     <button
                                                         onClick={handleLogout}
-                                                        className={`${
-                                                            active ? 'bg-gray-50 text-gray-900' : 'text-gray-500'
-                                                        } group flex w-full items-center gap-2 rounded-md px-3 py-2 text-sm`}
+                                                        className={`${active ? 'bg-gray-50 text-gray-900' : 'text-gray-500'
+                                                            } group flex w-full items-center gap-2 rounded-md px-3 py-2 text-sm`}
                                                     >
                                                         <LogOut className="w-4 h-4" />
                                                         Se déconnecter
@@ -169,7 +168,7 @@ export default function Header() {
                 <div className="border-t border-gray-100 bg-white">
                     <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
                         <nav className="flex -mb-px space-x-6 overflow-x-auto no-scrollbar">
-                            
+
                             {/* Navigation Agent */}
                             {!isAdmin && !isFinancial && (
                                 <Link
@@ -177,7 +176,7 @@ export default function Header() {
                                     className={`
                                         whitespace-nowrap py-3 px-1 border-b-2 text-sm font-medium transition-colors duration-200 flex items-center gap-2
                                         ${pathname.includes('/agent')
-                                            ? 'border-black text-black' 
+                                            ? 'border-black text-black'
                                             : 'border-transparent text-gray-500 hover:text-gray-900 hover:border-gray-200'
                                         }
                                     `}
@@ -197,17 +196,16 @@ export default function Header() {
                                         href={item.href}
                                         className={`
                                             group whitespace-nowrap py-3 px-1 border-b-2 text-sm font-medium transition-colors duration-200 flex items-center gap-2
-                                            ${active 
-                                                ? 'border-black text-black' 
+                                            ${active
+                                                ? 'border-black text-black'
                                                 : 'border-transparent text-gray-500 hover:text-gray-900 hover:border-gray-200'
                                             }
                                         `}
                                     >
-                                        <Icon 
-                                            size={16} 
-                                            className={`transition-colors duration-200 ${
-                                                active ? "text-black" : "text-gray-400 group-hover:text-gray-600"
-                                            }`} 
+                                        <Icon
+                                            size={16}
+                                            className={`transition-colors duration-200 ${active ? "text-black" : "text-gray-400 group-hover:text-gray-600"
+                                                }`}
                                         />
                                         {item.name}
                                     </Link>

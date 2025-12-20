@@ -12,6 +12,17 @@ export const fetchSalles = async (setData, setIsLoading) => {
 	}
 };
 
+export const fetchVisible = async (setData, setIsLoading) => {
+	try {
+		const res = await axios.get('/api/salle/visible');
+		setData(res.data);
+	} catch (error) {
+		toast.error('Erreur lors du chargement des salles visibles.');
+	} finally {
+		if (setIsLoading) setIsLoading(false);
+	}
+};
+
 export const submitForm = async ({
 	data,
 	onSuccess,
@@ -65,4 +76,41 @@ export const deleteSalle = async (id, reload = null) => {
 		const message = error?.response?.data?.error || "Erreur lors de la suppression.";
 		toast.error(message, { id: toastDep });
 	}
+};
+
+export const updateSalleVisibility = async (id, visible) => {
+  try {
+    const response = await fetch(`/api/salle/${id}`, { // Assurez-vous que cette route existe pour gérer le PATCH/PUT
+      method: 'PATCH', // ou PUT
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ visible }),
+    });
+	toast.success("La salle a bien changé de visibilité.");
+    return await response.json();
+  } catch (error) {
+    toast.error(error?.response?.data?.error || "Erreur lors de la mise à jour");
+  }
+};
+
+// utils/salleUtils.js
+
+export const updateSalleFull = async (up, formData, reloadCallback) => {
+    try {
+        const response = await fetch(`/api/salle/modif-${up}`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(formData),
+        });
+
+        if (!response.ok) throw new Error('Erreur lors de la modification');
+        
+        // Si tout est bon, on recharge la liste
+        if (reloadCallback) reloadCallback();
+        
+    } catch (error) {
+        console.error(error);
+        alert("Erreur lors de la modification de la salle");
+    }
 };

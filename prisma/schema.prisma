@@ -41,6 +41,7 @@ model Salle {
   id           String @id @default(uuid())
   nom_salle    String
   nombre_place Int?
+  visible  Boolean @default(false)
 
   events Even[]
   commodites  SalleCommodite[]

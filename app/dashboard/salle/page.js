@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from 'react'
-import { Info, Plus, Loader, Trash2, Armchair, BoxSelect } from 'lucide-react';
+import { Info, Plus, Loader, Trash2, Armchair, BoxSelect, Eye, EyeOff, Pen } from 'lucide-react';
 import {
     Dialog,
     DialogClose,
@@ -17,13 +17,15 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Badge } from '@/components/ui/badge';
 import { Separator } from "@/components/ui/separator";
+import { Switch } from "@/components/ui/switch"
 
 // Assure-toi que ces chemins sont corrects dans ton projet
-import { deleteSalle, fetchSalles, submitForm } from '@/utils/salleUtils';
+import { deleteSalle, fetchSalles, submitForm, updateSalleVisibility, updateSalleFull } from '@/utils/salleUtils';
 import { fetchEvents } from '@/utils/evenUtils';
 import { deleteCommodite, fetchCommodites, submitCommodite } from '@/utils/commoditeUtils';
 
 export default function page() {
+    const [salleToEdit, setSalleToEdit] = useState(null)
     const [salleToDelete, setSalleToDelete] = useState(null);
     const [salles, setSalles] = useState([])
     const [events, setEvents] = useState([])
@@ -100,10 +102,56 @@ export default function page() {
     const reloadSalles = () => fetchSalles(setSalles, setIsLoading);
     const reloadCom = () => fetchCommodites(setCommodites, setIsLoading);
 
+    const handleVisibilityToggle = async (salle) => {
+        // 1. Mise à jour optimiste (on change l'état local immédiatement pour que ce soit fluide)
+        const updatedSalles = salles.map((s) =>
+            s.id === salle.id ? { ...s, est_visible: !s.est_visible } : s
+        );
+        setSalles(updatedSalles);
+
+        try {
+            // 2. Appel à la base de données
+            await updateSalleVisibility(salle.id, !salle.est_visible);
+        } catch (error) {
+            // 3. Si erreur, on remet l'état précédent
+            console.error("Erreur de modification", error);
+            fetchSalles(setSalles, setIsLoading); // On recharge les données réelles
+        }
+    };
+
+    const handleEditClick = (salle) => {
+        // 1. On ouvre le modal via cet état
+        setSalleToEdit(salle);
+
+        // 2. On pré-remplit le formulaire principal avec les infos de la salle
+        setForm({
+            nom: salle.nom_salle,
+            capacite: salle.nombre_place
+        });
+
+        // 3. On pré-coche les commodités existantes
+        // Note: salle.commodites est un tableau d'objets { commoditeId: 1, ... }
+        const commoditesIds = salle.commodites.map(c => c.commoditeId);
+        setSelected(commoditesIds);
+    };
+
+    const handleUpdateSubmit = async () => {
+        setLoading(true);
+        await updateSalleFull(salleToEdit.id, {
+            nom: form.nom,
+            capacite: form.capacite,
+            commodites: selected
+        }, () => {
+            fetchSalles(setSalles, setIsLoading); // Recharger la liste
+            setSalleToEdit(null); // Fermer le modal
+        });
+        setLoading(false);
+    };
+
     return (
         <div className="min-h-screen bg-gray-50/50 p-4 text-gray-900">
             <div className="max-w-7xl mx-auto">
-                
+
                 {/* Header de la page */}
                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
                     <div>
@@ -126,7 +174,7 @@ export default function page() {
                 </div>
 
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-                    
+
                     {/* SECTION GAUCHE : LISTE DES SALLES (Prend 8/12 colonnes sur desktop) */}
                     <div className="lg:col-span-8 space-y-6">
                         <div className="flex items-center justify-between">
@@ -208,7 +256,7 @@ export default function page() {
                                         <div key={sal.id} className="group relative bg-white rounded-xl border border-gray-200 shadow-sm hover:shadow-lg hover:border-gray-300 transition-all duration-300 overflow-hidden">
                                             {/* Status Bar Indicator */}
                                             <div className={`absolute top-0 left-0 bottom-0 w-1.5 ${occupee ? "bg-rose-500" : "bg-emerald-500"}`}></div>
-                                            
+
                                             <div className="p-5 pl-7">
                                                 <div className="flex justify-between items-start mb-2">
                                                     <div>
@@ -238,15 +286,55 @@ export default function page() {
                                                     )}
                                                 </div>
 
-                                                <div className="flex justify-end pt-2">
-                                                    <Button
-                                                        variant="ghost"
-                                                        size="sm"
-                                                        className="text-gray-400 hover:text-red-600 hover:bg-red-50 -mr-2"
-                                                        onClick={() => setSalleToDelete(sal)}
-                                                    >
-                                                        <Trash2 className="w-4 h-4 mr-1.5" /> Supprimer
-                                                    </Button>
+                                                {/* <Separator className="my-3" /> */}
+
+                                                {/* ... Liste des commodités existante ... */}
+
+                                                {/* --- NOUVEAU BLOC : Actions et Visibilité --- */}
+                                                <div className="flex items-center justify-between pt-4 mt-2 border-t border-gray-50">
+
+                                                    {/* Le Switch de visibilité */}
+                                                    <div className="flex items-center gap-2">
+                                                        <Switch
+                                                            checked={sal.visible}
+                                                            onCheckedChange={() => handleVisibilityToggle(sal)}
+                                                            id={`switch-${sal.id}`}
+                                                            className="data-[state=checked]:bg-emerald-600"
+                                                        />
+                                                        <Label
+                                                            htmlFor={`switch-${sal.id}`}
+                                                            className={`text-xs font-medium cursor-pointer flex items-center gap-1.5 ${sal.est_visible ? "text-emerald-700" : "text-gray-400"}`}
+                                                        >
+                                                            {sal.visible ? (
+                                                                <><Eye size={14} /> Visible sur le site</>
+                                                            ) : (
+                                                                <><EyeOff size={14} /> Masquée</>
+                                                            )}
+                                                        </Label>
+                                                    </div>
+
+
+                                                    <div className="flex items-center gap-1">
+
+                                                        {/* Bouton MODIFIER */}
+                                                        <Button
+                                                            variant="outline"
+                                                            size="sm"
+                                                            onClick={() => handleEditClick(sal)}
+                                                            className="h-8 w-8 p-0 border-gray-200 text-gray-500 hover:text-blue-600 hover:bg-blue-50"
+                                                        >
+                                                            <Pen size={14} />
+                                                        </Button>
+
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="sm"
+                                                            className="text-gray-400 hover:text-red-600 hover:bg-red-50"
+                                                            onClick={() => setSalleToDelete(sal)}
+                                                        >
+                                                            <Trash2 className="w-4 h-4 mr-1.5" /> Supprimer
+                                                        </Button>
+                                                    </div>
                                                 </div>
                                             </div>
                                         </div>
@@ -338,6 +426,74 @@ export default function page() {
                                 }}
                             >
                                 Confirmer la suppression
+                            </Button>
+                        </DialogFooter>
+                    </DialogContent>
+                </Dialog>
+
+                {/* --- MODAL DE MODIFICATION --- */}
+                <Dialog open={!!salleToEdit} onOpenChange={(open) => !open && setSalleToEdit(null)}>
+                    <DialogContent className="sm:max-w-[500px]">
+                        <DialogHeader>
+                            <DialogTitle>Modifier la salle</DialogTitle>
+                            <DialogDescription>Modifiez les informations ci-dessous.</DialogDescription>
+                        </DialogHeader>
+
+                        {/* On réutilise les mêmes champs que l'ajout */}
+                        <div className="grid gap-4 py-4">
+                            <div className="grid grid-cols-4 items-center gap-4">
+                                <Label htmlFor="edit-nom" className="text-right">Nom</Label>
+                                <Input
+                                    id="edit-nom"
+                                    value={form.nom}
+                                    onChange={(e) => setForm({ ...form, nom: e.target.value })}
+                                    className="col-span-3"
+                                />
+                            </div>
+                            <div className="grid grid-cols-4 items-center gap-4">
+                                <Label htmlFor="edit-cap" className="text-right">Capacité</Label>
+                                <Input
+                                    id="edit-cap"
+                                    type="number"
+                                    value={form.capacite}
+                                    onChange={(e) => setForm({ ...form, capacite: e.target.value })}
+                                    className="col-span-3"
+                                />
+                            </div>
+
+                            {/* Gestion des commodités (Checkbox) */}
+                            <div className="grid grid-cols-4 gap-4 mt-2">
+                                <Label className="text-right pt-2">Équipements</Label>
+                                <div className="col-span-3 grid grid-cols-2 gap-2">
+                                    {commodites.map((com) => (
+                                        <div key={com.id} className="flex items-center space-x-2">
+                                            <input
+                                                type="checkbox"
+                                                id={`edit-com-${com.id}`}
+                                                checked={selected.includes(com.id)}
+                                                onChange={() => {
+                                                    if (selected.includes(com.id)) {
+                                                        setSelected(selected.filter(id => id !== com.id));
+                                                    } else {
+                                                        setSelected([...selected, com.id]);
+                                                    }
+                                                }}
+                                                className="rounded border-gray-300 text-emerald-600 focus:ring-emerald-500"
+                                            />
+                                            <label htmlFor={`edit-com-${com.id}`} className="text-sm text-gray-600 cursor-pointer">
+                                                {com.nom}
+                                            </label>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        </div>
+
+                        <DialogFooter>
+                            <Button variant="outline" onClick={() => setSalleToEdit(null)}>Annuler</Button>
+                            <Button onClick={handleUpdateSubmit} disabled={loading} className="bg-emerald-600 hover:bg-emerald-700">
+                                {loading && <Loader className="mr-2 h-4 w-4 animate-spin" />}
+                                Enregistrer
                             </Button>
                         </DialogFooter>
                     </DialogContent>

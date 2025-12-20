@@ -69,7 +69,7 @@ export default function AgentDashboard() {
         statut: getEventStatus(e.date_debut, e.date_fin),
         date_debut: e.date_debut,
         date_fin: e.date_fin,
-        montant: e.montant,
+        montant: "#######",
         description: e.description
     })), [events]);
 

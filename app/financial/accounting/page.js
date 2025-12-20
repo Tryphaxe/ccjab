@@ -2,18 +2,24 @@
 
 import React, { useEffect, useState, useMemo } from 'react'
 import { Button } from "@/components/ui/button"
-import { 
-    EqualApproximately, 
-    Filter, 
-    HandCoins, 
-    HousePlus, 
-    MapPinHouse, 
-    TrendingUp, 
+import { Progress } from "@/components/ui/progress" // Assure-toi d'avoir ce composant ou remplace par une div simple
+import {
+    EqualApproximately,
+    Filter,
+    HandCoins,
+    HousePlus,
+    MapPinHouse,
+    TrendingUp,
     TrendingDown,
-    Calendar, 
-    CalendarDays, 
-    CalendarRange, 
-    Loader
+    Calendar,
+    CalendarDays,
+    CalendarRange,
+    Loader,
+    Wallet,
+    AlertCircle,
+    Users,
+    Tag,
+    Trophy
 } from 'lucide-react';
 import ChartAreaDefault from '@/components/Area';
 import TableList from '@/components/Table';
@@ -25,9 +31,104 @@ import {
     DialogHeader,
     DialogTitle,
 } from "@/components/ui/dialog"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import TopSalles from '@/components/SalleDonut';
 
-// Composant Sélecteur de Période (Style Pillule)
+// --- NOUVEAU COMPOSANT : Leaderboard Agents ---
+const AgentLeaderboard = ({ events }) => {
+    const agentStats = useMemo(() => {
+        const stats = {};
+        events.forEach(e => {
+            const agentName = e.agent?.name || "Non assigné"; // Adapter selon ta structure (e.agent.nom ou e.agent.name)
+            if (!stats[agentName]) stats[agentName] = { name: agentName, total: 0, count: 0 };
+            stats[agentName].total += (e.montant || 0);
+            stats[agentName].count += 1;
+        });
+        return Object.values(stats).sort((a, b) => b.total - a.total).slice(0, 5); // Top 5
+    }, [events]);
+
+    const maxVal = agentStats[0]?.total || 1;
+
+    return (
+        <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                <Trophy className="w-5 h-5 text-yellow-500" />
+                Top Agents
+            </h3>
+            <div className="space-y-5">
+                {agentStats.map((agent, index) => (
+                    <div key={index} className="space-y-2">
+                        <div className="flex justify-between text-sm">
+                            <span className="font-medium text-gray-700 flex items-center gap-2">
+                                <div className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold ${index === 0 ? 'bg-yellow-100 text-yellow-700' : 'bg-gray-100 text-gray-600'}`}>
+                                    {index + 1}
+                                </div>
+                                {agent.name}
+                            </span>
+                            <span className="font-bold text-gray-900">{agent.total.toLocaleString()} F</span>
+                        </div>
+                        <div className="h-2 w-full bg-gray-100 rounded-full overflow-hidden">
+                            <div 
+                                className="h-full bg-blue-600 rounded-full transition-all duration-500" 
+                                style={{ width: `${(agent.total / maxVal) * 100}%` }}
+                            />
+                        </div>
+                        <p className="text-xs text-gray-400 text-right">{agent.count} ventes</p>
+                    </div>
+                ))}
+                {agentStats.length === 0 && <p className="text-sm text-gray-500 italic">Aucune donnée agent.</p>}
+            </div>
+        </div>
+    );
+};
+
+// --- NOUVEAU COMPOSANT : Répartition par Catégorie ---
+const CategoryBreakdown = ({ events }) => {
+    const catStats = useMemo(() => {
+        const stats = {};
+        let totalGlobal = 0;
+        events.forEach(e => {
+            const cat = e.categorie || "Autre";
+            if (!stats[cat]) stats[cat] = 0;
+            stats[cat] += (e.montant || 0);
+            totalGlobal += (e.montant || 0);
+        });
+        
+        return Object.entries(stats)
+            .sort(([, a], [, b]) => b - a)
+            .map(([name, value]) => ({
+                name,
+                value,
+                percent: totalGlobal > 0 ? (value / totalGlobal) * 100 : 0
+            }));
+    }, [events]);
+
+    const colors = ["bg-emerald-500", "bg-blue-500", "bg-purple-500", "bg-orange-500", "bg-gray-500"];
+
+    return (
+        <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                <Tag className="w-5 h-5 text-purple-500" />
+                Revenus par Catégorie
+            </h3>
+            <div className="space-y-4">
+                {catStats.map((cat, index) => (
+                    <div key={index} className="flex items-center justify-between p-3 rounded-lg border border-gray-50 hover:bg-gray-50 transition-colors">
+                        <div className="flex items-center gap-3">
+                            <span className={`w-3 h-3 rounded-full ${colors[index % colors.length]}`} />
+                            <span className="text-sm font-medium text-gray-700">{cat.name}</span>
+                        </div>
+                        <div className="text-right">
+                            <p className="text-sm font-bold text-gray-900">{cat.value.toLocaleString()} F</p>
+                            <p className="text-xs text-gray-500">{cat.percent.toFixed(1)}%</p>
+                        </div>
+                    </div>
+                ))}
+                {catStats.length === 0 && <p className="text-sm text-gray-500 italic">Aucune catégorie.</p>}
+            </div>
+        </div>
+    );
+};
+
 const PeriodSelector = ({ activePeriod, onChange }) => {
     const periods = [
         { id: 'semaine', label: 'Semaine', icon: CalendarRange },
@@ -46,8 +147,8 @@ const PeriodSelector = ({ activePeriod, onChange }) => {
                         onClick={() => onChange(p.id)}
                         className={`
                             flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-md transition-all duration-200
-                            ${isActive 
-                                ? 'bg-gray-900 text-white shadow-md' 
+                            ${isActive
+                                ? 'bg-gray-900 text-white shadow-md'
                                 : 'text-gray-500 hover:text-gray-900 hover:bg-gray-100'
                             }
                         `}
@@ -63,7 +164,7 @@ const PeriodSelector = ({ activePeriod, onChange }) => {
 
 export default function FinancePage() {
     const [events, setEvents] = useState([]);
-    const [periode, setPeriode] = useState("semaine"); 
+    const [periode, setPeriode] = useState("mois"); // Changé par défaut à "mois" pour plus de pertinence
     const [loading, setLoading] = useState(true);
     const [open, setOpen] = useState(false);
 
@@ -71,7 +172,7 @@ export default function FinancePage() {
         fetchEvents(setEvents, setLoading);
     }, []);
 
-    // --- Calcul des Données du Graphique (Memoized) ---
+    // --- Calcul des Données du Graphique ---
     const chartData = useMemo(() => {
         const now = new Date();
         let filtered = [];
@@ -119,151 +220,95 @@ export default function FinancePage() {
         return filtered;
     }, [events, periode]);
 
-    // --- Calcul des Statistiques Dynamiques (Memoized) ---
+    // --- Calcul des Statistiques KPI ---
     const stats = useMemo(() => {
         const now = new Date();
-        let startCurrent, endCurrent, startPrev, endPrev;
+        let startCurrent, endCurrent;
         let periodLabel;
 
-        // 1. Définition des plages de dates (Actuelle vs Précédente)
+        // Définition simple des plages pour les KPIs
         if (periode === "semaine") {
-            // Semaine glissante (7 derniers jours)
             endCurrent = new Date(now);
             startCurrent = new Date(now);
             startCurrent.setDate(now.getDate() - 6);
-            startCurrent.setHours(0,0,0,0);
-            
-            // Période précédente
-            endPrev = new Date(startCurrent);
-            endPrev.setDate(startCurrent.getDate() - 1);
-            endPrev.setHours(23,59,59,999);
-            
-            startPrev = new Date(endPrev);
-            startPrev.setDate(endPrev.getDate() - 6);
-            startPrev.setHours(0,0,0,0);
-            
             periodLabel = "vs 7j préc.";
         } else if (periode === "mois") {
-            // Mois civil courant
             startCurrent = new Date(now.getFullYear(), now.getMonth(), 1);
             endCurrent = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59);
-            
-            // Mois précédent
-            startPrev = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-            endPrev = new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59);
-
             periodLabel = "vs mois préc.";
         } else {
-            // Année civile courante
             startCurrent = new Date(now.getFullYear(), 0, 1);
             endCurrent = new Date(now.getFullYear(), 11, 31, 23, 59, 59);
-
-            // Année précédente
-            startPrev = new Date(now.getFullYear() - 1, 0, 1);
-            endPrev = new Date(now.getFullYear() - 1, 11, 31, 23, 59, 59);
-
             periodLabel = "vs année préc.";
         }
 
-        // 2. Filtrage des événements
-        const filterEvents = (start, end) => events.filter(e => {
+        const currentEvents = events.filter(e => {
             const d = new Date(e.date_debut);
-            return d >= start && d <= end;
+            return d >= startCurrent && d <= endCurrent;
         });
 
-        const currentEvents = filterEvents(startCurrent, endCurrent);
-        const prevEvents = filterEvents(startPrev, endPrev);
-
-        // 3. Fonctions de calcul
-        const sumRevenue = (arr) => arr.reduce((acc, e) => acc + (e.montant || 0), 0);
-        const countEvents = (arr) => arr.length;
-        const avgRevenue = (arr) => arr.length > 0 ? sumRevenue(arr) / arr.length : 0;
-
-        // 4. Calcul des valeurs actuelles et précédentes
-        const currRev = sumRevenue(currentEvents);
-        const prevRev = sumRevenue(prevEvents);
+        // Calculs
+        const currRev = currentEvents.reduce((acc, e) => acc + (e.montant || 0), 0);
         
-        const currCount = countEvents(currentEvents);
-        const prevCount = countEvents(prevEvents);
-        
-        const currAvg = avgRevenue(currentEvents);
-        const prevAvg = avgRevenue(prevEvents);
+        // Reste à percevoir (Montant - Avance)
+        const resteAPercevoir = currentEvents.reduce((acc, e) => {
+            const montant = e.montant || 0;
+            const avance = e.avance || 0;
+            return acc + (montant - avance);
+        }, 0);
 
-        // 5. Calcul des pourcentages de tendance
-        const calculateTrend = (curr, prev) => {
-            if (prev === 0) return curr > 0 ? 100 : 0; // Si 0 avant et >0 maintenant, +100% (ou infini symboliquement)
-            return ((curr - prev) / prev) * 100;
-        };
-
-        const trendRev = calculateTrend(currRev, prevRev);
-        const trendCount = calculateTrend(currCount, prevCount);
-        const trendAvg = calculateTrend(currAvg, prevAvg);
-
-        // 6. Salle la plus louée (Période courante)
-        const salleCounts = currentEvents.reduce((acc, e) => {
-            const name = e.salle?.nom_salle;
-            if (name) acc[name] = (acc[name] || 0) + 1;
-            return acc;
-        }, {});
-        
-        const mostRentedEntry = Object.entries(salleCounts).sort((a, b) => b[1] - a[1])[0];
-        const mostRentedSalle = mostRentedEntry ? mostRentedEntry[0] : "Aucune";
-        
-        // Tendance Top Salle (comparaison du volume de cette salle avec la période précédente)
-        let trendSalle = 0;
-        if (mostRentedSalle !== "Aucune") {
-            const prevCountSalle = prevEvents.filter(e => e.salle?.nom_salle === mostRentedSalle).length;
-            trendSalle = calculateTrend(mostRentedEntry[1], prevCountSalle);
-        }
-
-        // Helper pour formater l'affichage
-        const formatTrend = (val) => `${val > 0 ? '+' : ''}${val.toFixed(0)}% ${periodLabel}`;
-        const getTrendColor = (val) => val >= 0 ? "text-emerald-700 bg-emerald-50 border-emerald-200" : "text-red-700 bg-red-50 border-red-200";
-        const getTrendIcon = (val) => val >= 0 ? TrendingUp : TrendingDown;
+        // Taux d'annulation
+        const totalEventsCount = currentEvents.length;
 
         return [
             {
-                title: "Revenu",
-                value: currRev.toLocaleString("fr-FR") + " Fcfa",
+                title: "Chiffre d'Affaires",
+                value: currRev.toLocaleString("fr-FR") + " F",
                 icon: HandCoins,
                 color: "text-emerald-600",
                 bg: "bg-emerald-50",
-                trendValue: formatTrend(trendRev),
-                trendStyle: getTrendColor(trendRev),
-                TrendIcon: getTrendIcon(trendRev)
+                trendValue: "Total Facturé", // Simplifié
+                trendStyle: "text-emerald-700 bg-emerald-50 border-emerald-200",
+                TrendIcon: TrendingUp
             },
             {
-                title: "Locations",
-                value: currCount,
+                title: "Reste à Percevoir",
+                value: resteAPercevoir.toLocaleString("fr-FR") + " F",
+                icon: Wallet,
+                color: "text-amber-600",
+                bg: "bg-amber-50",
+                trendValue: "Trésorerie latente",
+                trendStyle: "text-amber-700 bg-amber-50 border-amber-200",
+                TrendIcon: AlertCircle
+            },
+            {
+                title: "Nombre d'Évènements",
+                value: totalEventsCount,
                 icon: MapPinHouse,
                 color: "text-blue-600",
                 bg: "bg-blue-50",
-                trendValue: formatTrend(trendCount),
-                trendStyle: getTrendColor(trendCount),
-                TrendIcon: getTrendIcon(trendCount)
-            },
-            {
-                title: "Panier Moyen",
-                value: currAvg.toLocaleString("fr-FR", { maximumFractionDigits: 0 }) + " Fcfa",
-                icon: EqualApproximately,
-                color: "text-purple-600",
-                bg: "bg-purple-50",
-                trendValue: formatTrend(trendAvg),
-                trendStyle: getTrendColor(trendAvg),
-                TrendIcon: getTrendIcon(trendAvg)
-            },
-            {
-                title: "Top Salle",
-                value: mostRentedSalle,
-                icon: HousePlus,
-                color: "text-orange-600",
-                bg: "bg-orange-50",
-                trendValue: mostRentedSalle !== "Aucune" ? formatTrend(trendSalle) : "-",
-                trendStyle: mostRentedSalle !== "Aucune" ? getTrendColor(trendSalle) : "text-gray-500 bg-gray-50",
-                TrendIcon: mostRentedSalle !== "Aucune" ? getTrendIcon(trendSalle) : TrendingUp
+                trendValue: periodLabel,
+                trendStyle: "text-blue-700 bg-blue-50 border-blue-200",
+                TrendIcon: Users
             },
         ];
     }, [events, periode]);
+
+    // Filtrage pour les sous-composants (Graphiques, Agents, etc)
+    const filteredEventsForComponents = useMemo(() => {
+        // On réapplique la logique de date pour passer les bons événements aux composants enfants
+        const now = new Date();
+        let start, end;
+        if (periode === "semaine") {
+            start = new Date(now); start.setDate(now.getDate() - 6);
+        } else if (periode === "mois") {
+            start = new Date(now.getFullYear(), now.getMonth(), 1);
+        } else {
+            start = new Date(now.getFullYear(), 0, 1);
+        }
+        return events.filter(e => new Date(e.date_debut) >= start);
+    }, [events, periode]);
+
 
     if (loading) {
         return (
@@ -277,18 +322,18 @@ export default function FinancePage() {
     return (
         <div className="min-h-screen bg-gray-50/50 p-4 text-gray-900 pb-24">
             <div className="max-w-7xl mx-auto space-y-8">
-                
+
                 {/* Header */}
                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
                     <div>
                         <h1 className="text-2xl font-bold tracking-tight text-gray-900">Aperçu Financier</h1>
-                        <p className="text-sm text-gray-500 mt-1">Suivez vos revenus et analysez la performance de vos salles.</p>
+                        <p className="text-sm text-gray-500 mt-1">Suivez vos revenus, créances et performances commerciales.</p>
                     </div>
                     <PeriodSelector activePeriod={periode} onChange={setPeriode} />
                 </div>
 
                 {/* KPI Cards */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                     {stats.map((stat, index) => {
                         const Icon = stat.icon;
                         const TrendIcon = stat.TrendIcon;
@@ -298,7 +343,6 @@ export default function FinancePage() {
                                     <div className={`p-3 rounded-xl ${stat.bg}`}>
                                         <Icon className={`w-6 h-6 ${stat.color}`} />
                                     </div>
-                                    {/* Badge Tendance Dynamique */}
                                     <div className={`flex items-center gap-1 text-[10px] font-semibold px-2 py-1 rounded-full border ${stat.trendStyle}`}>
                                         <TrendIcon size={12} />
                                         {stat.trendValue}
@@ -313,8 +357,23 @@ export default function FinancePage() {
                     })}
                 </div>
 
-                {/* Graphique */}
-                <ChartAreaDefault data={chartData} />
+                {/* Section Graphiques Principaux */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {/* Graphique de revenu (prend 2 colonnes) */}
+                    <div className="lg:col-span-1">
+                         <ChartAreaDefault data={chartData} />
+                    </div>
+                    {/* Top Salles (prend 1 colonne) */}
+                    <div className="lg:col-span-1">
+                        <TopSalles events={filteredEventsForComponents} />
+                    </div>
+                </div>
+
+                {/* Nouvelle Section : Analyse Détaillée (Agents & Catégories) */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <AgentLeaderboard events={filteredEventsForComponents} />
+                    <CategoryBreakdown events={filteredEventsForComponents} />
+                </div>
 
                 {/* Tableau */}
                 <div className="space-y-4">
@@ -328,7 +387,7 @@ export default function FinancePage() {
                 </div>
 
                 {/* Bouton Filtre Flottant */}
-                <Button 
+                <Button
                     onClick={() => setOpen(true)}
                     className="fixed bottom-8 right-8 h-10 w-10 cursor-pointer rounded-full bg-gray-900 hover:bg-gray-800 text-white shadow-xl hover:shadow-2xl transition-all duration-300 z-50 flex items-center justify-center group"
                 >
