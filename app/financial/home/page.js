@@ -69,7 +69,8 @@ export default function Page() {
         statut: getEventStatus(e.date_debut, e.date_fin),
         date_debut: e.date_debut,
         date_fin: e.date_fin,
-        montant: e.montant
+        montant: e.montant,
+        fiche: e.fiche
     })), [events]);
 
     const nbreven = events.length;

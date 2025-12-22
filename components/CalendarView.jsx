@@ -14,7 +14,9 @@ import {
   User,
   Info,
   Tag,
-  CreditCard
+  CreditCard,
+  File,
+  FileText
 } from "lucide-react";
 import {
   Dialog,
@@ -249,6 +251,27 @@ export default function CalendarView({ events }) {
                     </p>
                   </div>
                 )}
+              </div>
+
+              <div className="flex items-center justify-between bg-gray-50 p-3 rounded-lg border border-gray-100">
+                <div className="flex items-center gap-2">
+                  <File className="w-4 h-4 text-gray-500" />
+                  <span className="text-sm font-medium text-gray-700">Fiche technique</span>
+                </div>
+                {selectedEvent.fiche ? (
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    className="h-8 w-8 bg-white text-blue-600 hover:text-blue-700 hover:bg-blue-50 border-blue-200"
+                    onClick={(e) => {
+                      e.stopPropagation(); // Empêche de cliquer sur la ligne si elle est interactive
+                      window.open(selectedEvent.fiche, '_blank');
+                    }}
+                    title="Télécharger la fiche technique"
+                  >
+                    <FileText className="w-3.5 h-3.5" />
+                  </Button>
+                ) : "Aucun fichier"}
               </div>
             </div>
           )}

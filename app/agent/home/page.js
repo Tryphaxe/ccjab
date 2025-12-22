@@ -1,18 +1,19 @@
 "use client";
 
 import React, { useState, useEffect, useMemo } from 'react';
-import { 
-    Info, 
-    Loader, 
-    CalendarCheck2, 
-    Phone, 
+import {
+    Info,
+    Loader,
+    CalendarCheck2,
+    Phone,
     Filter,
     Calendar as CalendarIcon,
     ListFilter,
     MapPin,
     User,
     Clock,
-    Wallet
+    Wallet,
+    FileText
 } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -50,8 +51,8 @@ export default function AgentDashboard() {
             if (user?.id) {
                 setIsLoading(true);
                 await Promise.all([
-                    fetchEventsAgent(user.id, setEvents, () => {}),
-                    fetchSalles(setSalles, () => {})
+                    fetchEventsAgent(user.id, setEvents, () => { }),
+                    fetchSalles(setSalles, () => { })
                 ]);
                 setIsLoading(false);
             }
@@ -69,8 +70,10 @@ export default function AgentDashboard() {
         statut: getEventStatus(e.date_debut, e.date_fin),
         date_debut: e.date_debut,
         date_fin: e.date_fin,
-        montant: "#######",
-        description: e.description
+        description: e.description,
+        montant: "####",
+        fiche: e.fiche
+
     })), [events]);
 
     // Filtrage pour la liste
@@ -98,7 +101,7 @@ export default function AgentDashboard() {
     }, [filters]);
 
     const getStatusBadgeStyles = (status) => {
-        switch(status) {
+        switch (status) {
             case 'En cours': return 'text-orange-700 bg-orange-50 border-orange-200 hover:bg-orange-100';
             case 'A venir': return 'text-blue-700 bg-blue-50 border-blue-200 hover:bg-blue-100';
             default: return 'text-emerald-700 bg-emerald-50 border-emerald-200 hover:bg-emerald-100';
@@ -117,7 +120,7 @@ export default function AgentDashboard() {
     return (
         <div className="min-h-screen bg-gray-50/50 p-4 text-gray-900">
             <div className="max-w-7xl mx-auto space-y-8">
-                
+
                 {/* Header de bienvenue */}
                 <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                     <div>
@@ -187,13 +190,13 @@ export default function AgentDashboard() {
                             </Select>
 
                             {/* Dates */}
-                            <Input 
-                                type="date" 
-                                className="bg-gray-50 border-gray-200" 
-                                value={filters.date_debut || ""} 
-                                onChange={(e) => setFilters({ ...filters, date_debut: e.target.value })} 
+                            <Input
+                                type="date"
+                                className="bg-gray-50 border-gray-200"
+                                value={filters.date_debut || ""}
+                                onChange={(e) => setFilters({ ...filters, date_debut: e.target.value })}
                             />
-                            
+
                             {/* Reset Button */}
                             {Object.keys(filters).length > 0 ? (
                                 <Button variant="outline" onClick={() => setFilters({})} className="text-red-600 hover:text-red-700 hover:bg-red-50 border-red-100">
@@ -225,28 +228,28 @@ export default function AgentDashboard() {
                                     {filteredEvents.map((event) => {
                                         const status = getEventStatus(event.date_debut, event.date_fin);
                                         return (
-                                            <div 
-                                                key={event.id} 
+                                            <div
+                                                key={event.id}
                                                 className="group p-4 border-b border-gray-100 last:border-b-0 hover:bg-gray-50 transition-colors duration-200 flex flex-col md:flex-row md:items-center justify-between gap-4"
                                             >
                                                 {/* Colonne 1 : Infos Principales */}
                                                 <div className="flex-1 min-w-0">
                                                     <div className="flex items-center gap-3 mb-1">
                                                         <span className="text-base font-bold text-gray-900 truncate">
-                                                            {event.nom_salle || "Salle Inconnue"}
+                                                            {event.salle.nom_salle || "Salle Inconnue"}
                                                         </span>
                                                         <Badge variant="outline" className={`text-[10px] px-2 py-0.5 font-semibold border ${getStatusBadgeStyles(status)}`}>
                                                             {status}
                                                         </Badge>
                                                     </div>
-                                                    
+
                                                     <div className="flex items-center gap-3 text-sm text-gray-500 mb-1">
                                                         <span className="flex items-center gap-1.5">
-                                                            <CalendarCheck2 size={14} className="text-gray-400" /> 
+                                                            <CalendarCheck2 size={14} className="text-gray-400" />
                                                             <span dangerouslySetInnerHTML={{ __html: formatEventDate(event.date_debut, event.date_fin) }} />
                                                         </span>
                                                     </div>
-                                                    
+
                                                     <div className="text-xs text-gray-500 flex items-center gap-2">
                                                         <span className="bg-gray-100 px-2 py-0.5 rounded text-gray-600 font-medium">
                                                             {event.type}
@@ -267,14 +270,24 @@ export default function AgentDashboard() {
                                                     </p>
                                                 </div>
 
-                                                {/* Colonne 3 : Financier (Pour l'agent, peut-être moins pertinent mais présent) */}
                                                 <div className="md:w-1/6 md:text-right border-t md:border-t-0 border-gray-100 pt-2 md:pt-0 mt-2 md:mt-0 flex flex-row md:flex-col justify-between items-center md:items-end">
                                                     <p className="text-[10px] text-gray-400 uppercase tracking-wider font-semibold mb-0.5 flex items-center gap-1 md:justify-end">
-                                                        <Wallet size={10} /> Montant
+                                                        <Wallet size={10} /> Fiche Technique
                                                     </p>
-                                                    <span className="text-sm font-bold text-gray-900">
-                                                        ### <span className="text-[10px] text-gray-500 font-normal">FCFA</span>
-                                                    </span>
+                                                    {event.fiche && (
+                                                        <Button
+                                                            variant="outline"
+                                                            size="icon"
+                                                            className="h-8 w-8 bg-white text-blue-600 hover:text-blue-700 hover:bg-blue-50 border-blue-200"
+                                                            onClick={(e) => {
+                                                                e.stopPropagation(); // Empêche de cliquer sur la ligne si elle est interactive
+                                                                window.open(event.fiche, '_blank');
+                                                            }}
+                                                            title="Télécharger la fiche technique"
+                                                        >
+                                                            <FileText className="w-3.5 h-3.5" />
+                                                        </Button>
+                                                    )}
                                                 </div>
                                             </div>
                                         );
