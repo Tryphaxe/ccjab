@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from 'react'
-import { Info, Plus, Loader, Trash2, Armchair, BoxSelect, Eye, EyeOff, Pen } from 'lucide-react';
+import { Info, Plus, Loader, Trash2, Armchair, BoxSelect, Eye, EyeOff, Pen, Upload, Image } from 'lucide-react';
 import {
     Dialog,
     DialogClose,
@@ -19,7 +19,7 @@ import { Badge } from '@/components/ui/badge';
 import { Separator } from "@/components/ui/separator";
 import { Switch } from "@/components/ui/switch"
 
-// Assure-toi que ces chemins sont corrects dans ton projet
+import { uploadImage } from '@/utils/uploadSallesUtils';
 import { deleteSalle, fetchSalles, submitForm, updateSalleVisibility, updateSalleFull } from '@/utils/salleUtils';
 import { fetchEvents } from '@/utils/evenUtils';
 import { deleteCommodite, fetchCommodites, submitCommodite } from '@/utils/commoditeUtils';
@@ -33,6 +33,8 @@ export default function page() {
     const [loading, setLoading] = useState(false)
     const [commodites, setCommodites] = useState([]);
     const [selected, setSelected] = useState([]);
+    const [imageFile, setImageFile] = useState(null);
+    const [preview, setPreview] = useState(null);
     const [form, setForm] = useState({
         nom_salle: '',
         nombre_place: '',
@@ -76,13 +78,21 @@ export default function page() {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+        let imageUrl = null;
+
+        // 1. Si une image a été choisie, on l'upload d'abord
+        if (imageFile) {
+            imageUrl = await uploadImage(imageFile, 'salles');
+        }
         await submitForm({
-            data: { ...form, commodites: selected },
+            data: { ...form, commodites: selected, image: imageUrl },
             setLoading,
             reload: () => fetchSalles(setSalles, setIsLoading),
             successMessage: "Salle ajoutée avec succès.",
             errorMessage: "Erreur lors de l'ajout de la salle.",
         });
+        setPreview(null);
+        setImageFile(null);
         setSelected([]);
         setForm({ nom_salle: "", nombre_place: "", commodites: [] });
     };
@@ -105,13 +115,13 @@ export default function page() {
     const handleVisibilityToggle = async (salle) => {
         // 1. Mise à jour optimiste (on change l'état local immédiatement pour que ce soit fluide)
         const updatedSalles = salles.map((s) =>
-            s.id === salle.id ? { ...s, est_visible: !s.est_visible } : s
+            s.id === salle.id ? { ...s, visible: !s.visible } : s
         );
         setSalles(updatedSalles);
 
         try {
             // 2. Appel à la base de données
-            await updateSalleVisibility(salle.id, !salle.est_visible);
+            await updateSalleVisibility(salle.id, !salle.visible);
         } catch (error) {
             // 3. Si erreur, on remet l'état précédent
             console.error("Erreur de modification", error);
@@ -125,28 +135,51 @@ export default function page() {
 
         // 2. On pré-remplit le formulaire principal avec les infos de la salle
         setForm({
-            nom: salle.nom_salle,
-            capacite: salle.nombre_place
+            nom_salle: salle.nom_salle,
+            nombre_place: salle.nombre_place
         });
 
         // 3. On pré-coche les commodités existantes
         // Note: salle.commodites est un tableau d'objets { commoditeId: 1, ... }
         const commoditesIds = salle.commodites.map(c => c.commoditeId);
         setSelected(commoditesIds);
+
+        // On affiche l'image actuelle ou l'image par défaut
+        setPreview(salle.image || DEFAULT_IMAGE);
+        setImageFile(null); // On reset le fichier en attente
     };
 
     const handleUpdateSubmit = async () => {
         setLoading(true);
+
+        let imageUrl = salleToEdit.image; // Par défaut, on garde l'ancienne
+
+        // Si l'utilisateur a choisi une nouvelle photo, on l'upload
+        if (imageFile) {
+            imageUrl = await uploadImage(imageFile, 'salles');
+        }
+
         await updateSalleFull(salleToEdit.id, {
-            nom: form.nom,
-            capacite: form.capacite,
-            commodites: selected
+            nom_salle: form.nom_salle,
+            nombre_place: form.nombre_place,
+            commodites: selected,
+            image: imageUrl
         }, () => {
             fetchSalles(setSalles, setIsLoading); // Recharger la liste
             setSalleToEdit(null); // Fermer le modal
         });
         setLoading(false);
     };
+
+    const handleImageChange = (e) => {
+        const file = e.target.files[0];
+        if (file) {
+            setImageFile(file);
+            // Créer une URL temporaire pour la prévisualisation immédiate
+            setPreview(URL.createObjectURL(file));
+        }
+    };
+    const DEFAULT_IMAGE = "/images/default-salle.png";
 
     return (
         <div className="min-h-screen bg-gray-50/50 p-4 text-gray-900">
@@ -194,6 +227,28 @@ export default function page() {
                                         <DialogDescription>Créez un nouvel espace pour vos événements.</DialogDescription>
                                     </DialogHeader>
                                     <form onSubmit={handleSubmit} className="space-y-6 mt-4">
+                                        {/* Zone d'upload d'image */}
+                                        <div className="col-span-4 flex flex-col items-center gap-4 mb-4">
+                                            <div className="relative w-full h-40 border-2 border-dashed border-gray-300 rounded-lg bg-gray-50 flex flex-col items-center justify-center cursor-pointer hover:bg-gray-100 transition-colors overflow-hidden">
+
+                                                <Input
+                                                    type="file"
+                                                    accept="image/*"
+                                                    onChange={handleImageChange}
+                                                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+                                                />
+
+                                                {preview ? (
+                                                    <img src={preview} alt="Prévisualisation" className="w-full h-full object-cover" />
+                                                ) : (
+                                                    <div className="text-center text-gray-500">
+                                                        <Upload className="w-8 h-8 mx-auto mb-2 text-gray-400" />
+                                                        <p className="text-xs font-medium">Cliquez pour ajouter une photo</p>
+                                                        <p className="text-[10px] text-gray-400">JPG, PNG (Max 5Mo)</p>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </div>
                                         <div className="grid gap-4">
                                             <div className="space-y-2">
                                                 <Label htmlFor="nom_salle">Nom de la salle</Label>
@@ -252,12 +307,27 @@ export default function page() {
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                                 {salles.map((sal) => {
                                     const occupee = isSalleOccupee(sal.id);
-                                    return (
-                                        <div key={sal.id} className="group relative bg-white rounded-xl border border-gray-200 shadow-sm hover:shadow-lg hover:border-gray-300 transition-all duration-300 overflow-hidden">
-                                            {/* Status Bar Indicator */}
-                                            <div className={`absolute top-0 left-0 bottom-0 w-1.5 ${occupee ? "bg-rose-500" : "bg-emerald-500"}`}></div>
 
-                                            <div className="p-5 pl-7">
+                                    return (
+                                        <div key={sal.id} className="group relative bg-white rounded-xl border border-gray-200 shadow-sm hover:shadow-lg hover:border-gray-300 transition-all duration-300 overflow-hidden flex flex-col">
+
+                                            {/* Barre de statut latérale */}
+                                            <div className={`absolute top-0 left-0 bottom-0 w-1.5 z-10 ${occupee ? "bg-rose-500" : "bg-emerald-500"}`}></div>
+
+                                            {/* --- ZONE IMAGE AJOUTÉE --- */}
+                                            <div className="h-48 w-full bg-gray-100 relative overflow-hidden">
+                                                <img
+                                                    src={sal.image || DEFAULT_IMAGE}
+                                                    alt={sal.nom_salle}
+                                                    className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                                                    onError={(e) => e.target.src = DEFAULT_IMAGE} // Fallback si l'image casse
+                                                />
+                                                {/* Overlay sombre au survol pour faire ressortir le texte si besoin */}
+                                                <div className="absolute inset-0 bg-black/0 group-hover:bg-black/5 transition-colors duration-300"></div>
+                                            </div>
+                                            {/* -------------------------- */}
+
+                                            <div className="p-5 pl-7 flex flex-col flex-1">
                                                 <div className="flex justify-between items-start mb-2">
                                                     <div>
                                                         <p className="text-xs font-semibold uppercase tracking-wider text-gray-400 mb-1">
@@ -286,12 +356,8 @@ export default function page() {
                                                     )}
                                                 </div>
 
-                                                {/* <Separator className="my-3" /> */}
-
-                                                {/* ... Liste des commodités existante ... */}
-
-                                                {/* --- NOUVEAU BLOC : Actions et Visibilité --- */}
-                                                <div className="flex items-center justify-between pt-4 mt-2 border-t border-gray-50">
+                                                {/* Bloc Actions et Visibilité (poussé vers le bas grâce à mt-auto) */}
+                                                <div className="flex items-center justify-between pt-4 mt-auto border-t border-gray-50">
 
                                                     {/* Le Switch de visibilité */}
                                                     <div className="flex items-center gap-2">
@@ -303,20 +369,17 @@ export default function page() {
                                                         />
                                                         <Label
                                                             htmlFor={`switch-${sal.id}`}
-                                                            className={`text-xs font-medium cursor-pointer flex items-center gap-1.5 ${sal.est_visible ? "text-emerald-700" : "text-gray-400"}`}
+                                                            className={`text-xs font-medium cursor-pointer flex items-center gap-1.5 ${sal.visible ? "text-emerald-700" : "text-gray-400"}`}
                                                         >
                                                             {sal.visible ? (
-                                                                <><Eye size={14} /> Visible sur le site</>
+                                                                <><Eye size={14} /> Visible</>
                                                             ) : (
                                                                 <><EyeOff size={14} /> Masquée</>
                                                             )}
                                                         </Label>
                                                     </div>
 
-
                                                     <div className="flex items-center gap-1">
-
-                                                        {/* Bouton MODIFIER */}
                                                         <Button
                                                             variant="outline"
                                                             size="sm"
@@ -390,7 +453,7 @@ export default function page() {
                                                     variant="ghost"
                                                     size="icon"
                                                     className="h-7 w-7 text-gray-400 opacity-0 group-hover:opacity-100 hover:text-red-600 hover:bg-red-50 transition-all"
-                                                    onClick={() => deleteCommodite(c.id, reloadCom)}
+                                                    onClick={() => {deleteCommodite(c.id, reloadCom), reloadSalles}}
                                                 >
                                                     <Trash2 size={14} />
                                                 </Button>
@@ -441,12 +504,30 @@ export default function page() {
 
                         {/* On réutilise les mêmes champs que l'ajout */}
                         <div className="grid gap-4 py-4">
+                            <div className="flex flex-col items-center gap-4 mb-2">
+                                <div className="relative w-full h-40 border-2 border-dashed border-gray-300 rounded-lg bg-gray-50 flex flex-col items-center justify-center cursor-pointer hover:bg-gray-100 transition-colors overflow-hidden">
+                                    <Input
+                                        type="file"
+                                        accept="image/*"
+                                        onChange={handleImageChange}
+                                        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+                                    />
+                                    {preview ? (
+                                        <img src={preview} alt="Prévisualisation" className="w-full h-full object-cover" onError={(e) => e.target.src = DEFAULT_IMAGE} />
+                                    ) : (
+                                        <div className="text-center text-gray-500">
+                                            <Upload className="w-8 h-8 mx-auto mb-2 text-gray-400" />
+                                            <p className="text-xs font-medium">Changer la photo</p>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
                             <div className="grid grid-cols-4 items-center gap-4">
                                 <Label htmlFor="edit-nom" className="text-right">Nom</Label>
                                 <Input
                                     id="edit-nom"
-                                    value={form.nom}
-                                    onChange={(e) => setForm({ ...form, nom: e.target.value })}
+                                    value={form.nom_salle}
+                                    onChange={(e) => setForm({ ...form, nom_salle: e.target.value })}
                                     className="col-span-3"
                                 />
                             </div>
@@ -455,8 +536,8 @@ export default function page() {
                                 <Input
                                     id="edit-cap"
                                     type="number"
-                                    value={form.capacite}
-                                    onChange={(e) => setForm({ ...form, capacite: e.target.value })}
+                                    value={form.nombre_place}
+                                    onChange={(e) => setForm({ ...form, nombre_place: e.target.value })}
                                     className="col-span-3"
                                 />
                             </div>

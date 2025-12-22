@@ -112,3 +112,19 @@ export const deleteManyEvents = async (ids, reloadCallback) => {
     toast.error("Impossible de supprimer les évènements sélectionnés.");
   }
 };
+
+export const updateEventVisibility = async (id, visible) => {
+  try {
+    const response = await fetch(`/api/even/${id}`, {
+      method: 'PATCH', // ou PUT
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ visible }),
+    });
+	toast.success("L'évènement a bien changé de visibilité.");
+    return await response.json();
+  } catch (error) {
+    toast.error(error?.response?.data?.error || "Erreur lors de la mise à jour");
+  }
+};

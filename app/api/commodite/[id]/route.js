@@ -6,6 +6,11 @@ export async function DELETE(request, { params }) {
   const { id } = await params;
 
   try {
+    await prisma.SalleCommodite.deleteMany({
+      where: {
+        commoditeId: parseInt(id)
+      }
+    });
     await prisma.commodite.delete({
       where: { id: parseInt(id) },
     });

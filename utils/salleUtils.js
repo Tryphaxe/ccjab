@@ -94,23 +94,19 @@ export const updateSalleVisibility = async (id, visible) => {
   }
 };
 
-// utils/salleUtils.js
-
-export const updateSalleFull = async (up, formData, reloadCallback) => {
+export const updateSalleFull = async (id, formData, reloadCallback) => {
     try {
-        const response = await fetch(`/api/salle/modif-${up}`, {
+        const response = await fetch(`/api/salle/${id}`, {
             method: 'PATCH',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(formData),
         });
 
-        if (!response.ok) throw new Error('Erreur lors de la modification');
-        
         // Si tout est bon, on recharge la liste
         if (reloadCallback) reloadCallback();
+        toast.success("Modification effectuée.");
         
     } catch (error) {
-        console.error(error);
-        alert("Erreur lors de la modification de la salle");
+        toast.error("Erreur lors de la modification de la salle");
     }
 };

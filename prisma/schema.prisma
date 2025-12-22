@@ -38,23 +38,25 @@ enum Role {
 //        SALLE
 // ==========================
 model Salle {
-  id           String @id @default(uuid())
+  id           String  @id @default(uuid())
   nom_salle    String
   nombre_place Int?
-  visible  Boolean @default(false)
+  visible      Boolean @default(false)
+  image        String?
 
-  events Even[]
-  commodites  SalleCommodite[]
+  events     Even[]
+  commodites SalleCommodite[]
 }
+
 model Commodite {
-  id          Int              @id @default(autoincrement())
-  nom         String
-  salles      SalleCommodite[]
+  id     Int              @id @default(autoincrement())
+  nom    String
+  salles SalleCommodite[]
 }
 
 model SalleCommodite {
-  salle       Salle     @relation(fields: [salleId], references: [id])
-  salleId     String
+  salle   Salle  @relation(fields: [salleId], references: [id])
+  salleId String
 
   commodite   Commodite @relation(fields: [commoditeId], references: [id])
   commoditeId Int
@@ -76,6 +78,9 @@ model Even {
   nom_client     String?
   contact_client String?
   type           String?
+  visible        Boolean  @default(false)
+  fiche          String?
+  image          String?
   createdAt      DateTime @default(now())
 
   salle_id String?

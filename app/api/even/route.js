@@ -21,7 +21,7 @@ export async function GET() {
 // ➕ POST : créer une nouvelle even
 export async function POST(req) {
     try {
-        const { categorie, montant, avance, date_debut, date_fin, description, nom_client, contact_client, type, salle_id, agent_id } = await req.json();
+        const { categorie, montant, avance, date_debut, date_fin, description, nom_client, contact_client, type, salle_id, agent_id, image, fiche } = await req.json();
 
         // Vérification simple avant insertion
         if (!nom_client || !categorie || !salle_id || !agent_id || !type || !montant || !date_debut || !date_fin) {
@@ -75,6 +75,8 @@ export async function POST(req) {
                 type,
                 salle_id,
                 agent_id,
+                image: image || null,
+                fiche: fiche || null,
             },
         });
 

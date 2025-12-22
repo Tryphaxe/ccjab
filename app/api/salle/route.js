@@ -18,7 +18,7 @@ export async function GET() {
 // ➕ POST : créer une nouvelle salle
 export async function POST(req) {
   try {
-    const { nom_salle, nombre_place, commodites } = await req.json();
+    const { nom_salle, nombre_place, commodites,image } = await req.json();
 
     if (!nom_salle) {
       return NextResponse.json({ error: 'Nom de la salle requis !' }, { status: 400 });
@@ -33,6 +33,7 @@ export async function POST(req) {
             commodite: { connect: { id } },
           })),
         },
+        image
       },
     });
 

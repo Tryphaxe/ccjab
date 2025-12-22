@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useMemo } from 'react'
-import { Info, Plus, Loader, Trash2, Share, CalendarCheck2, Phone, Pen, User, PartyPopper, UserStar, FilterX, FileText, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Info, Plus, Loader, Trash2, Share, CalendarCheck2, Phone, Pen, User, PartyPopper, UserStar, FilterX, FileText, ChevronLeft, ChevronRight, Eye, EyeOff, Upload, Image } from 'lucide-react';
 import { Button } from "@/components/ui/button"
 import {
     Dialog,
@@ -26,18 +26,98 @@ import {
 } from "@/components/ui/select"
 import { Badge } from "@/components/ui/badge";
 import { eventCategories, eventTypesByCategory } from '@/lib/list';
-import { submitForm, fetchEvents, deleteEvent, updateEvent, deleteManyEvents } from '@/utils/evenUtils';
+import { submitForm, fetchEvents, deleteEvent, updateEvent, deleteManyEvents, updateEventVisibility } from '@/utils/evenUtils';
 import { fetchAgents } from '@/utils/agentUtils';
 import { fetchSalles } from '@/utils/salleUtils';
 import { formatEventDate, getEventStatus } from '@/lib/evenHelper';
 import { exportEventsToPDF } from '@/lib/exportEvent';
 import { DateTimePicker } from '@/components/DateTimePicker';
+import { Switch } from '@/components/ui/switch';
+import { uploadImage } from '@/utils/uploadEventsUtils';
+import { uploadFile } from '@/utils/uploadFichesUtils';
+const DEFAULT_IMAGE = "/images/default-salle.png";
 
 const ITEMS_PER_PAGE = 10; // Nombre d'éléments par page
 
 const EventFormFields = React.memo(
-    ({ form, handleChange, handleSelectChange, setForm, salles, agents, getOccupiedSlots }) => (
+    ({ form, handleChange, handleSelectChange, setForm, salles, agents, getOccupiedSlots, handleImageChange, preview, pdfLink, handlePdfChange }) => (
         <div className='grid gap-4 py-2'>
+            {/* --- NOUVELLE ZONE : FICHE TECHNIQUE --- */}
+            <div className="bg-blue-50/50 border border-blue-100 rounded-lg p-3 flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                    <div className="bg-blue-100 p-2 rounded-md text-blue-600">
+                        <FileText size={20} />
+                    </div>
+                    <div>
+                        <Label htmlFor="pdf-upload" className="font-semibold text-sm text-gray-900 cursor-pointer">
+                            Fiche Technique (PDF)
+                        </Label>
+                        <p className="text-xs text-gray-500">
+                            {pdfLink ? "Fichier actuel enregistré" : "Aucun fichier sélectionné"}
+                        </p>
+                    </div>
+                </div>
+
+                <div className="flex items-center gap-2">
+                    {/* Lien pour voir le PDF existant */}
+                    {pdfLink && typeof pdfLink === 'string' && (
+                        <Button type="button" variant="ghost" size="sm" className="h-8 text-blue-600" onClick={() => window.open(pdfLink, '_blank')}>
+                            <Eye size={16} />
+                        </Button>
+                    )}
+
+                    {/* Input file caché + Bouton déclencheur */}
+                    <div className="relative">
+                        <input
+                            id="pdf-upload"
+                            type="file"
+                            accept="application/pdf"
+                            onChange={handlePdfChange}
+                            className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                        />
+                        <Button type="button" variant="outline" size="sm" className="h-8 pointer-events-none">
+                            <Upload size={14} className="mr-2" />
+                            {pdfLink && typeof pdfLink !== 'string' ? "Modifier" : "Ajouter"}
+                        </Button>
+                    </div>
+                </div>
+            </div>
+
+            {/* --- ZONE D'UPLOAD D'IMAGE AJOUTÉE --- */}
+            <div className="flex flex-col items-center gap-4 mb-2">
+                <div className="relative w-full h-48 border-2 border-dashed border-gray-300 rounded-lg bg-gray-50 flex flex-col items-center justify-center cursor-pointer hover:bg-gray-100 transition-colors overflow-hidden group">
+                    <input
+                        type="file"
+                        accept="image/*"
+                        onChange={handleImageChange}
+                        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+                    />
+                    {preview ? (
+                        <>
+                            <img
+                                src={preview}
+                                alt="Prévisualisation"
+                                className="w-full h-full object-cover transition-transform group-hover:scale-105"
+                                onError={(e) => e.target.src = DEFAULT_IMAGE}
+                            />
+                            <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                                <p className="text-white text-sm font-medium flex items-center gap-2">
+                                    <Pen size={14} /> Changer l'image
+                                </p>
+                            </div>
+                        </>
+                    ) : (
+                        <div className="text-center text-gray-500">
+                            <div className="bg-white p-3 rounded-full shadow-sm mb-2 inline-block">
+                                <Upload className="w-6 h-6 text-emerald-600" />
+                            </div>
+                            <p className="text-sm font-semibold text-gray-900">Cliquez pour ajouter une affiche</p>
+                            <p className="text-xs text-gray-400 mt-1">JPG, PNG (Max 5Mo)</p>
+                        </div>
+                    )}
+                </div>
+            </div>
+            {/* -------------------------------------- */}
             {/* Section Client */}
             <div className="space-y-3">
                 <h3 className="text-sm font-semibold text-gray-900 bg-gray-50 p-2 rounded-md border border-gray-100 flex items-center gap-2">
@@ -170,6 +250,13 @@ export default function page() {
     const [selectedEvent, setSelectedEvent] = useState(null);
     const [eventToDelete, setEventToDelete] = useState(null);
     const [open, setOpen] = useState(false);
+
+    const [imageFile, setImageFile] = useState(null);
+    const [preview, setPreview] = useState(null);
+    // --- AJOUTS PDF ---
+    const [pdfFile, setPdfFile] = useState(null);
+    const [pdfLink, setPdfLink] = useState(null);
+
     const [form, setForm] = useState({
         categorie: '',
         montant: '',
@@ -182,6 +269,8 @@ export default function page() {
         type: '',
         salle_id: '',
         agent_id: '',
+        image: '',
+        fiche: '',
     });
 
     // Pagination state
@@ -208,7 +297,11 @@ export default function page() {
     const reloadEvents = () => fetchEvents(setEvents, setIsLoading);
 
     const onClose = () => {
-        setOpen(false);
+        setOpen(false); setPreview(null);
+        setImageFile(null);
+        // --- RESET PDF ---
+        setPdfFile(null);
+        setPdfLink(null);
         setForm({
             categorie: '',
             montant: '',
@@ -221,8 +314,28 @@ export default function page() {
             type: '',
             salle_id: '',
             agent_id: '',
+            image: '',
+            fiche: '',
         });
     }
+
+    // --- FONCTION DE GESTION DE L'IMAGE ---
+    const handleImageChange = (e) => {
+        const file = e.target.files[0];
+        if (file) {
+            setImageFile(file);
+            setPreview(URL.createObjectURL(file));
+        }
+    };
+
+    const handlePdfChange = (e) => {
+        const file = e.target.files[0];
+        if (file) {
+            setPdfFile(file);
+            // On utilise l'objet File temporairement pour l'affichage conditionnel du bouton "Modifier"
+            setPdfLink(file);
+        }
+    };
 
     const hasConflict = (startIso, endIso, salleId, excludeId = null) => {
         if (!salleId || !startIso || !endIso) return false;
@@ -243,17 +356,35 @@ export default function page() {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        if (isConflict) {
-            return;
+        if (isConflict) return;
+
+        setLoading(true); // Activez le loading manuellement ici pour englober l'upload
+
+        try {
+            let imageUrl = null;
+            if (imageFile) {
+                imageUrl = await uploadImage(imageFile, 'event');
+            }
+
+            let pdfUrl = null;
+            if (pdfFile) {
+                // On peut réutiliser la même fonction uploadFile car Supabase gère le type
+                // Ou spécifier un bucket différent si vous voulez 'documents'
+                pdfUrl = await uploadFile(pdfFile, 'fiches_event');
+            }
+
+            await submitForm({
+                data: { ...form, image: imageUrl, fiche: pdfUrl }, // On injecte l'URL
+                setLoading,
+                reload: () => fetchEvents(setEvents, setIsLoading),
+                successMessage: "Évènement ajouté avec succès.",
+                errorMessage: "Erreur lors de l'ajout.",
+            });
+            onClose();
+        } catch (error) {
+            console.error(error);
+            setLoading(false);
         }
-        await submitForm({
-            data: form,
-            setLoading,
-            reload: () => fetchEvents(setEvents, setIsLoading),
-            successMessage: "Évènement ajouté avec succès.",
-            errorMessage: "Erreur lors de l'ajout de l'évènement.",
-        });
-        onClose();
     };
 
     const filteredEvents = useMemo(() => {
@@ -292,14 +423,41 @@ export default function page() {
     const handleUpdate = async (e) => {
         e.preventDefault();
         if (!selectedEvent) return;
+
         setLoading(true);
-        await updateEvent(
-            selectedEvent.id,
-            form,
-            reloadEvents,
-            setLoading,
-            () => setSelectedEvent(null)
-        );
+
+        try {
+            let imageUrl = form.image; // Par défaut, on garde l'ancienne URL
+
+            // Si un NOUVEAU fichier a été choisi, on l'upload
+            if (imageFile) {
+                imageUrl = await uploadImage(imageFile, 'event');
+            }
+
+            // PDF Logic (AJOUT)
+            let pdfUrl = form.fiche; // Par défaut, ancienne URL
+            if (pdfFile) {
+                // Si nouveau fichier, on upload
+                pdfUrl = await uploadFile(pdfFile, 'fiches_event');
+            }
+
+            await updateEvent(
+                selectedEvent.id,
+                { ...form, image: imageUrl, fiche: pdfUrl }, // On envoie la nouvelle donnée
+                reloadEvents,
+                setLoading,
+                () => {
+                    setSelectedEvent(null);
+                    setPreview(null);
+                    setImageFile(null);// Reset PDF
+                    setPdfFile(null);
+                    setPdfLink(null);
+                }
+            );
+        } catch (error) {
+            console.error(error);
+            setLoading(false);
+        }
     };
 
     // --- LOGIQUE DE SÉLECTION MULTIPLE ---
@@ -344,6 +502,21 @@ export default function page() {
         }
     }, [form.salle_id]);
 
+    const handleVisibilityToggle = async (ev) => {
+        // 1. Mise à jour optimiste (on change l'état local immédiatement pour que ce soit fluide)
+        const updatedEvents = events.map((s) =>
+            s.id === ev.id ? { ...s, visible: !s.visible } : s
+        );
+        setEvents(updatedEvents);
+
+        try {
+            // 2. Appel à la base de données
+            await updateEventVisibility(ev.id, !ev.visible);
+        } catch (error) {
+            fetchEvents(setEvents, setIsLoading); // On recharge les données réelles
+        }
+    };
+
     return (
         <div className="min-h-screen bg-gray-50/50 p-4 text-gray-900">
             <div className="max-w-7xl mx-auto">
@@ -376,6 +549,10 @@ export default function page() {
                                             salles={salles}
                                             agents={agents}
                                             getOccupiedSlots={getOccupiedSlots}
+                                            preview={preview}
+                                            handleImageChange={handleImageChange}
+                                            pdfLink={pdfLink}
+                                            handlePdfChange={handlePdfChange}
                                         />
                                     </form>
                                 </div>
@@ -540,7 +717,9 @@ export default function page() {
                         </div>
                         {currentEvents.map((event) => (
                             <div key={event.id} className="group p-4 border-b border-gray-100 last:border-b-0 hover:bg-gray-50 transition-all duration-200 flex flex-col md:flex-row md:items-center gap-4 justify-between">
-                                <div className="flex items-center h-full">
+
+                                {/* 0. Checkbox de sélection */}
+                                <div className="flex items-center h-full md:w-auto">
                                     <input
                                         type="checkbox"
                                         className="w-4 h-4 rounded border-gray-300 text-gray-900 focus:ring-gray-900 cursor-pointer"
@@ -549,48 +728,65 @@ export default function page() {
                                     />
                                 </div>
 
-                                {/* 1. Bloc Informations Principales */}
-                                <div className="md:w-1/4 min-w-0">
-                                    <div className="flex items-center gap-2 mb-1">
-                                        <span className="text-base font-bold text-gray-900 truncate">{event.type}</span>
-                                        <span className={`text-[10px] uppercase font-bold px-2 py-0.5 rounded-full ${getEventStatus(event.date_debut, event.date_fin) === 'En cours' ? 'text-yellow-700 bg-yellow-100' :
-                                            getEventStatus(event.date_debut, event.date_fin) === 'A venir' ? 'text-blue-700 bg-blue-100' :
-                                                'text-green-700 bg-green-100'
-                                            }`}>
-                                            {getEventStatus(event.date_debut, event.date_fin)}
-                                        </span>
-                                    </div>
-                                    <div className="text-sm text-gray-500 flex gap-2 items-start">
-                                        <CalendarCheck2 size={14} className="mt-0.5 shrink-0" />
-                                        <span
-                                            className="line-clamp-2"
-                                            dangerouslySetInnerHTML={{ __html: formatEventDate(event.date_debut, event.date_fin) }}
+                                {/* 1. Bloc Image + Infos Principales (Regroupés pour l'alignement) */}
+                                <div className="flex items-center gap-4 md:w-1/3 min-w-0">
+
+                                    {/* --- IMAGE MINIATURE --- */}
+                                    <div className="relative h-14 w-14 shrink-0 rounded-lg overflow-hidden border border-gray-200 bg-gray-100 shadow-sm">
+                                        <img
+                                            src={event.image || DEFAULT_IMAGE}
+                                            alt={event.type}
+                                            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                                            loading="lazy"
+                                            onError={(e) => e.target.src = DEFAULT_IMAGE}
                                         />
+                                    </div>
+                                    {/* ----------------------- */}
+
+                                    <div className="min-w-0 flex-1">
+                                        <div className="flex items-center gap-2 mb-1">
+                                            <span className="text-base font-bold text-gray-900 truncate" title={event.type}>
+                                                {event.type}
+                                            </span>
+                                            <span className={`text-[10px] uppercase font-bold px-2 py-0.5 rounded-full shrink-0 ${getEventStatus(event.date_debut, event.date_fin) === 'En cours' ? 'text-yellow-700 bg-yellow-100' :
+                                                getEventStatus(event.date_debut, event.date_fin) === 'A venir' ? 'text-blue-700 bg-blue-100' :
+                                                    'text-green-700 bg-green-100'
+                                                }`}>
+                                                {getEventStatus(event.date_debut, event.date_fin)}
+                                            </span>
+                                        </div>
+                                        <div className="text-sm text-gray-500 flex gap-2 items-start">
+                                            <CalendarCheck2 size={14} className="mt-0.5 shrink-0" />
+                                            <span
+                                                className=""
+                                                dangerouslySetInnerHTML={{ __html: formatEventDate(event.date_debut, event.date_fin) }}
+                                            />
+                                        </div>
                                     </div>
                                 </div>
 
                                 {/* 2. Bloc Détails & Finances */}
-                                <div className="md:w-1/4">
+                                <div className="md:w-1/5 pl-0 md:pl-4 border-l-0 md:border-l border-gray-100">
                                     <div className="flex items-center gap-1.5 text-gray-900 font-semibold text-sm mb-0.5">
                                         <PartyPopper size={14} className="text-gray-400" />
-                                        {event.salle.nom_salle}
+                                        <span className="truncate">{event.salle.nom_salle}</span>
                                     </div>
                                     <div className="pl-5">
                                         <p className="text-sm font-medium text-gray-700">
                                             {event.montant.toLocaleString("fr-FR")} Fcfa
                                         </p>
-                                        <p className="text-xs text-gray-500">
-                                            Avance: {event.avance === 0 ? event.avance : (event.avance || 0) + " Fcfa"} • <span className="italic">{event.categorie}</span>
+                                        <p className="text-xs text-gray-500 truncate" title={`Avance: ${event.avance} • ${event.categorie}`}>
+                                            Avance: {event.avance === 0 ? event.avance : (event.avance || 0) + " Fcfa"}
                                         </p>
                                     </div>
                                 </div>
 
                                 {/* 3. Bloc Intervenants */}
-                                <div className="md:w-1/4 flex flex-col gap-2">
+                                <div className="md:w-1/5 flex flex-col gap-2">
                                     <div className="flex items-start gap-2">
                                         <User size={14} className="mt-0.5 text-gray-400" />
-                                        <div>
-                                            <p className="text-sm font-semibold text-gray-900 leading-none">{event.nom_client}</p>
+                                        <div className="min-w-0">
+                                            <p className="text-sm font-semibold text-gray-900 leading-none truncate">{event.nom_client}</p>
                                             <p className="text-xs text-gray-500 mt-0.5 flex items-center gap-1">
                                                 <Phone size={10} /> {event.contact_client}
                                             </p>
@@ -598,49 +794,84 @@ export default function page() {
                                     </div>
                                     <div className="flex items-start gap-2">
                                         <UserStar size={14} className="mt-0.5 text-gray-400" />
-                                        <div>
-                                            <p className="text-sm font-medium text-gray-700 leading-none">{event.agent.name}</p>
+                                        <div className="min-w-0">
+                                            <p className="text-sm font-medium text-gray-700 leading-none truncate">{event.agent.name}</p>
                                         </div>
                                     </div>
                                 </div>
 
-                                {/* 4. Bloc Actions */}
-                                <div className="flex items-center md:justify-end gap-2 md:w-auto mt-2 md:mt-0 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
-                                    <Button
-                                        variant="outline"
-                                        size="icon"
-                                        className="h-8 w-8 bg-white text-gray-600 hover:text-blue-600 hover:bg-blue-50 border-gray-200"
-                                        onClick={() => {
-                                            setSelectedEvent(event);
-                                            setForm({
-                                                categorie: event.categorie || '',
-                                                montant: event.montant || '',
-                                                avance: event.avance || '',
-                                                date_debut: event.date_debut || '',
-                                                date_fin: event.date_fin || '',
-                                                description: event.description || '',
-                                                nom_client: event.nom_client || '',
-                                                contact_client: event.contact_client || '',
-                                                type: event.type || '',
-                                                salle_id: event.salle_id || '',
-                                                agent_id: event.agent_id || '',
-                                            });
-                                        }}
-                                    >
-                                        <Pen className="w-3.5 h-3.5" />
-                                    </Button>
+                                {/* 4. Bloc Actions & Visibilité */}
+                                <div className="flex items-center justify-between md:justify-end gap-3 md:w-auto mt-2 md:mt-0">
 
-                                    <Button
-                                        variant="destructive"
-                                        size="icon"
-                                        className="h-8 w-8 bg-white text-red-500 border border-red-100 hover:bg-red-50 hover:text-red-700 shadow-sm"
-                                        onClick={() => {
-                                            setEventToDelete(event);
-                                            setOpenn(true);
-                                        }}
-                                    >
-                                        <Trash2 className="w-3.5 h-3.5" />
-                                    </Button>
+                                    {/* Switch Visibilité */}
+                                    <div className="flex items-center gap-2 mr-2">
+                                        <Switch
+                                            checked={event.visible}
+                                            onCheckedChange={() => handleVisibilityToggle(event)}
+                                            id={`list-switch-${event.id}`}
+                                            className="data-[state=checked]:bg-emerald-600 scale-75" // scale-75 pour le rendre plus discret
+                                        />
+                                    </div>
+
+                                    <div className="flex items-center gap-2 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
+                                        {/* --- NOUVEAU : BOUTON PDF --- */}
+                                        {event.fiche && (
+                                            <Button
+                                                variant="outline"
+                                                size="icon"
+                                                className="h-8 w-8 bg-white text-blue-600 hover:text-blue-700 hover:bg-blue-50 border-blue-200"
+                                                onClick={(e) => {
+                                                    e.stopPropagation(); // Empêche de cliquer sur la ligne si elle est interactive
+                                                    window.open(event.fiche, '_blank');
+                                                }}
+                                                title="Télécharger la fiche technique"
+                                            >
+                                                <FileText className="w-3.5 h-3.5" />
+                                            </Button>
+                                        )}
+                                        <Button
+                                            variant="outline"
+                                            size="icon"
+                                            className="h-8 w-8 bg-white text-gray-600 hover:text-blue-600 hover:bg-blue-50 border-gray-200"
+                                            onClick={() => {
+                                                setSelectedEvent(event);
+                                                setPreview(event.image || null);
+                                                setImageFile(null);
+                                                // PDF (AJOUT)
+                                                setPdfLink(event.fiche || null); // On charge l'URL existante
+                                                setPdfFile(null);
+                                                setForm({
+                                                    categorie: event.categorie || '',
+                                                    montant: event.montant || '',
+                                                    avance: event.avance || '',
+                                                    date_debut: event.date_debut || '',
+                                                    date_fin: event.date_fin || '',
+                                                    description: event.description || '',
+                                                    nom_client: event.nom_client || '',
+                                                    contact_client: event.contact_client || '',
+                                                    type: event.type || '',
+                                                    salle_id: event.salle_id || '',
+                                                    agent_id: event.agent_id || '',
+                                                    image: event.image || '',
+                                                    fiche: event.fiche || '',
+                                                });
+                                            }}
+                                        >
+                                            <Pen className="w-3.5 h-3.5" />
+                                        </Button>
+
+                                        <Button
+                                            variant="destructive"
+                                            size="icon"
+                                            className="h-8 w-8 bg-white text-red-500 border border-red-100 hover:bg-red-50 hover:text-red-700 shadow-sm"
+                                            onClick={() => {
+                                                setEventToDelete(event);
+                                                setOpenn(true);
+                                            }}
+                                        >
+                                            <Trash2 className="w-3.5 h-3.5" />
+                                        </Button>
+                                    </div>
                                 </div>
 
                             </div>
@@ -740,6 +971,10 @@ export default function page() {
                                     salles={salles}
                                     agents={agents}
                                     getOccupiedSlots={getOccupiedSlots}
+                                    preview={preview}
+                                    handleImageChange={handleImageChange}
+                                    pdfLink={pdfLink}
+                                    handlePdfChange={handlePdfChange}
                                 />
                             </form>
                         </div><DialogFooter className="p-6 pt-2 border-t bg-gray-50/50 flex-col sm:flex-col items-stretch gap-2">
