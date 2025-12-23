@@ -12,14 +12,14 @@ export default function Footer() {
 
   const handleSecretAccess = (e) => {
     // Empêche le comportement normal du lien
-    e.preventDefault(); 
+    e.preventDefault();
     clickCount++;
-    
+
     // Si on clique 3 fois rapidement
     if (clickCount === 3) {
       router.push('/auth/login');
     }
-    
+
     // Reset après 1 seconde
     setTimeout(() => clickCount = 0, 1000);
   };
@@ -81,27 +81,11 @@ export default function Footer() {
               </li>
             </ul>
           </div>
-
-          {/* COLONNE 4 : NEWSLETTER */}
-          <div>
-            <h4 className="font-bold text-lg mb-6 text-white">Restez informé</h4>
-            <p className="text-gray-400 text-sm mb-4">Recevez le programme de la semaine directement par email.</p>
-            <form className="flex flex-col gap-2">
-              <input
-                type="email"
-                placeholder="Votre email"
-                className="bg-gray-900 border border-gray-800 text-white rounded-lg px-4 py-3 text-sm focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none transition-all"
-              />
-              <button className="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-3 rounded-lg text-sm font-bold transition-colors flex items-center justify-center gap-2">
-                S'inscrire <ArrowRight size={16} />
-              </button>
-            </form>
-          </div>
         </div>
 
         {/* COPYRIGHT */}
         <div className="border-t border-gray-900 pt-8 flex flex-col md:flex-row justify-between items-center gap-4 text-sm text-gray-600">
-          <p>© {new Date().getFullYear()} CCJAB. Tous droits réservés.</p>
+          <p>© {new Date().getFullYear()} RELAIS IT pour CCJAB. Tous droits réservés.</p>
           <div className="flex gap-6">
             <Link href="#" className="hover:text-emerald-500 transition-colors">Mentions légales</Link>
             <Link href="#" className="hover:text-emerald-500 transition-colors">Confidentialité</Link>
