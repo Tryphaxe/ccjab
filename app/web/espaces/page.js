@@ -64,11 +64,11 @@ export default function EspacesPage() {
                 </div>
               ))
             ) : salles.length === 0 ? (
-              <div className='flex flex-col items-center justify-center py-20'>
+              <div className='flex flex-col items-center justify-center py-20 bg-white rounded-lg'>
                 <div className="bg-gray-50 p-4 rounded-full mb-4">
-                  <UserCog className='w-8 h-8 text-gray-400' />
+                  <UserCog className='w-8 h-8 text-gray-800' />
                 </div>
-                <h3 className="text-lg font-semibold text-gray-300">Aucune salle disponible !</h3>
+                <h3 className="text-lg font-semibold text-gray-700">Aucune salle disponible !</h3>
               </div>
             ) : (
               salles.map((space) => (

@@ -18,6 +18,9 @@ export default function CulturalCenterHome() {
     fetchEvents(setEvents, setIsLoading)
   }, []);
 
+  const redirect = () => {
+    router.push('/web/espaces');
+  }
   return (
     <div className="min-h-screen bg-white text-gray-900 selection:bg-emerald-100 selection:text-emerald-900">
       {/* ================= HERO SECTION ================= */}
@@ -49,7 +52,7 @@ export default function CulturalCenterHome() {
               Concerts, théâtres, expositions : vivez la culture autrement.
             </p>
             <div className="flex justify-center">
-              <button onClick={router.push('/web/espaces')} className="px-8 py-4 bg-emerald-600 text-white rounded-full font-semibold hover:bg-emerald-500 transition-all flex items-center justify-center gap-2 shadow-xl shadow-emerald-900/20 border border-transparent">
+              <button onClick={redirect} className="px-8 py-4 bg-emerald-600 text-white rounded-full font-semibold hover:bg-emerald-500 transition-all flex items-center justify-center gap-2 shadow-xl shadow-emerald-900/20 border border-transparent">
                 Voir la programmation <ArrowRight size={18} />
               </button>
             </div>
