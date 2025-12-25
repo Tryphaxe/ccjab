@@ -4,10 +4,12 @@ import React, { useEffect, useState } from 'react';
 import {
   Music, Menu, X, MapPin, Users, Maximize, CheckCircle2,
   Wifi, Mic2, Projector, Armchair, Coffee, ArrowRight, Star,
-  Facebook, Instagram, Twitter, Mail, Phone
+  Facebook, Instagram, Twitter, Mail, Phone,
+  UserCog
 } from 'lucide-react';
 import { fetchSalles } from '@/utils/salleWebUtils';
 import { fetchCommodites } from '@/utils/commoditeUtils';
+import { Skeleton } from '@/components/ui/skeleton';
 
 export default function EspacesPage() {
   const [salles, setSalles] = useState([])
@@ -51,58 +53,81 @@ export default function EspacesPage() {
       <section className="py-16 bg-gray-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {salles.map((space) => (
-              <div key={space.id} className="group bg-white rounded-2xl overflow-hidden border border-gray-100 shadow-sm hover:shadow-xl hover:shadow-emerald-900/5 transition-all duration-300 flex flex-col">
-
-                {/* Image */}
-                <div className="relative h-64 overflow-hidden">
-                  <img
-                    src={space.image || DEFAULT_IMAGE}
-                    alt={space.name || "DEFAULT_IMAGE"}
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
-                  />
-                  <div className="absolute top-4 right-4 bg-black/60 backdrop-blur px-3 py-1 rounded-full text-xs font-bold text-white flex items-center gap-1">
-                    <Maximize size={12} />Grand public
+            {isloading ? (
+              Array.from({ length: 3 }).map((_, index) => (
+                <div key={index} className="flex flex-col space-y-3">
+                  <Skeleton className="h-[250px] w-[360px] rounded-xl bg-gray-200" />
+                  <div className="space-y-2">
+                    <Skeleton className="h-4 w-[360px] bg-gray-200" />
+                    <Skeleton className="h-4 w-[300px] bg-gray-200" />
                   </div>
                 </div>
-
-                {/* Contenu */}
-                <div className="p-6 flex flex-col flex-1">
-                  <div className="flex justify-between items-start mb-2">
-                    <div className="flex items-center text-gray-500 text-sm">
-                      <Users size={16} className="mr-1.5 text-emerald-600" />
-                      {space.nombre_place}
-                    </div>
-                  </div>
-
-                  <h3 className="text-2xl font-bold text-gray-900 mb-3 group-hover:text-emerald-700 transition-colors">
-                    {space.nom_salle}
-                  </h3>
-
-                  {/* Équipements */}
-                  <div className="mb-6">
-                    <h4 className="text-xs font-semibold text-gray-400 uppercase mb-3">Équipements inclus</h4>
-                    <div className="flex flex-wrap gap-2">
-                      {space.commodites.map((feature, idx) => (
-                        <span key={idx} className="inline-flex items-center px-2.5 py-1 rounded-md bg-gray-100 text-gray-600 text-xs font-medium">
-                          <CheckCircle2 size={12} className="mr-1 text-emerald-600" />
-                          {feature}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-
-                  <div className="pt-5 border-t border-gray-100 flex items-center justify-between mt-auto">
-                    <span className="text-sm font-bold text-gray-900">
-                      Sur devis
-                    </span>
-                    <button className="text-sm font-semibold text-emerald-600 hover:text-emerald-800 flex items-center gap-1 transition-colors">
-                      Appelez-nous <ArrowRight size={16} />
-                    </button>
-                  </div>
+              ))
+            ) : salles.length === 0 ? (
+              <div className='flex flex-col items-center justify-center py-20'>
+                <div className="bg-gray-50 p-4 rounded-full mb-4">
+                  <UserCog className='w-8 h-8 text-gray-400' />
                 </div>
+                <h3 className="text-lg font-semibold text-gray-300">Aucune salle disponible !</h3>
               </div>
-            ))}
+            ) : (
+              salles.map((space) => (
+                <div key={space.id} className="group bg-white rounded-2xl overflow-hidden border border-gray-100 shadow-sm hover:shadow-xl hover:shadow-emerald-900/5 transition-all duration-300 flex flex-col">
+
+                  {/* Image */}
+                  <div className="relative h-64 overflow-hidden">
+                    <img
+                      src={space.image || DEFAULT_IMAGE}
+                      alt={space.name || "DEFAULT_IMAGE"}
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
+                    />
+                    <div className="absolute top-4 right-4 bg-black/60 backdrop-blur px-3 py-1 rounded-full text-xs font-bold text-white flex items-center gap-1">
+                      <Maximize size={12} />Grand public
+                    </div>
+                  </div>
+
+                  {/* Contenu */}
+                  <div className="p-6 flex flex-col flex-1">
+                    <div className="flex justify-between items-start mb-2">
+                      <div className="flex items-center text-gray-500 text-sm">
+                        <Users size={16} className="mr-1.5 text-emerald-600" />
+                        {space.nombre_place}
+                      </div>
+                    </div>
+
+                    <h3 className="text-2xl font-bold text-gray-900 mb-3 group-hover:text-emerald-700 transition-colors">
+                      {space.nom_salle}
+                    </h3>
+
+                    {/* Équipements */}
+                    <div className="mb-6">
+                      <h4 className="text-xs font-semibold text-gray-400 uppercase mb-3">Équipements inclus</h4>
+                      <div className="flex flex-wrap gap-2">
+                        {space.commodites.length > 0 ? (
+                          space.commodites?.map((item) => (
+                            <span key={item.commodite.id} className="inline-flex items-center px-2.5 py-1 rounded-md bg-gray-100 text-gray-600 text-xs font-medium">
+                              <CheckCircle2 size={12} className="mr-1 text-emerald-600" />
+                              {item.commodite?.nom}
+                            </span>
+                          ))
+                        ) : (
+                          <span className="text-xs text-gray-400 italic">Aucun équipement spécifié !</span>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="pt-5 border-t border-gray-100 flex items-center justify-between mt-auto">
+                      <span className="text-sm font-bold text-gray-900">
+                        Sur devis
+                      </span>
+                      <button className="text-sm font-semibold text-emerald-600 hover:text-emerald-800 flex items-center gap-1 transition-colors">
+                        Appelez-nous <ArrowRight size={16} />
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ))
+            )}
           </div>
         </div>
       </section>

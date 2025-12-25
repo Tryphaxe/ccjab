@@ -1,6 +1,6 @@
 "use client";
 
-import React from 'react';
+import React, { useState } from 'react';
 import Link from 'next/link';
 import { Music, MapPin, Phone, Mail, Facebook, Instagram, Twitter, ArrowRight } from 'lucide-react';
 import Image from 'next/image';
@@ -8,20 +8,25 @@ import { useRouter } from 'next/navigation';
 
 export default function Footer() {
   const router = useRouter();
-  let clickCount = 0;
+
+  const [clickCount, setClickCount] = useState(0);
 
   const handleSecretAccess = (e) => {
-    // Empêche le comportement normal du lien
     e.preventDefault();
-    clickCount++;
 
-    // Si on clique 3 fois rapidement
-    if (clickCount === 3) {
+    // On calcule le nouveau nombre
+    const newCount = clickCount + 1;
+    setClickCount(newCount);
+
+    // Si on atteint 3 clics
+    if (newCount === 3) {
       router.push('/auth/login');
+      setClickCount(0); // On reset après redirection
     }
 
-    // Reset après 1 seconde
-    setTimeout(() => clickCount = 0, 1000);
+    setTimeout(() => {
+      setClickCount(0);
+    }, 1000);
   };
   return (
     <footer className="bg-gray-950 text-white pt-20 pb-10 border-t border-gray-900">
@@ -32,12 +37,12 @@ export default function Footer() {
           <div className="space-y-6">
             <div className="flex items-center gap-2">
               <Image
-                onDoubleClick={handleSecretAccess}
+                onClick={handleSecretAccess} /* 4. IMPORTANT : on utilise onClick, pas onDoubleClick */
                 alt="Logo CCJAB"
                 src="/images/favicon.png"
                 width={32}
                 height={32}
-                className="h-8 w-8 object-contain"
+                className="h-8 w-8 object-contain cursor-pointer active:scale-95 transition-transform" /* Ajout d'un petit effet visuel au clic */
                 priority
               />
               <span className="font-bold text-xl tracking-tight">CENTRE<span className="text-emerald-500">CULTUREL</span></span>

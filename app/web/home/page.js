@@ -2,13 +2,15 @@
 
 import React, { useEffect, useState } from 'react';
 import { Calendar, MapPin, ArrowRight, Music, Mic2, Users, Ticket, Menu, X, Instagram, Facebook, Twitter, Loader, UserCog } from 'lucide-react';
-import { Button } from "@/components/ui/button";
 import { fetchEvents } from '@/utils/evenWebUtils';
 import { formatEventDate } from '@/lib/evenHelper';
+import { Skeleton } from '@/components/ui/skeleton';
+import { useRouter } from 'next/navigation';
 const DEFAULT_IMAGE = "/images/default-salle.png";
 
 
 export default function CulturalCenterHome() {
+  const router = useRouter();
   const [events, setEvents] = useState([])
   const [isloading, setIsLoading] = useState(true)
 
@@ -47,7 +49,7 @@ export default function CulturalCenterHome() {
               Concerts, théâtres, expositions : vivez la culture autrement.
             </p>
             <div className="flex justify-center">
-              <button className="px-8 py-4 bg-emerald-600 text-white rounded-full font-semibold hover:bg-emerald-500 transition-all flex items-center justify-center gap-2 shadow-xl shadow-emerald-900/20 border border-transparent">
+              <button onClick={router.push('/web/espaces')} className="px-8 py-4 bg-emerald-600 text-white rounded-full font-semibold hover:bg-emerald-500 transition-all flex items-center justify-center gap-2 shadow-xl shadow-emerald-900/20 border border-transparent">
                 Voir la programmation <ArrowRight size={18} />
               </button>
             </div>
@@ -68,20 +70,23 @@ export default function CulturalCenterHome() {
             </a>
           </div>
 
-
-
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 w-full">
             {isloading ? (
-              <div className="flex flex-col items-center justify-center py-20 text-gray-400">
-                <Loader className='animate-spin w-6 h-6 mb-3 text-green-600' />
-                <span className="font-medium">Chargement des évènements...</span>
-              </div>
+              Array.from({ length: 3 }).map((_, index) => (
+                <div key={index} className="flex flex-col space-y-3">
+                  <Skeleton className="h-[250px] w-[360px] rounded-xl bg-gray-200" />
+                  <div className="space-y-2">
+                    <Skeleton className="h-4 w-[360px] bg-gray-200" />
+                    <Skeleton className="h-4 w-[300px] bg-gray-200" />
+                  </div>
+                </div>
+              ))
             ) : events.length === 0 ? (
               <div className='flex flex-col items-center justify-center py-20'>
                 <div className="bg-gray-50 p-4 rounded-full mb-4">
                   <UserCog className='w-8 h-8 text-gray-400' />
                 </div>
-                <h3 className="text-lg font-semibold text-gray-900">Aucun évènement !</h3>
+                <h3 className="text-lg font-semibold text-gray-300">Aucun évènement !</h3>
               </div>
             ) : (
               events.map((event) => (
@@ -100,7 +105,7 @@ export default function CulturalCenterHome() {
                   <div className="p-6">
                     <div className="flex items-center gap-2 text-gray-500 text-sm mb-3">
                       <Calendar size={16} className="text-emerald-600" />
-                      <span dangerouslySetInnerHTML={{ __html: formatEventDate(event.date_debut, event.date_fin) }}/>
+                      <span dangerouslySetInnerHTML={{ __html: formatEventDate(event.date_debut, event.date_fin) }} />
                       <span className="w-1 h-1 bg-gray-300 rounded-full mx-1"></span>
                       <MapPin size={16} className="text-emerald-600" />
                       <span className="truncate">{event.salle.nom_salle}</span>
@@ -121,12 +126,6 @@ export default function CulturalCenterHome() {
                 </div>
               ))
             )}
-          </div>
-
-          <div className="mt-8 text-center md:hidden">
-            <button className="text-emerald-700 font-bold border border-emerald-200 px-6 py-3 rounded-full w-full">
-              Voir tous les évènements
-            </button>
           </div>
         </div>
       </section>
