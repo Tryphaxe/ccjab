@@ -120,6 +120,7 @@ export default function UsersPage() {
         password: '',
         role: '',
     });
+    // Handlers de formulaire
 
     const handleChange = (e) => {
         setForm({ ...form, [e.target.name]: e.target.value });
