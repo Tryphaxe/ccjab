@@ -63,6 +63,7 @@ const UserFormFields = React.memo(({ form, handleChange, handleSelectChange, sel
                         <SelectItem value="ADMIN">Administrateur</SelectItem>
                         <SelectItem value="AGENT">Agent</SelectItem>
                         <SelectItem value="FINANCIER">Financier</SelectItem>
+                        <SelectItem value="EDITOR">Éditeur</SelectItem>
                     </SelectContent>
                 </Select>
             </div>
@@ -170,6 +171,8 @@ export default function UsersPage() {
                 return <Badge className="bg-emerald-100 text-emerald-700 hover:bg-emerald-200 border-emerald-200 shadow-none">Financier</Badge>;
             case "AGENT":
                 return <Badge className="bg-blue-100 text-blue-700 hover:bg-blue-200 border-blue-200 shadow-none">Agent</Badge>;
+            case "EDITEUR":
+                return <Badge className="bg-yellow-100 text-yellow-700 hover:bg-yellow-200 border-yellow-200 shadow-none">Éditeur</Badge>;
             default:
                 return <Badge variant="outline" className="text-gray-500">{role}</Badge>;
         }
