@@ -38,8 +38,13 @@ const finance = [
     { name: 'Rapports', href: '/financial/accounting', icon: Newspaper },
 ];
 
+const editor = [
+    { name: 'Vue d\'ensemble', href: '/editor/home', icon: Home },
+    { name: 'Contenus', href: '/editor/posts', icon: Newspaper },
+];
+
 export default function Header() {
-    const { user, logout, isAdmin, isFinancial } = useAuth();
+    const { user, logout, isAdmin, isFinancial, isEditor } = useAuth();
     const pathname = usePathname();
     const [loading, setLoading] = useState(true);
     const [openDrawer, setOpenDrawer] = useState(false);
@@ -62,7 +67,7 @@ export default function Header() {
     }, [user]);
 
     // Détermine quelle liste de navigation utiliser
-    const currentNav = isAdmin ? navigation : isFinancial ? finance : [];
+    const currentNav = isAdmin ? navigation : isFinancial ? finance : isEditor ? editor : [];
 
     return (
         <div className="sticky top-0 z-40 w-full bg-white border-b border-gray-200">
@@ -101,7 +106,7 @@ export default function Header() {
                     <div className="flex items-center gap-4">
 
                         {/* Notifications */}
-                        {!loading && !isAdmin && !isFinancial && (
+                        {!loading && !isAdmin && !isFinancial && !isEditor && (
                             <button
                                 onClick={() => setOpenDrawer(true)}
                                 className="relative p-1.5 rounded-full text-gray-500 hover:text-gray-900 hover:bg-gray-100 transition-all duration-200 focus:outline-none"
@@ -164,13 +169,13 @@ export default function Header() {
             </div>
 
             {/* 2. NIVEAU INFÉRIEUR : Navigation avec ICÔNES */}
-            {(isAdmin || isFinancial || pathname.includes('/agent')) && (
+            {(isAdmin || isFinancial || isEditor || pathname.includes('/agent')) && (
                 <div className="border-t border-gray-100 bg-white">
                     <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
                         <nav className="flex -mb-px space-x-6 overflow-x-auto no-scrollbar">
 
                             {/* Navigation Agent */}
-                            {!isAdmin && !isFinancial && (
+                            {!isAdmin && !isFinancial && !isEditor && (
                                 <Link
                                     href="/agent/home"
                                     className={`

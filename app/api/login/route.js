@@ -42,7 +42,8 @@ export async function POST(req) {
     });
 
     // 5. Définir le Cookie HttpOnly sécurisé
-    cookies().set({
+    const cookieStore = await cookies();
+    cookieStore.set({
       name: "token",
       value: token,
       httpOnly: true, // 🔒 Invisible pour le JavaScript client

@@ -17,44 +17,25 @@ import {
 } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { useAuth } from '@/lib/AuthContext';
 
 export default function LoginPage() {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [loading, setLoading] = useState(false);
-    const router = useRouter();
+    const {login} = useAuth();
 
     const handleLogin = async (e) => {
         e.preventDefault();
         setLoading(true);
 
         try {
-            const res = await fetch('/api/login', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ email, password }),
-            });
-
-            const user = await res.json();
-
-            if (res.ok) {
-                localStorage.setItem('user', JSON.stringify(user));
-                toast.success('Connexion réussie 🎉');
-                
-                // Redirection basée sur le rôle
-                if (user?.role === "ADMIN") {
-                    router.push('/dashboard/home');
-                } else if (user?.role === "FINANCIER") {
-                    router.push('/financial/home');
-                } else {
-                    // Fallback ou autre rôle
-                    router.push('/agent/home');
-                }
-            } else {
-                toast.error(user.error || 'Email ou mot de passe incorrect');
-            }
+            // Utilisez la fonction login du contexte au lieu de fetch
+            await login(email, password);
+            toast.success('Connexion réussie 🎉');
+            // La redirection est gérée automatiquement par AuthContext.js
         } catch (err) {
-            toast.error('Erreur de connexion au serveur.');
+            toast.error(err.message || 'Email ou mot de passe incorrect');
             console.error(err);
         } finally {
             setLoading(false);

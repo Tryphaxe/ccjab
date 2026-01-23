@@ -16,18 +16,20 @@ export async function middleware(request) {
   
   // Chemins protégés par rôle
   const isAdminPath = pathname.startsWith("/dashboard");
-  const isFinancePath = pathname.startsWith("/finance");
+  const isFinancePath = pathname.startsWith("/financial");
+  const isEditorPath = pathname.startsWith("/editor");
   const isAgentPath = pathname.startsWith("/agent");
 
   // A. Si non connecté et essaie d'accéder à une page protégée
-  if (!isAuth && (isAdminPath || isFinancePath || isAgentPath)) {
+  if (!isAuth && (isAdminPath || isFinancePath || isEditorPath || isAgentPath)) {
     return NextResponse.redirect(new URL("/auth/login", request.url));
   }
 
   // B. Si connecté mais essaie d'aller sur login (on le renvoie chez lui)
   if (isAuth && isLoginPage) {
     if (payload.role === 'ADMIN') return NextResponse.redirect(new URL("/dashboard/home", request.url));
-    if (payload.role === 'FINANCIER') return NextResponse.redirect(new URL("/finance/dashboard", request.url));
+    if (payload.role === 'FINANCIER') return NextResponse.redirect(new URL("/financial/home", request.url));
+    if (payload.role === 'EDITEUR') return NextResponse.redirect(new URL("/editor/home", request.url));
     if (payload.role === 'AGENT') return NextResponse.redirect(new URL("/agent/home", request.url));
   }
 
@@ -39,6 +41,12 @@ export async function middleware(request) {
     if (isFinancePath && payload.role !== "FINANCIER" && payload.role !== "ADMIN") {
         return NextResponse.redirect(new URL("/unauthorized", request.url));
     }
+    if (isEditorPath && payload.role !== "EDITEUR" && payload.role !== "ADMIN") {
+        return NextResponse.redirect(new URL("/unauthorized", request.url));
+    }
+    if (isAgentPath && payload.role !== "AGENT" && payload.role !== "ADMIN") {
+        return NextResponse.redirect(new URL("/unauthorized", request.url));
+    }
   }
 
   return NextResponse.next();
@@ -46,5 +54,5 @@ export async function middleware(request) {
 
 // Configurer sur quelles routes le middleware s'active
 export const config = {
-  matcher: ["/dashboard/:path*", "/financial/:path*", "/agent/:path*"],
+  matcher: ["/dashboard/:path*", "/financial/:path*", "/editor/:path*", "/agent/:path*"],
 };

@@ -26,12 +26,26 @@ model User {
   // Relations
   notifs Notif[]
   events Even[]  @relation("UserEvents")
+  posts  Post[]
 }
 
 enum Role {
   ADMIN
   AGENT
   FINANCIER
+  EDITEUR
+}
+
+model Post {
+  id          String   @id @default(uuid())
+  titre       String
+  contenu     String?
+  type        String   // 'PUB' ou 'ACTU'
+  mediaUrl    String?  // Pour les images ou vidéos
+  isPromoted  Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  authorId    String
+  author      User     @relation(fields: [authorId], references: [id])
 }
 
 // ==========================
