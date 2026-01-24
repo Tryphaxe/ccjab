@@ -29,7 +29,7 @@ export default function EspacesPage() {
         {/* Image de fond subtile */}
         <div className="absolute inset-0 opacity-40">
           <img
-            src="https://lh3.googleusercontent.com/gps-cs-s/AG0ilSxDqbSdEdKyDnwVpmVT8y7Q4iNeG_1P88PMC1JJTnTDelI6A6BsZnR4sirINd3fXxGW8GmgmoXyqwrphCtqHPar2swBEqf0fOib-R0dw_kSKbQVnRz-qTX0FnHzlAJzz68BJLgNmb777YUw=s1360-w1360-h1020-rw"
+            src="https://media.istockphoto.com/id/1295114854/fr/photo/fauteuils-rouges-vides-dun-th%C3%A9%C3%A2tre-pr%C3%AAt-pour-un-spectacle.jpg?s=612x612&w=0&k=20&c=JcBwWuzI4bWocUSUqQNSb9PYhkNoU8XLUXEfdBM-jH8="
             alt="Architecture background"
             className="w-full h-full object-cover grayscale"
           />

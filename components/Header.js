@@ -12,7 +12,8 @@ import {
     Newspaper,
     LogOut,
     Slash, // Icône pour le style breadcrumb
-    X
+    X,
+    HandCoins
 } from 'lucide-react';
 import { Menu, MenuButton, MenuItem, MenuItems, Transition } from '@headlessui/react';
 import { Fragment, useEffect, useState } from 'react';
@@ -27,15 +28,16 @@ import { Button } from '@/components/ui/button';
 const navigation = [
     { name: 'Vue d\'ensemble', href: '/dashboard/home', icon: Home },
     { name: 'Salles', href: '/dashboard/salle', icon: Warehouse },
+    { name: 'Posts', href: '/dashboard/posts', icon: Newspaper },
     { name: 'Évènements', href: '/dashboard/evenements', icon: PartyPopper },
-    { name: 'Finance', href: '/dashboard/accounting', icon: Newspaper },
+    { name: 'Finance', href: '/dashboard/accounting', icon: HandCoins },
     { name: 'Équipe', href: '/dashboard/users', icon: ShieldUser },
 ];
 
 const finance = [
     { name: 'Vue d\'ensemble', href: '/financial/home', icon: Home },
     { name: 'Évènements', href: '/financial/evenements', icon: PartyPopper },
-    { name: 'Rapports', href: '/financial/accounting', icon: Newspaper },
+    { name: 'Rapports', href: '/financial/accounting', icon: HandCoins },
 ];
 
 const editor = [

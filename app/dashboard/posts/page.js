@@ -14,6 +14,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
+import Dash from "./Dash";
 
 export default function PostsPage() {
   const [posts, setPosts] = useState([]);
@@ -179,7 +180,7 @@ export default function PostsPage() {
     return (
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
         {filtered.map((post) => (
-          <Card key={post.id} className="group overflow-hidden flex flex-col hover:shadow-lg transition-all">
+          <Card key={post.id} className="group overflow-hidden flex flex-col transition-all">
             <div className="relative h-48 w-full bg-gray-100 overflow-hidden">
               {post.mediaUrl ? (
                 post.mediaUrl.match(/\.(mp4|webm|ogg|mov)$/i) ? (
@@ -219,7 +220,8 @@ export default function PostsPage() {
   };
 
   return (
-    <div className="space-y-8 min-h-screen bg-gray-50/50 p-6 md:p-10">
+    <div className="space-y-8 min-h-screen bg-gray-50/50 p-4">
+      <Dash />
       <div className="flex justify-between items-center">
         <h2 className="text-3xl font-bold">Gestion des Contenus</h2>
 

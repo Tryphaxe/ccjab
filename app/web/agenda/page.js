@@ -24,6 +24,15 @@ export default function AgendaPage() {
   const types = ['Tout', 'Concert', 'Théâtre', 'Exposition', 'Atelier', 'Cinéma'];
 
   const filteredEvents = events.filter(event => {
+    const now = new Date();
+    const endDate = new Date(event.date_fin);
+    
+    // Si l'événement est terminé, on ne l'affiche pas (return false)
+    if (endDate < now) return false;
+    
+    // Si l'événement est marqué "non visible" par le switch, on ne l'affiche pas
+    if (!event.visible) return false;
+    
     const matchesTypes = filter === 'Tout' || event.type === filter;
     const matchesSearch = event.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
       event.description?.toLowerCase().includes(searchTerm.toLowerCase());
@@ -82,8 +91,8 @@ export default function AgendaPage() {
                   key={cat}
                   onClick={() => setFilter(cat)}
                   className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-all ${filter === cat
-                      ? 'bg-emerald-600 text-white shadow-md shadow-emerald-600/20'
-                      : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                    ? 'bg-emerald-600 text-white shadow-md shadow-emerald-600/20'
+                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
                     }`}
                 >
                   {cat}
@@ -122,7 +131,7 @@ export default function AgendaPage() {
                     {/* Image */}
                     <div className="relative h-56 overflow-hidden">
                       <img
-                        src={event.image}
+                        src={event.image || "/images/default-salle.png"} // Utilise l'image par défaut si vide
                         alt={event.type}
                         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
                       />
@@ -161,11 +170,11 @@ export default function AgendaPage() {
                           )}
                         </div>
 
-                        <div className="pt-4 mt-auto border-t border-gray-100 flex items-center justify-between">
+                        {/* <div className="pt-4 mt-auto border-t border-gray-100 flex items-center justify-between">
                           <button className="text-sm font-semibold text-gray-900 flex items-center gap-1 group-hover:translate-x-1 transition-transform">
                             Détails <ChevronRight size={16} className="text-emerald-500" />
                           </button>
-                        </div>
+                        </div> */}
                       </div>
                     </div>
                   </div>
