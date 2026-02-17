@@ -2,8 +2,8 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { usePathname, useRouter } from 'next/navigation';
-import { Music, Menu, X, Phone } from 'lucide-react';
+import { usePathname } from 'next/navigation';
+import { Menu, X, Phone, ChevronDown } from 'lucide-react'; // Ajout de ChevronDown
 import Image from 'next/image';
 
 export default function Navbar() {
@@ -21,11 +21,22 @@ export default function Navbar() {
   // Fonction utilitaire pour savoir si un lien est actif
   const isActive = (path) => pathname === path;
 
+  // Configuration des liens avec sous-menus
   const navLinks = [
     { name: 'Accueil', href: '/web/home' },
     { name: 'Agenda', href: '/web/agenda' },
     { name: 'Nos Espaces', href: '/web/espaces' },
+    { name: 'Actualités', href: '/web/actualite' }, // J'ai conservé Actualités si vous l'aviez ajouté précédemment
     { name: 'Contact', href: '/web/contact' },
+    {
+      name: 'À propos',
+      href: '#', // Lien parent non cliquable ou redirigeant vers une page générale
+      subLinks: [
+        { name: 'Historique', href: '/web/historique' },
+        { name: 'Médiathèque', href: '/web/mediatheque' },
+        { name: 'Ludothèque', href: '/web/ludotheque' },
+      ]
+    },
   ];
 
   return (
@@ -57,23 +68,53 @@ export default function Navbar() {
           {/* MENU DESKTOP */}
           <div className="hidden md:flex items-center space-x-8">
             {navLinks.map((link) => (
-              <Link
-                key={link.name}
-                href={link.href}
-                className={`text-sm font-medium transition-colors relative hover:text-emerald-500 ${isActive(link.href)
-                    ? 'text-emerald-600 font-bold'
-                    : scrolled ? 'text-gray-600' : 'text-white/90 hover:text-white mix-blend-difference'
-                  }`}
-              >
-                {link.name}
-                {isActive(link.href) && (
-                  <span className="absolute -bottom-1 left-0 w-full h-0.5 bg-emerald-600 rounded-full"></span>
+              <div key={link.name} className="relative group">
+                {/* Si le lien a des sous-liens */}
+                {link.subLinks ? (
+                  <button
+                    className={`flex items-center gap-1 text-sm font-medium transition-colors hover:text-emerald-500 py-2 ${scrolled ? 'text-gray-600' : 'text-white/90 hover:text-white mix-blend-difference'
+                      }`}
+                  >
+                    {link.name}
+                    <ChevronDown size={14} className="group-hover:rotate-180 transition-transform duration-200" />
+                  </button>
+                ) : (
+                  /* Lien standard */
+                  <Link
+                    href={link.href}
+                    className={`text-sm font-medium transition-colors relative hover:text-emerald-500 ${isActive(link.href)
+                      ? 'text-emerald-600 font-bold'
+                      : scrolled ? 'text-gray-600' : 'text-white/90 hover:text-white mix-blend-difference'
+                      }`}
+                  >
+                    {link.name}
+                    {isActive(link.href) && (
+                      <span className="absolute -bottom-1 left-0 w-full h-0.5 bg-emerald-600 rounded-full"></span>
+                    )}
+                  </Link>
                 )}
-              </Link>
+
+                {/* Dropdown (Menu déroulant) */}
+                {link.subLinks && (
+                  <div className="absolute left-1/2 -translate-x-1/2 top-full pt-2 w-48 hidden group-hover:block hover:block">
+                    <div className="bg-white rounded-xl shadow-xl border border-gray-100 overflow-hidden py-1 animate-in fade-in zoom-in-95 duration-200">
+                      {link.subLinks.map((subLink) => (
+                        <Link
+                          key={subLink.name}
+                          href={subLink.href}
+                          className="block px-4 py-2 text-sm text-gray-700 hover:bg-emerald-50 hover:text-emerald-600 transition-colors"
+                        >
+                          {subLink.name}
+                        </Link>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
             ))}
 
             <button className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-2.5 rounded-full text-sm font-semibold transition-all shadow-lg shadow-emerald-600/30 hover:-translate-y-0.5">
-              <Phone size={14}/> Appelez-nous
+              <Phone size={14} /> Appelez-nous
             </button>
           </div>
 
@@ -89,22 +130,46 @@ export default function Navbar() {
         </div>
       </div>
 
-      {/* MENU MOBILE (DROPDOWN) */}
+      {/* MENU MOBILE */}
       {isMenuOpen && (
-        <div className="md:hidden absolute top-full left-0 w-full bg-white border-t border-gray-100 shadow-xl animate-in slide-in-from-top-5">
+        <div className="md:hidden absolute top-full left-0 w-full bg-white border-t border-gray-100 shadow-xl animate-in slide-in-from-top-5 max-h-[80vh] overflow-y-auto">
           <div className="px-4 py-6 space-y-2">
             {navLinks.map((link) => (
-              <Link
-                key={link.name}
-                href={link.href}
-                onClick={() => setIsMenuOpen(false)}
-                className={`block px-4 py-3 text-base font-medium rounded-xl transition-colors ${isActive(link.href)
-                    ? 'bg-emerald-50 text-emerald-700'
-                    : 'text-gray-600 hover:bg-gray-50'
-                  }`}
-              >
-                {link.name}
-              </Link>
+              <div key={link.name}>
+                {link.subLinks ? (
+                  /* Section avec sous-liens pour mobile */
+                  <div className="space-y-1">
+                    <div className="px-4 py-2 text-base font-bold text-gray-900">
+                      {link.name}
+                    </div>
+                    <div className="pl-4 border-l-2 border-gray-100 ml-4 space-y-1">
+                      {link.subLinks.map((subLink) => (
+                        <Link
+                          key={subLink.name}
+                          href={subLink.href}
+                          onClick={() => setIsMenuOpen(false)}
+                          className={`block px-4 py-2 text-sm font-medium rounded-lg transition-colors ${isActive(subLink.href) ? 'text-emerald-600 bg-emerald-50' : 'text-gray-500 hover:text-gray-900'
+                            }`}
+                        >
+                          {subLink.name}
+                        </Link>
+                      ))}
+                    </div>
+                  </div>
+                ) : (
+                  /* Lien standard mobile */
+                  <Link
+                    href={link.href}
+                    onClick={() => setIsMenuOpen(false)}
+                    className={`block px-4 py-3 text-base font-medium rounded-xl transition-colors ${isActive(link.href)
+                      ? 'bg-emerald-50 text-emerald-700'
+                      : 'text-gray-600 hover:bg-gray-50'
+                      }`}
+                  >
+                    {link.name}
+                  </Link>
+                )}
+              </div>
             ))}
             <button className="w-full mt-4 bg-emerald-600 text-white px-5 py-3.5 rounded-xl font-bold shadow-lg shadow-emerald-600/20">
               Accéder à la billetterie

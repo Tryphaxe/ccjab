@@ -38,7 +38,7 @@ export default function EspacesPage() {
 
         <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <span className="inline-block py-1 px-3 rounded-full bg-emerald-500/20 border border-emerald-500/30 text-emerald-300 text-xs font-bold uppercase tracking-widest mb-4">
-            Locations & Privatisations
+            Locations
           </span>
           <h1 className="text-4xl md:text-5xl font-bold text-white mb-6">
             Des espaces conçus pour <br /> <span className="text-emerald-400">sublimer vos événements</span>

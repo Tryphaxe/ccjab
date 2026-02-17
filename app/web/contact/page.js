@@ -90,7 +90,8 @@ export default function ContactPage() {
                                     <div>
                                         <h4 className="font-bold text-sm text-emerald-200 uppercase tracking-wider mb-1">Téléphone</h4>
                                         <p className="text-sm">+225 07 07 07 07 07</p>
-                                        <p className="text-xs text-emerald-400 mt-1">Lun-Sam : 8h - 18h</p>
+                                        <p className="text-xs text-emerald-400 mt-1">Lun-Ven : 7h30 - 16h30</p>
+                                        <p className="text-xs text-emerald-400 mt-1">Sam : 8h - 13h</p>
                                     </div>
                                 </div>
 
@@ -100,7 +101,7 @@ export default function ContactPage() {
                                     </div>
                                     <div>
                                         <h4 className="font-bold text-sm text-emerald-200 uppercase tracking-wider mb-1">Email</h4>
-                                        <p className="text-sm break-all">contact@kora-culture.ci</p>
+                                        <p className="text-sm break-all">jacquesaka1974@gmail.com</p>
                                     </div>
                                 </div>
                             </div>

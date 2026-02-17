@@ -48,7 +48,7 @@ export default function Footer() {
               <span className="font-bold text-xl tracking-tight">CENTRE<span className="text-emerald-500">CULTUREL</span></span>
             </div>
             <p className="text-gray-400 text-sm leading-relaxed">
-              Le cœur battant de la culture à Bouaké. Concerts, théâtres, expositions et espaces de travail pour tous les passionnés d'art.
+              Le carrefour ideal de l'expression culturelle à Bouaké
             </p>
             <div className="flex gap-4 pt-2">
               <SocialIcon icon={Facebook} />
@@ -82,7 +82,7 @@ export default function Footer() {
               </li>
               <li className="flex items-center gap-3">
                 <Mail size={18} className="text-emerald-500 shrink-0" />
-                <span>contact@ccjab.ci</span>
+                <span>jacquesaka1974@gmail.com</span>
               </li>
             </ul>
           </div>

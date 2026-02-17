@@ -62,7 +62,7 @@ export default function AgendaPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 text-center">
           <h1 className="text-4xl md:text-5xl font-bold text-white mb-4">Programmation Culturelle</h1>
           <p className="text-emerald-100 text-lg max-w-2xl mx-auto">
-            Retrouvez tous les concerts, spectacles, expositions et ateliers du Centre Jacques Aka.
+            Retrouvez tous les concerts, cinéma, spectacles, expositions et ateliers du Centre Jacques Aka.
           </p>
         </div>
       </div>

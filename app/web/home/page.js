@@ -101,15 +101,15 @@ export default function CulturalCenterHome() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
           <div className="text-center max-w-4xl mx-auto">
             <h1 className="text-5xl md:text-7xl font-extrabold text-white tracking-tight mb-6 leading-tight drop-shadow-lg">
-              L'Art au cœur <br /> de <span className="text-emerald-400 relative inline-block">
-                votre vie
+              L'Art de rassembler, <br /> la <span className="text-emerald-400 relative inline-block">
+                culture de partager
                 <svg className="absolute w-full h-3 -bottom-1 left-0 text-emerald-500 -z-10 opacity-80" viewBox="0 0 100 10" preserveAspectRatio="none">
                   <path d="M0 5 Q 50 10 100 5" stroke="currentColor" strokeWidth="8" fill="none" />
                 </svg>
               </span>
             </h1>
             <p className="text-xl text-gray-100 mb-10 leading-relaxed drop-shadow-md">
-              Découvrez le <strong>Centre Culturel Jacques Aka</strong>, un espace unique dédié à la création, à la performance et à l'échange.
+              Le <strong>Centre Culturel Jacques Aka</strong>, lieu d'innovation et de diversité culturelles.
             </p>
             <div className="flex justify-center">
               <button onClick={redirect} className="px-8 py-4 bg-emerald-600 text-white rounded-full font-semibold hover:bg-emerald-500 transition-all flex items-center justify-center gap-2 shadow-xl border border-transparent">
