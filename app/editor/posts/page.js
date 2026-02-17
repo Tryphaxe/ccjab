@@ -15,7 +15,6 @@ import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea"; // Assure-toi d'avoir ce composant ou utilise <textarea> standard
-import Dash from "./Dash";
 
 export default function PostsPage() {
   const [posts, setPosts] = useState([]);
@@ -300,8 +299,6 @@ export default function PostsPage() {
 
   return (
     <div className="space-y-8 min-h-screen bg-gray-50/50 p-4 lg:p-8">
-      <Dash />
-
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <h2 className="text-3xl font-bold tracking-tight text-gray-900">Gestion des Contenus</h2>
