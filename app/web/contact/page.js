@@ -89,7 +89,7 @@ export default function ContactPage() {
                                     </div>
                                     <div>
                                         <h4 className="font-bold text-sm text-emerald-200 uppercase tracking-wider mb-1">Téléphone</h4>
-                                        <p className="text-sm">+225 07 07 07 07 07</p>
+                                        <p className="text-sm">+225 01 50 985 220</p>
                                         <p className="text-xs text-emerald-400 mt-1">Lun-Ven : 7h30 - 16h30</p>
                                         <p className="text-xs text-emerald-400 mt-1">Sam : 8h - 13h</p>
                                     </div>
@@ -110,14 +110,13 @@ export default function ContactPage() {
                         <div className="mt-12">
                             <h4 className="font-bold text-sm text-emerald-200 uppercase tracking-wider mb-4">Réseaux Sociaux</h4>
                             <div className="flex gap-4">
-                                <a href="#" className="w-10 h-10 border border-emerald-600 rounded-full flex items-center justify-center hover:bg-emerald-600 transition-all">
-                                    <Facebook size={18} />
-                                </a>
-                                <a href="#" className="w-10 h-10 border border-emerald-600 rounded-full flex items-center justify-center hover:bg-emerald-600 transition-all">
-                                    <Twitter size={18} />
-                                </a>
-                                <a href="#" className="w-10 h-10 border border-emerald-600 rounded-full flex items-center justify-center hover:bg-emerald-600 transition-all">
-                                    <Instagram size={18} />
+                                <a
+                                    href="https://www.facebook.com/share/p/1BDVJJtsMz/"
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="p-2 bg-emerald-800 rounded-full hover:bg-emerald-600 transition-colors"
+                                >
+                                    <Facebook size={20} />
                                 </a>
                             </div>
                         </div>

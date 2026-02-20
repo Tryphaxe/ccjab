@@ -120,9 +120,9 @@ export default function EspacesPage() {
                       <span className="text-sm font-bold text-gray-900">
                         Sur devis
                       </span>
-                      <button className="text-sm font-semibold text-emerald-600 hover:text-emerald-800 flex items-center gap-1 transition-colors">
+                      <a href="tel:+2250150985220" className="text-sm font-semibold text-emerald-600 hover:text-emerald-800 flex items-center gap-1 transition-colors">
                         Appelez-nous <ArrowRight size={16} />
-                      </button>
+                      </a>
                     </div>
                   </div>
                 </div>

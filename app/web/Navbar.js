@@ -26,7 +26,7 @@ export default function Navbar() {
     { name: 'Accueil', href: '/web/home' },
     { name: 'Agenda', href: '/web/agenda' },
     { name: 'Nos Espaces', href: '/web/espaces' },
-    { name: 'Actualités', href: '/web/actualite' }, // J'ai conservé Actualités si vous l'aviez ajouté précédemment
+    { name: 'Actualités', href: '/web/actualites' }, // J'ai conservé Actualités si vous l'aviez ajouté précédemment
     { name: 'Contact', href: '/web/contact' },
     {
       name: 'À propos',
@@ -113,9 +113,12 @@ export default function Navbar() {
               </div>
             ))}
 
-            <button className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-2.5 rounded-full text-sm font-semibold transition-all shadow-lg shadow-emerald-600/30 hover:-translate-y-0.5">
+            <a
+              href="tel:+2250150985220"
+              className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-2.5 rounded-full text-sm font-semibold transition-all shadow-lg shadow-emerald-600/30 hover:-translate-y-0.5"
+            >
               <Phone size={14} /> Appelez-nous
-            </button>
+            </a>
           </div>
 
           {/* BOUTON MOBILE */}

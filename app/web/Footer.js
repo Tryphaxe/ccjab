@@ -51,9 +51,14 @@ export default function Footer() {
               Le carrefour ideal de l'expression culturelle à Bouaké
             </p>
             <div className="flex gap-4 pt-2">
-              <SocialIcon icon={Facebook} />
-              <SocialIcon icon={Instagram} />
-              <SocialIcon icon={Twitter} />
+              <a
+                href="https://www.facebook.com/share/p/1BDVJJtsMz/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="p-2 bg-emerald-800 rounded-full hover:bg-emerald-600 transition-colors"
+              >
+                <Facebook size={20} />
+              </a>
             </div>
           </div>
 
@@ -78,7 +83,7 @@ export default function Footer() {
               </li>
               <li className="flex items-center gap-3">
                 <Phone size={18} className="text-emerald-500 shrink-0" />
-                <span>+225 07 07 07 07 07</span>
+                <span>+225 01 50 985 220</span>
               </li>
               <li className="flex items-center gap-3">
                 <Mail size={18} className="text-emerald-500 shrink-0" />
