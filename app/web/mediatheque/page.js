@@ -6,13 +6,13 @@ import { BookOpen, Search, Monitor, Library, Coffee, GraduationCap, ArrowRight, 
 export default function MediathequePage() {
   return (
     <div className="min-h-screen bg-white text-gray-900 selection:bg-emerald-100 selection:text-emerald-900">
-      
+
       {/* ================= HERO SECTION ================= */}
       <section className="relative pt-32 pb-20 bg-emerald-950 text-white overflow-hidden">
         {/* Motif de fond subtil */}
         <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/black-scales.png')] opacity-20"></div>
         <div className="absolute inset-0 bg-gradient-to-tr from-emerald-900/90 to-black/60"></div>
-        
+
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 text-center">
           <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-emerald-800/50 border border-emerald-700 text-emerald-300 text-sm font-medium mb-6 backdrop-blur-sm">
             <Library size={16} />
@@ -30,7 +30,7 @@ export default function MediathequePage() {
       {/* ================= PRÉSENTATION & FONDS DOCUMENTAIRE ================= */}
       <section className="py-20 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid lg:grid-cols-2 gap-16 items-center">
-          
+
           <div className="space-y-8">
             <div>
               <h2 className="text-3xl font-bold text-gray-900 mb-6 flex items-center gap-3">
@@ -40,7 +40,7 @@ export default function MediathequePage() {
               <p className="text-gray-600 leading-relaxed text-lg mb-6">
                 La médiathèque met à la disposition du public une collection riche et diversifiée. Que vous soyez étudiant, chercheur ou simplement passionné de lecture, vous y trouverez votre bonheur.
               </p>
-              
+
               <ul className="space-y-4">
                 <li className="flex items-start gap-3">
                   <div className="mt-1 bg-emerald-100 p-1 rounded-full text-emerald-600"><CheckCircle2 size={16} /></div>
@@ -66,14 +66,14 @@ export default function MediathequePage() {
 
           {/* Image Illustration */}
           <div className="relative h-[450px] rounded-3xl overflow-hidden shadow-2xl group">
-             <img 
-              src="/images/mediath.jpeg" 
-              alt="Intérieur de la médiathèque" 
+            <img
+              src="/images/mediath.jpeg"
+              alt="Intérieur de la médiathèque"
               className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
             />
             <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
             <div className="absolute bottom-6 left-6 text-white">
-                <p className="font-bold text-lg">Un cadre propice à l'étude</p>
+              <p className="font-bold text-lg">Un cadre propice à l'étude</p>
             </div>
           </div>
 
@@ -110,7 +110,7 @@ export default function MediathequePage() {
 
             {/* Carte Cairn.info */}
             <div className="bg-white p-8 rounded-2xl shadow-sm border border-emerald-100 hover:shadow-xl hover:-translate-y-1 transition-all duration-300 relative overflow-hidden">
-               <div className="absolute top-0 right-0 p-6 opacity-5"><Search size={100} /></div>
+              <div className="absolute top-0 right-0 p-6 opacity-5"><Search size={100} /></div>
               <div className="w-16 h-16 bg-red-50 text-red-600 rounded-2xl flex items-center justify-center mb-6">
                 <GraduationCap size={32} />
               </div>
@@ -131,7 +131,7 @@ export default function MediathequePage() {
       <section className="py-20 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="bg-gray-900 rounded-3xl overflow-hidden text-white relative">
           <div className="absolute inset-0 bg-emerald-900/30"></div>
-          
+
           <div className="grid md:grid-cols-2">
             <div className="p-10 md:p-16 flex flex-col justify-center relative z-10">
               <h2 className="text-3xl font-bold mb-6">Un espace d'apprentissage autonome</h2>
@@ -144,13 +144,16 @@ export default function MediathequePage() {
                   <span className="font-medium">Cadre Confortable</span>
                 </div>
                 <div className="flex items-center gap-3">
-                   <div className="p-2 bg-gray-800 rounded-lg text-emerald-400"><Monitor size={20} /></div>
+                  <div className="p-2 bg-gray-800 rounded-lg text-emerald-400"><Monitor size={20} /></div>
                   <span className="font-medium">Accès Internet</span>
                 </div>
               </div>
             </div>
-            
-            <div className="h-full min-h-[300px] bg-[url('https://images.unsplash.com/photo-1497366216548-37526070297c?q=80&w=1000&auto=format&fit=crop')] bg-cover bg-center relative">
+
+            <div
+              className="h-full min-h-[300px] bg-cover bg-center relative"
+              style={{ backgroundImage: "url('/images/mediath2.jpeg')" }} // Assurez-vous que l'image est dans public/votre-image.jpg
+            >
               <div className="absolute inset-0 bg-gradient-to-l from-gray-900 via-transparent to-transparent"></div>
             </div>
           </div>
