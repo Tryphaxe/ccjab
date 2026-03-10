@@ -57,17 +57,17 @@ export default function MediathequePage() {
               </ul>
             </div>
 
-            <div className="pt-4">
+            {/* <div className="pt-4">
               <button className="bg-gray-900 text-white px-6 py-3 rounded-full font-semibold hover:bg-gray-800 transition-colors flex items-center gap-2">
                 Consulter le catalogue <ArrowRight size={18} />
               </button>
-            </div>
+            </div> */}
           </div>
 
           {/* Image Illustration */}
           <div className="relative h-[450px] rounded-3xl overflow-hidden shadow-2xl group">
              <img 
-              src="https://images.unsplash.com/photo-1521587760476-6c12a4b040da?q=80&w=1000&auto=format&fit=crop" 
+              src="/images/mediath.jpeg" 
               alt="Intérieur de la médiathèque" 
               className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
             />

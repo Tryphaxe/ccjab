@@ -34,7 +34,7 @@ export default function LudothequePage() {
           <div className="relative">
             <div className="absolute -inset-4 bg-emerald-100 rounded-full blur-2xl opacity-50"></div>
             <img 
-              src="https://images.unsplash.com/vector-1738325063780-d211d6d2edde?q=80&w=880&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D" 
+              src="/images/ludoth.jpeg" 
               alt="Enfants jouant à des jeux de société" 
               className="relative rounded-3xl shadow-2xl rotate-2 hover:rotate-0 transition-all duration-500 border-4 border-white"
             />

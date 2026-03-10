@@ -155,7 +155,7 @@ export default function DayCalendar({ events = [] }) {
                                         <div>
                                             <div className="flex items-center justify-between mb-1">
                                                 <span className="font-bold text-sm text-gray-900 truncate pr-2">
-                                                    {e.salle?.nom_salle || "Salle Inconnue"}
+                                                    {e.nom_evenement || e.nom_salle || "Évènement sans nom"}
                                                 </span>
                                                 <Badge variant="outline" className="text-[10px] px-1 py-0 h-5 bg-gray-50 text-gray-600 border-gray-200">
                                                     {e.categorie}

@@ -165,7 +165,7 @@ export default function CalendarView({ events }) {
                           `}
                         >
                           <div className="flex items-center justify-between w-full">
-                            <span className="truncate leading-tight font-bold">{event.nom_salle || "Salle inconnue"}</span>
+                            <span className="truncate leading-tight font-bold">{event.nom_evenement || event.nom_salle || "Évènement sans nom"}</span>
                           </div>
                           <span className="truncate opacity-80 font-normal leading-tight">{event.type}</span>
                         </button>
@@ -199,7 +199,7 @@ export default function CalendarView({ events }) {
               <span className="text-xs text-gray-500 font-medium">#{selectedEvent?.type_evenement}</span>
             </div>
             <DialogTitle className="text-xl text-gray-900">
-              {selectedEvent?.nom_salle || selectedEvent?.salle?.nom || "Non spécifié"}
+              {selectedEvent?.nom_evenement || "Non spécifié"}
             </DialogTitle>
             <DialogDescription className="mt-1">
               {selectedEvent && (

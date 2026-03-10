@@ -143,6 +143,16 @@ const EventFormFields = React.memo(
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div className="space-y-1 sm:col-span-2">
+                        <Label htmlFor="nom_evenement" className="text-xs text-gray-500">Nom de l'évènement</Label>
+                        <Input
+                            id="nom_evenement"
+                            name="nom_evenement"
+                            value={form.nom_evenement}
+                            onChange={handleChange}
+                            placeholder="ex: Gala de charité 2026"
+                        />
+                    </div>
+                    <div className="space-y-1 sm:col-span-2">
                         <Label className="text-xs text-gray-500">Lieu</Label>
                         <Select value={form.salle_id} onValueChange={(value) => handleSelectChange("salle_id", value)}>
                             <SelectTrigger>
@@ -258,6 +268,7 @@ export default function page() {
     const [pdfLink, setPdfLink] = useState(null);
 
     const [form, setForm] = useState({
+        nom_evenement: '',
         categorie: '',
         montant: '',
         avance: '',
@@ -303,6 +314,7 @@ export default function page() {
         setPdfFile(null);
         setPdfLink(null);
         setForm({
+            nom_evenement: '',
             categorie: '',
             montant: '',
             avance: '',
@@ -746,7 +758,7 @@ export default function page() {
                                     <div className="min-w-0 flex-1">
                                         <div className="flex items-center gap-2 mb-1">
                                             <span className="text-base font-bold text-gray-900 truncate" title={event.type}>
-                                                {event.type}
+                                                {event.nom_evenement || event.type || "Évènement sans nom"}
                                             </span>
                                             <span className={`text-[10px] uppercase font-bold px-2 py-0.5 rounded-full shrink-0 ${getEventStatus(event.date_debut, event.date_fin) === 'En cours' ? 'text-yellow-700 bg-yellow-100' :
                                                 getEventStatus(event.date_debut, event.date_fin) === 'A venir' ? 'text-blue-700 bg-blue-100' :
@@ -841,6 +853,7 @@ export default function page() {
                                                 setPdfLink(event.fiche || null); // On charge l'URL existante
                                                 setPdfFile(null);
                                                 setForm({
+                                                    nom_evenement: event.nom_evenement || '',
                                                     categorie: event.categorie || '',
                                                     montant: event.montant || '',
                                                     avance: event.avance || '',

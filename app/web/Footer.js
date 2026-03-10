@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
-import { MapPin, Phone, Mail, Facebook, Instagram, Twitter } from 'lucide-react';
+import { MapPin, Phone, Mail, Facebook, Youtube, Music } from 'lucide-react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 
@@ -50,14 +50,39 @@ export default function Footer() {
             <p className="text-gray-400 text-sm leading-relaxed">
               Le carrefour ideal de l'expression culturelle à Bouaké
             </p>
-            <div className="flex gap-4 pt-2">
+            <div className="flex gap-3 pt-2 items-center">
+              {/* Facebook */}
               <a
                 href="https://www.facebook.com/share/p/1BDVJJtsMz/"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="p-2 bg-emerald-800 rounded-full hover:bg-emerald-600 transition-colors"
+                className="w-9 h-9 flex items-center justify-center bg-[#1877F2] text-white rounded-full hover:opacity-80 transition-all shadow-sm"
+                title="Suivre sur Facebook"
               >
-                <Facebook size={20} />
+                <Facebook size={18} />
+              </a>
+
+              {/* YouTube */}
+              <a
+                href="https://youtube.com/@ccjab-tv?si=_qS64Dbhr7z1fFAJ"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-9 h-9 flex items-center justify-center bg-[#FF0000] text-white rounded-full hover:opacity-80 transition-all shadow-sm"
+                title="S'abonner sur YouTube"
+              >
+                <Youtube size={18} />
+              </a>
+
+              {/* TikTok */}
+              <a
+                href="https://vm.tiktok.com/ZS9eP6EAxfCF8-zbKMl/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-9 h-9 flex items-center justify-center bg-black text-white rounded-full hover:bg-gray-800 transition-all shadow-sm"
+                title="Suivre sur TikTok"
+              >
+                {/* Utilisation de l'icône FontAwesome ou Music si Lucide n'a pas TikTok */}
+                <i className="fa-brands fa-tiktok text-[16px]"></i>
               </a>
             </div>
           </div>

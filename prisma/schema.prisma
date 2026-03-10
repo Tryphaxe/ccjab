@@ -83,6 +83,7 @@ model SalleCommodite {
 // ==========================
 model Even {
   id             String   @id @default(uuid())
+  nom_evenement  String?
   categorie      String
   montant        Float?
   avance         Float?

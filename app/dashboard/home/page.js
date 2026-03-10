@@ -54,6 +54,7 @@ export default function Page() {
     // Utilisation de useMemo pour éviter de recalculer à chaque rendu
     const formattedEvents = useMemo(() => events.map((e) => ({
         id: e.id,
+        nom_evenement: e.nom_evenement,
         nom_salle: e.salle.nom_salle,
         agent: { nom: e.agent.name },
         type_evenement: e.type,
