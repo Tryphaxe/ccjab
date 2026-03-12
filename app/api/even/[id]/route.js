@@ -37,6 +37,7 @@ export async function PATCH(request, { params }) {
     // 2. GESTION DU FORMULAIRE ET DE L'IMAGE
     
     // Champs Textes
+    if (body.nom_evenement !== undefined) updateData.nom_evenement = body.nom_evenement;
     if (body.nom_client !== undefined) updateData.nom_client = body.nom_client;
     if (body.contact_client !== undefined) updateData.contact_client = body.contact_client;
     if (body.categorie !== undefined) updateData.categorie = body.categorie;

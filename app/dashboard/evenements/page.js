@@ -256,7 +256,7 @@ export default function page() {
     const [salles, setSalles] = useState([])
     const [isloading, setIsLoading] = useState(true)
     const [loading, setLoading] = useState(false)
-    const [openn, setOpenn] = useState(false);
+    // const [openn, setOpenn] = useState(false);
     const [selectedEvent, setSelectedEvent] = useState(null);
     const [eventToDelete, setEventToDelete] = useState(null);
     const [open, setOpen] = useState(false);
@@ -879,7 +879,6 @@ export default function page() {
                                             className="h-8 w-8 bg-white text-red-500 border border-red-100 hover:bg-red-50 hover:text-red-700 shadow-sm"
                                             onClick={() => {
                                                 setEventToDelete(event);
-                                                setOpenn(true);
                                             }}
                                         >
                                             <Trash2 className="w-3.5 h-3.5" />

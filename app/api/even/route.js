@@ -21,7 +21,7 @@ export async function GET() {
 // ➕ POST : créer une nouvelle even
 export async function POST(req) {
     try {
-        const { categorie, montant, avance, date_debut, date_fin, description, nom_client, contact_client, type, salle_id, agent_id, image, fiche } = await req.json();
+        const { nom_evenement, categorie, montant, avance, date_debut, date_fin, description, nom_client, contact_client, type, salle_id, agent_id, image, fiche } = await req.json();
 
         // Vérification simple avant insertion
         if (!nom_client || !categorie || !salle_id || !agent_id || !type || !montant || !date_debut || !date_fin) {
@@ -64,6 +64,7 @@ export async function POST(req) {
         // 2. Création de l'événement
         const even = await prisma.even.create({
             data: {
+                nom_evenement,
                 categorie,
                 montant: montant ? parseFloat(montant) : null,
                 avance: avance ? parseFloat(avance) : 0,
@@ -83,7 +84,7 @@ export async function POST(req) {
         // 3. Création de la notification in-app
         await prisma.notif.create({
             data: {
-                message: `Vous avez été assigné à un évènement pour le ${newStart.toLocaleDateString("fr-FR")}.`,
+                message: `Vous avez été assigné à l'évènement "${nom_evenement}" pour le ${newStart.toLocaleDateString("fr-FR")}.`,
                 agent_id,
             },
         });
@@ -93,6 +94,7 @@ export async function POST(req) {
             // On ne met pas 'await' ici si on veut que la réponse soit rapide, 
             // mais mettre 'await' garantit que l'email est parti avant de répondre.
             await sendAssignmentEmail(agent.email, agent.name, {
+                nom_evenement,
                 date_debut: newStart,
                 date_fin: newEnd,
                 nom_client,
