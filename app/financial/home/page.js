@@ -62,7 +62,8 @@ export default function Page() {
     // Utilisation de useMemo pour éviter de recalculer à chaque rendu
     const formattedEvents = useMemo(() => events.map((e) => ({
         id: e.id,
-        nom_salle: e.salle.nom_salle,
+        nom_evenement: e.nom_evenement,
+        nom_salle: e.salles?.length > 0 ? e.salles.map(s => s.nom_salle).join(" + ") : "Aucune salle",
         agent: { nom: e.agent.name },
         type_evenement: e.type,
         categorie: e.categorie,
@@ -70,6 +71,7 @@ export default function Page() {
         date_debut: e.date_debut,
         date_fin: e.date_fin,
         montant: e.montant,
+        description: e.description,
         fiche: e.fiche
     })), [events]);
 

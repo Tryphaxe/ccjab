@@ -9,7 +9,7 @@ export async function GET(req, { params }) {
       where: { agent_id: agentId },
       orderBy: { createdAt: 'desc' },
       include: {
-        salle: true,
+        salles: true,
         agent: true,
       },
     });

@@ -55,6 +55,16 @@ export async function PATCH(req, { params }) {
       }
     }
 
+    if (dataToUpdate.password) {
+      // S'assurer que le mot de passe n'est pas vide avant de le crypter
+      if (dataToUpdate.password.trim() === "") {
+        delete dataToUpdate.password; // On l'ignore s'il est vide
+      } else {
+        const saltRounds = 10;
+        dataToUpdate.password = await bcrypt.hash(dataToUpdate.password, saltRounds);
+      }
+    }
+
     // ✅ Mise à jour de l'utilisateur
     const updated = await prisma.user.update({
       where: { id },

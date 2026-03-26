@@ -1,53 +1,31 @@
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 
-// 📄 GET : liste de toutes les salles
 export async function GET() {
-  try {
-    const stats = await prisma.even.groupBy({
-        by: ['salle_id'],
-        _count: {
-            id: true,
-        },
-        orderBy: {
-            _count: {
-                id: 'desc',
-            },
-        },
-        take: 8, // Top 8
-    })
+    try {
+        const salles = await prisma.salle.findMany({
+            select: {
+                nom_salle: true,
+                _count: {
+                    select: { events: true } // Compte les évènements dans la table de liaison
+                }
+            }
+        });
 
-    // 2. Récupérer le total pour les %
-    const totalEvents = await prisma.even.count();
+        // On formate les données pour le graphique (Donut Chart)
+        const topSalles = salles
+            .filter(salle => salle._count.events > 0) // On ignore les salles jamais utilisées
+            .map(salle => ({
+                name: salle.nom_salle,
+                value: salle._count.events
+            }))
+            .sort((a, b) => b.value - a.value) // Tri de la plus utilisée à la moins utilisée
+            .slice(0, 5); // Optionnel : On ne garde que le Top 5 pour ne pas surcharger le graphique
 
-    // 3. Formater les données pour le composant
-    const formattedStats = await Promise.all(
-        stats.map(async (stat) => {
-            if (!stat.salle_id) return null;
-
-            const salle = await prisma.salle.findUnique({
-                where: { id: stat.salle_id },
-                select: { nom_salle: true }
-            });
-
-            const count = stat._count.id;
-            // Calcul du pourcentage (évite la division par zéro)
-            const percentage = totalEvents > 0
-                ? Math.round((count / totalEvents) * 100)
-                : 0;
-
-            return {
-                name: salle?.nom_salle || "Salle Inconnue",
-                count: count,
-                percentage: percentage
-            };
-        })
-    );
-
-    const salles = formattedStats.filter((s) => s !== null);
-    return NextResponse.json(salles);
-  } catch (error) {
-    console.error('Erreur GET /api/topsalle:', error);
-    return NextResponse.json({ error: 'Erreur lors de la récupération.' }, { status: 500 });
-  }
+        return NextResponse.json(topSalles);
+        
+    } catch (error) {
+        console.error("Erreur API TopSalles :", error);
+        return NextResponse.json({ error: 'Erreur lors de la récupération des statistiques.' }, { status: 500 });
+    }
 }

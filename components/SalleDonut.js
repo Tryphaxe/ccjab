@@ -94,24 +94,32 @@ export default function TopSalles({ events = [] }) {
 
         // 1. Compter les occurrences par salle
         const stats = {};
-        events.forEach(e => {
-            // On gère les différents formats possibles (relation ou champ direct)
-            const nomSalle = e.salle?.nom_salle || e.nom_salle || "Salle inconnue";
-            
-            if (!stats[nomSalle]) {
-                stats[nomSalle] = 0;
-            }
-            stats[nomSalle] += 1;
-        });
+        let totalRoomAssignments = 0; // Pour calculer le vrai pourcentage (100% au total)
 
-        const total = events.length;
+        events.forEach(e => {
+            // ✅ NOUVEAU : On boucle sur le tableau de salles
+            if (e.salles && e.salles.length > 0) {
+                e.salles.forEach(s => {
+                    const nomSalle = s.nom_salle || "Salle inconnue";
+                    if (!stats[nomSalle]) stats[nomSalle] = 0;
+                    stats[nomSalle] += 1;
+                    totalRoomAssignments += 1;
+                });
+            } else {
+                // Cas où aucune salle n'est assignée
+                const nomSalle = "Aucune salle";
+                if (!stats[nomSalle]) stats[nomSalle] = 0;
+                stats[nomSalle] += 1;
+                totalRoomAssignments += 1;
+            }
+        });
 
         // 2. Transformer en tableau, trier et prendre le top 8
         return Object.entries(stats)
             .map(([name, count]) => ({
                 name,
                 count,
-                percentage: total > 0 ? Math.round((count / total) * 100) : 0
+                percentage: totalRoomAssignments > 0 ? Math.round((count / totalRoomAssignments) * 100) : 0
             }))
             .sort((a, b) => b.count - a.count)
             .slice(0, 8);
