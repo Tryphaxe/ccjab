@@ -55,14 +55,16 @@ export default function Page() {
     const formattedEvents = useMemo(() => events.map((e) => ({
         id: e.id,
         nom_evenement: e.nom_evenement,
-        nom_salle: e.salle.nom_salle,
-        agent: { nom: e.agent.name },
+        nom_salle: e.salles?.length > 0 ? e.salles.map(s => s.nom_salle).join(" + ") : "Aucune salle",
+        agent: { nom: e.agent?.name },
         type_evenement: e.type,
         categorie: e.categorie,
         statut: getEventStatus(e.date_debut, e.date_fin),
         date_debut: e.date_debut,
         date_fin: e.date_fin,
-        montant: e.montant
+        montant: e.montant,
+        description: e.description, // Sécurisé pour la modale
+        fiche: e.fiche // Sécurisé pour la modale
     })), [events]);
 
     const nbreven = events.length;

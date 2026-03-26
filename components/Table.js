@@ -16,14 +16,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { 
-    Phone, 
-    Loader2, 
-    Calendar, 
-    Clock, 
-    ChevronLeft, 
-    ChevronRight,
-    SearchX
+import {
+  Phone,
+  Loader2,
+  Calendar,
+  Clock,
+  ChevronLeft,
+  ChevronRight,
+  SearchX
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -44,10 +44,10 @@ export default function TableList() {
 
   // Calculs de pagination
   const totalPages = Math.ceil(events.length / rowsPerPage);
-  
+
   const paginatedEvents = useMemo(() => {
-      const startIndex = (currentPage - 1) * rowsPerPage;
-      return events.slice(startIndex, startIndex + rowsPerPage);
+    const startIndex = (currentPage - 1) * rowsPerPage;
+    return events.slice(startIndex, startIndex + rowsPerPage);
   }, [events, currentPage, rowsPerPage]);
 
   const getStatusBadge = (status) => {
@@ -64,12 +64,12 @@ export default function TableList() {
   };
 
   if (loading) {
-      return (
-          <div className="flex flex-col items-center justify-center h-64 text-gray-400">
-              <Loader2 className="w-8 h-8 animate-spin mb-2 text-gray-900" />
-              <p className="text-sm">Chargement des réservations...</p>
-          </div>
-      );
+    return (
+      <div className="flex flex-col items-center justify-center h-64 text-gray-400">
+        <Loader2 className="w-8 h-8 animate-spin mb-2 text-gray-900" />
+        <p className="text-sm">Chargement des réservations...</p>
+      </div>
+    );
   }
 
   return (
@@ -92,53 +92,53 @@ export default function TableList() {
               paginatedEvents.map((event) => {
                 const dateStart = new Date(event.date_debut);
                 const status = getEventStatus(event.date_debut, event.date_fin);
-                
+
                 return (
                   <TableRow key={event.id} className="hover:bg-gray-50/50 transition-colors">
                     {/* Salle */}
                     <TableCell>
                       <div className="flex flex-col">
-                          <span className="font-bold text-gray-900">{event.salle?.nom_salle || "Non spécifié"}</span>
-                          <span className="text-xs text-gray-500">{event.type || "Évènement"}</span>
+                        <span className="font-bold text-gray-900">{event.nom_evenement || event.description || "Non spécifié"}</span>
+                        <span className="text-xs text-gray-500">{event.type || "Évènement"}</span>
                       </div>
                     </TableCell>
 
                     {/* Client */}
                     <TableCell className="font-medium text-gray-700">
-                        {event.nom_client || "Anonyme"}
+                      {event.nom_client || "Anonyme"}
                     </TableCell>
 
                     {/* Date */}
                     <TableCell>
-                        <div className="flex flex-col text-sm">
-                            <div className="flex items-center gap-1.5 text-gray-900">
-                                <Calendar className="w-3.5 h-3.5 text-gray-400" />
-                                {dateStart.toLocaleDateString("fr-FR", { day: "2-digit", month: "short", year: "numeric" })}
-                            </div>
-                            <div className="flex items-center gap-1.5 text-gray-500 text-xs mt-0.5">
-                                <Clock className="w-3.5 h-3.5" />
-                                {dateStart.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" })}
-                            </div>
+                      <div className="flex flex-col text-sm">
+                        <div className="flex items-center gap-1.5 text-gray-900">
+                          <Calendar className="w-3.5 h-3.5 text-gray-400" />
+                          {dateStart.toLocaleDateString("fr-FR", { day: "2-digit", month: "short", year: "numeric" })}
                         </div>
+                        <div className="flex items-center gap-1.5 text-gray-500 text-xs mt-0.5">
+                          <Clock className="w-3.5 h-3.5" />
+                          {dateStart.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" })}
+                        </div>
+                      </div>
                     </TableCell>
 
                     {/* Montant */}
                     <TableCell>
-                        <div className="font-semibold text-gray-900">
-                             {event.montant ? event.montant.toLocaleString("fr-FR") : "0"} <span className="text-xs font-normal text-gray-500">FCFA</span>
-                        </div>
+                      <div className="font-semibold text-gray-900">
+                        {event.montant ? event.montant.toLocaleString("fr-FR") : "0"} <span className="text-xs font-normal text-gray-500">FCFA</span>
+                      </div>
                     </TableCell>
 
                     {/* Contact */}
                     <TableCell>
-                        {event.contact_client ? (
-                            <div className="flex items-center gap-2 text-gray-600 bg-gray-50 w-fit px-2 py-1 rounded-md border border-gray-100">
-                                <Phone size={12} />
-                                <span className="text-xs font-medium">{event.contact_client}</span>
-                            </div>
-                        ) : (
-                            <span className="text-gray-400 text-xs italic">N/A</span>
-                        )}
+                      {event.contact_client ? (
+                        <div className="flex items-center gap-2 text-gray-600 bg-gray-50 w-fit px-2 py-1 rounded-md border border-gray-100">
+                          <Phone size={12} />
+                          <span className="text-xs font-medium">{event.contact_client}</span>
+                        </div>
+                      ) : (
+                        <span className="text-gray-400 text-xs italic">N/A</span>
+                      )}
                     </TableCell>
 
                     {/* Statut */}
@@ -151,10 +151,10 @@ export default function TableList() {
             ) : (
               <TableRow>
                 <TableCell colSpan={6} className="h-48 text-center">
-                    <div className="flex flex-col items-center justify-center text-gray-400 gap-2">
-                        <SearchX className="w-8 h-8" />
-                        <p>Aucun évènement trouvé pour le moment.</p>
-                    </div>
+                  <div className="flex flex-col items-center justify-center text-gray-400 gap-2">
+                    <SearchX className="w-8 h-8" />
+                    <p>Aucun évènement trouvé pour le moment.</p>
+                  </div>
                 </TableCell>
               </TableRow>
             )}
@@ -165,54 +165,54 @@ export default function TableList() {
       {/* --- Pagination --- */}
       {events.length > 0 && (
         <div className="flex flex-col sm:flex-row items-center justify-between gap-4 px-2">
-            <div className="flex items-center gap-2 text-sm text-gray-500">
-                <span>Afficher</span>
-                <Select
-                    value={rowsPerPage.toString()}
-                    onValueChange={(value) => {
-                        setRowsPerPage(Number(value));
-                        setCurrentPage(1);
-                    }}
-                >
-                    <SelectTrigger className="w-[70px] h-8">
-                        <SelectValue placeholder={rowsPerPage} />
-                    </SelectTrigger>
-                    <SelectContent>
-                        {[5, 10, 20, 50].map((num) => (
-                            <SelectItem key={num} value={num.toString()}>
-                                {num}
-                            </SelectItem>
-                        ))}
-                    </SelectContent>
-                </Select>
-                <span>par page</span>
-            </div>
+          <div className="flex items-center gap-2 text-sm text-gray-500">
+            <span>Afficher</span>
+            <Select
+              value={rowsPerPage.toString()}
+              onValueChange={(value) => {
+                setRowsPerPage(Number(value));
+                setCurrentPage(1);
+              }}
+            >
+              <SelectTrigger className="w-[70px] h-8">
+                <SelectValue placeholder={rowsPerPage} />
+              </SelectTrigger>
+              <SelectContent>
+                {[5, 10, 20, 50].map((num) => (
+                  <SelectItem key={num} value={num.toString()}>
+                    {num}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <span>par page</span>
+          </div>
 
-            <div className="flex items-center gap-2">
-                <span className="text-sm text-gray-500 mr-2">
-                    Page {currentPage} sur {totalPages}
-                </span>
-                <div className="flex items-center gap-1">
-                    <Button
-                        variant="outline"
-                        size="icon"
-                        className="h-8 w-8"
-                        onClick={() => setCurrentPage((p) => Math.max(p - 1, 1))}
-                        disabled={currentPage === 1}
-                    >
-                        <ChevronLeft className="h-4 w-4" />
-                    </Button>
-                    <Button
-                        variant="outline"
-                        size="icon"
-                        className="h-8 w-8"
-                        onClick={() => setCurrentPage((p) => Math.min(p + 1, totalPages))}
-                        disabled={currentPage === totalPages}
-                    >
-                        <ChevronRight className="h-4 w-4" />
-                    </Button>
-                </div>
+          <div className="flex items-center gap-2">
+            <span className="text-sm text-gray-500 mr-2">
+              Page {currentPage} sur {totalPages}
+            </span>
+            <div className="flex items-center gap-1">
+              <Button
+                variant="outline"
+                size="icon"
+                className="h-8 w-8"
+                onClick={() => setCurrentPage((p) => Math.max(p - 1, 1))}
+                disabled={currentPage === 1}
+              >
+                <ChevronLeft className="h-4 w-4" />
+              </Button>
+              <Button
+                variant="outline"
+                size="icon"
+                className="h-8 w-8"
+                onClick={() => setCurrentPage((p) => Math.min(p + 1, totalPages))}
+                disabled={currentPage === totalPages}
+              >
+                <ChevronRight className="h-4 w-4" />
+              </Button>
             </div>
+          </div>
         </div>
       )}
     </div>

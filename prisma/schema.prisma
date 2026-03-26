@@ -98,8 +98,9 @@ model Even {
   image          String?
   createdAt      DateTime @default(now())
 
-  salle_id String?
-  salle    Salle?  @relation(fields: [salle_id], references: [id])
+  // salle_id String?
+  // salle    Salle?  @relation(fields: [salle_id], references: [id])
+  salles         Salle[]
 
   agent_id String?
   agent    User?   @relation("UserEvents", fields: [agent_id], references: [id])

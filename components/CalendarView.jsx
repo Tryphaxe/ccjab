@@ -165,7 +165,7 @@ export default function CalendarView({ events }) {
                           `}
                         >
                           <div className="flex items-center justify-between w-full">
-                            <span className="truncate leading-tight font-bold">{event.nom_evenement || event.nom_salle || "Évènement sans nom"}</span>
+                            <span className="truncate leading-tight font-bold">{event.nom_evenement || event.description || "Évènement sans nom"}</span>
                           </div>
                           <span className="truncate opacity-80 font-normal leading-tight">{event.type}</span>
                         </button>
@@ -199,7 +199,7 @@ export default function CalendarView({ events }) {
               <span className="text-xs text-gray-500 font-medium">#{selectedEvent?.type_evenement}</span>
             </div>
             <DialogTitle className="text-xl text-gray-900">
-              {selectedEvent?.nom_evenement || "Non spécifié"}
+              {selectedEvent?.nom_evenement || selectedEvent?.description || "Non spécifié"}
             </DialogTitle>
             <DialogDescription className="mt-1">
               {selectedEvent && (
@@ -213,6 +213,12 @@ export default function CalendarView({ events }) {
 
               {/* Infos principales */}
               <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-1 col-span-2 bg-gray-50 p-3 rounded-lg border border-gray-100 mb-2">
+                  <span className="flex items-center gap-2 text-xs font-medium text-gray-500">
+                    <MapPin className="w-4 h-4" /> Lieu(x) de l'évènement
+                  </span>
+                  <p className="text-sm font-bold text-gray-900">{selectedEvent.nom_salle}</p>
+                </div>
                 <div className="space-y-1">
                   <span className="flex items-center gap-2 text-xs font-medium text-gray-500">
                     <User className="w-3.5 h-3.5" /> Agent Responsable

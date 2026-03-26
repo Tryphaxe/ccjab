@@ -152,21 +152,28 @@ const EventFormFields = React.memo(
                             placeholder="ex: Gala de charité 2026"
                         />
                     </div>
-                    <div className="space-y-1 sm:col-span-2">
-                        <Label className="text-xs text-gray-500">Lieu</Label>
-                        <Select value={form.salle_id} onValueChange={(value) => handleSelectChange("salle_id", value)}>
-                            <SelectTrigger>
-                                <SelectValue placeholder="Sélectionner une salle" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectGroup>
-                                    <SelectLabel>Salles disponibles</SelectLabel>
-                                    {salles.map((salle) => (
-                                        <SelectItem key={salle.id} value={salle.id}>{salle.nom_salle}</SelectItem>
-                                    ))}
-                                </SelectGroup>
-                            </SelectContent>
-                        </Select>
+
+                    <div className="space-y-2 sm:col-span-2">
+                        <Label className="text-xs text-gray-500">Lieu(x) de l'évènement</Label>
+                        <div className="grid grid-cols-2 gap-3 p-3 border border-gray-200 rounded-md bg-white">
+                            {salles.map((salle) => (
+                                <label key={salle.id} className="flex items-center gap-2 cursor-pointer">
+                                    <input
+                                        type="checkbox"
+                                        className="w-4 h-4 rounded border-gray-300 text-gray-900 focus:ring-gray-900"
+                                        checked={form.salle_ids?.includes(salle.id) || false}
+                                        onChange={(e) => {
+                                            const currentIds = form.salle_ids || [];
+                                            const newIds = e.target.checked
+                                                ? [...currentIds, salle.id]
+                                                : currentIds.filter(id => id !== salle.id);
+                                            setForm({ ...form, salle_ids: newIds });
+                                        }}
+                                    />
+                                    <span className="text-sm font-medium text-gray-700">{salle.nom_salle}</span>
+                                </label>
+                            ))}
+                        </div>
                     </div>
 
                     <div className="space-y-1">
@@ -278,7 +285,7 @@ export default function page() {
         nom_client: '',
         contact_client: '',
         type: '',
-        salle_id: '',
+        salle_ids: [],
         agent_id: '',
         image: '',
         fiche: '',
@@ -324,7 +331,7 @@ export default function page() {
             nom_client: '',
             contact_client: '',
             type: '',
-            salle_id: '',
+            salle_ids: [],
             agent_id: '',
             image: '',
             fiche: '',
@@ -349,22 +356,23 @@ export default function page() {
         }
     };
 
-    const hasConflict = (startIso, endIso, salleId, excludeId = null) => {
-        if (!salleId || !startIso || !endIso) return false;
+    const hasConflict = (startIso, endIso, salleIds, excludeId = null) => {
+        if (!salleIds || salleIds.length === 0 || !startIso || !endIso) return false;
         const start = new Date(startIso);
         const end = new Date(endIso);
 
         return events.some(e => {
-            if (e.id === excludeId) return false; // On ne compare pas avec l'évènement lui-même
-            return e.salle_id === salleId && (start < new Date(e.date_fin) && end > new Date(e.date_debut));
+            if (e.id === excludeId) return false;
+            // Conflit si l'évènement existant occupe l'une des salles qu'on tente de réserver
+            const occupeUneDesSalles = e.salles?.some(s => salleIds.includes(s.id));
+            return occupeUneDesSalles && (start < new Date(e.date_fin) && end > new Date(e.date_debut));
         });
     };
 
-    // Calcul réactif : Vrai si un conflit existe avec les valeurs actuelles du formulaire
     const isConflict = useMemo(() => {
         const excludeId = selectedEvent ? selectedEvent.id : null;
-        return hasConflict(form.date_debut, form.date_fin, form.salle_id, excludeId);
-    }, [form.date_debut, form.date_fin, form.salle_id, events, selectedEvent]);
+        return hasConflict(form.date_debut, form.date_fin, form.salle_ids, excludeId);
+    }, [form.date_debut, form.date_fin, form.salle_ids, events, selectedEvent]);
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -512,7 +520,7 @@ export default function page() {
         if (open || selectedEvent) {
             // Reset form dates if needed or handle side effects
         }
-    }, [form.salle_id]);
+    }, [form.salle_ids]);
 
     const handleVisibilityToggle = async (ev) => {
         // 1. Mise à jour optimiste (on change l'état local immédiatement pour que ce soit fluide)
@@ -780,8 +788,10 @@ export default function page() {
                                 {/* 2. Bloc Détails & Finances */}
                                 <div className="md:w-1/5 pl-0 md:pl-4 border-l-0 md:border-l border-gray-100">
                                     <div className="flex items-center gap-1.5 text-gray-900 font-semibold text-sm mb-0.5">
-                                        <PartyPopper size={14} className="text-gray-400" />
-                                        <span className="truncate">{event.salle.nom_salle}</span>
+                                        <PartyPopper size={14} className="text-gray-400 shrink-0" />
+                                        <span className="truncate" title={event.salles?.map(s => s.nom_salle).join(" + ")}>
+                                            {event.salles?.length > 0 ? event.salles.map(s => s.nom_salle).join(" + ") : "Aucune salle"}
+                                        </span>
                                     </div>
                                     <div className="pl-5">
                                         <p className="text-sm font-medium text-gray-700">
@@ -863,7 +873,7 @@ export default function page() {
                                                     nom_client: event.nom_client || '',
                                                     contact_client: event.contact_client || '',
                                                     type: event.type || '',
-                                                    salle_id: event.salle_id || '',
+                                                    salle_ids: event.salles?.map(s => s.id) || [],
                                                     agent_id: event.agent_id || '',
                                                     image: event.image || '',
                                                     fiche: event.fiche || '',

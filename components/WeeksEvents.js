@@ -123,8 +123,11 @@ export default function WeeksEvents() {
                                     
                                     <div>
                                         <h3 className="text-lg font-bold text-gray-900 group-hover:text-orange-700 transition-colors">
-                                            {even.nom_evenement || even.salle?.nom_salle || "Évènement sans nom"}
+                                            {even.nom_evenement || even.description || "Évènement sans nom"}
                                         </h3>
+                                        <h6 className="text-lg font-bold text-gray-900 group-hover:text-orange-700 transition-colors">
+                                            {(even.salles?.length > 0 ? even.salles.map(s => s.nom_salle).join(" + ") : "Aucune salle")}
+                                        </h6>
                                         <div className="flex items-center gap-2 text-sm text-gray-500 mt-1">
                                             <Clock className="w-4 h-4" />
                                             <span className="capitalize">

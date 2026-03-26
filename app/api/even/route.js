@@ -8,7 +8,7 @@ export async function GET() {
         const evens = await prisma.even.findMany({
             orderBy: { createdAt: 'desc' },
             include: {
-                salle: true,
+                salles: true,
                 agent: true,
             },
         });
@@ -21,10 +21,10 @@ export async function GET() {
 // ➕ POST : créer une nouvelle even
 export async function POST(req) {
     try {
-        const { nom_evenement, categorie, montant, avance, date_debut, date_fin, description, nom_client, contact_client, type, salle_id, agent_id, image, fiche } = await req.json();
+        const { nom_evenement, categorie, montant, avance, date_debut, date_fin, description, nom_client, contact_client, type, salle_ids, agent_id, image, fiche } = await req.json();
 
         // Vérification simple avant insertion
-        if (!nom_client || !categorie || !salle_id || !agent_id || !type || !montant || !date_debut || !date_fin) {
+        if (!nom_client || !categorie || !salle_ids || !salle_ids.length === 0 || !agent_id || !type || !montant || !date_debut || !date_fin) {
             return NextResponse.json(
                 { error: "Certains champs obligatoires sont manquants." },
                 { status: 400 }
@@ -38,7 +38,11 @@ export async function POST(req) {
         // vérifier avant create (Conflits)
         const conflict = await prisma.even.findFirst({
             where: {
-                salle_id,
+                salles: {
+                    some: {
+                        id: { in: salle_ids }
+                    }
+                },
                 AND: [
                     { date_debut: { lt: newEnd } },
                     { date_fin: { gt: newStart } }
@@ -52,10 +56,8 @@ export async function POST(req) {
         const agent = await prisma.user.findUnique({ // Assurez-vous que votre modèle s'appelle 'user' ou 'agent'
             where: { id: agent_id }
         });
-
-        const salle = await prisma.salle.findUnique({
-            where: { id: salle_id }
-        });
+        const sallesConcernees = await prisma.salle.findMany({ where: { id: { in: salle_ids } } });
+        const nomDesSalles = sallesConcernees.map(s => s.nom_salle).join(' + ');
 
         if (!agent) {
             return NextResponse.json({ error: "Agent introuvable." }, { status: 404 });
@@ -74,7 +76,9 @@ export async function POST(req) {
                 nom_client,
                 contact_client,
                 type,
-                salle_id,
+                salles: {
+                    connect: salle_ids.map(id => ({ id }))
+                },
                 agent_id,
                 image: image || null,
                 fiche: fiche || null,
@@ -98,7 +102,7 @@ export async function POST(req) {
                 date_debut: newStart,
                 date_fin: newEnd,
                 nom_client,
-                salle_nom: salle ? salle.nom_salle : 'Salle inconnue',
+                salle_nom: nomDesSalles || 'Salles multiples',
                 type
             });
         }

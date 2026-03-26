@@ -24,7 +24,7 @@ export async function GET(req) {
             orderBy: { date_debut: 'asc' },
             include: {
                 agent: true,
-                salle: true
+                salles: true
             }
         });
 

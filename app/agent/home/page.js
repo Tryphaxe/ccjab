@@ -63,7 +63,8 @@ export default function AgentDashboard() {
     // Formatage pour le CalendarView
     const formattedEvents = useMemo(() => events.map((e) => ({
         id: e.id,
-        nom_salle: e.salle?.nom_salle,
+        nom_evenement: e.nom_evenement,
+        nom_salle: e.salles?.length > 0 ? e.salles.map(s => s.nom_salle).join(" + ") : "Aucune salle",
         agent: { nom: e.agent?.name },
         type_evenement: e.type,
         categorie: e.categorie,
@@ -236,7 +237,10 @@ export default function AgentDashboard() {
                                                 <div className="flex-1 min-w-0">
                                                     <div className="flex items-center gap-3 mb-1">
                                                         <span className="text-base font-bold text-gray-900 truncate">
-                                                            {event.salle.nom_salle || "Salle Inconnue"}
+                                                            {event.nom_evenement || event.description || "Évènement sans nom"}
+                                                        </span>
+                                                        <span className="text-base font-bold text-gray-900 truncate" title={event.salles?.map(s => s.nom_salle).join(" + ")}>
+                                                            {event.salles?.length > 0 ? event.salles.map(s => s.nom_salle).join(" + ") : "Aucune salle"}
                                                         </span>
                                                         <Badge variant="outline" className={`text-[10px] px-2 py-0.5 font-semibold border ${getStatusBadgeStyles(status)}`}>
                                                             {status}

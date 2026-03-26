@@ -35,7 +35,7 @@ export async function PATCH(request, { params }) {
     }
 
     // 2. GESTION DU FORMULAIRE ET DE L'IMAGE
-    
+
     // Champs Textes
     if (body.nom_evenement !== undefined) updateData.nom_evenement = body.nom_evenement;
     if (body.nom_client !== undefined) updateData.nom_client = body.nom_client;
@@ -43,7 +43,7 @@ export async function PATCH(request, { params }) {
     if (body.categorie !== undefined) updateData.categorie = body.categorie;
     if (body.type !== undefined) updateData.type = body.type;
     if (body.description !== undefined) updateData.description = body.description;
-    
+
     // Champ Image
     if (body.image !== undefined) updateData.image = body.image;
     if (body.fiche !== undefined) updateData.fiche = body.fiche;
@@ -58,11 +58,14 @@ export async function PATCH(request, { params }) {
 
     // Relations (Salle & Agent)
     // On gère le cas où l'utilisateur sélectionne "Aucune salle" (chaîne vide -> null)
-    if (body.salle_id !== undefined) {
-        updateData.salle_id = body.salle_id === "" ? null : body.salle_id;
+    if (body.salle_ids !== undefined) {
+      // "set" écrase les anciennes salles associées par les nouvelles
+      updateData.salles = {
+        set: body.salle_ids.map(id => ({ id }))
+      };
     }
     if (body.agent_id !== undefined) {
-        updateData.agent_id = body.agent_id === "" ? null : body.agent_id;
+      updateData.agent_id = body.agent_id === "" ? null : body.agent_id;
     }
 
     // Sécurité : Si aucune donnée valide n'est envoyée, on arrête là
@@ -79,10 +82,10 @@ export async function PATCH(request, { params }) {
     return NextResponse.json(updatedEvent, { status: 200 });
 
   } catch (error) {
-    
+
     // Gestion spécifique si l'événement n'existe pas
     if (error.code === 'P2025') {
-        return NextResponse.json({ error: "Évènement introuvable." }, { status: 404 });
+      return NextResponse.json({ error: "Évènement introuvable." }, { status: 404 });
     }
 
     return NextResponse.json(
