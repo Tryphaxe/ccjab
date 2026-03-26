@@ -12,7 +12,8 @@ import {
     Instagram,
     Twitter,
     Loader2,
-    Megaphone
+    Megaphone,
+    Youtube
 } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useRouter } from 'next/navigation';
@@ -65,7 +66,7 @@ export default function ActualitePage() {
         : [];
 
     return (
-        <div className="min-h-screen bg-gray-50 text-gray-900 font-sans">
+        <div className="min-h-screen bg-gray-50 text-gray-900">
 
             {/* ================= EN-TÊTE (HERO) ================= */}
             <section className="bg-emerald-900 text-white pt-32 pb-20 relative overflow-hidden">
@@ -258,10 +259,40 @@ export default function ActualitePage() {
                         {/* Widget Réseaux Sociaux */}
                         <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 text-center">
                             <h3 className="text-sm font-bold text-gray-500 uppercase tracking-wider mb-4">Suivez-nous</h3>
-                            <div className="flex justify-center gap-4">
-                                <a href="#" className="p-3 bg-blue-50 text-blue-600 rounded-full hover:bg-blue-600 hover:text-white transition-all"><Facebook size={20} /></a>
-                                <a href="#" className="p-3 bg-pink-50 text-pink-600 rounded-full hover:bg-pink-600 hover:text-white transition-all"><Instagram size={20} /></a>
-                                <a href="#" className="p-3 bg-sky-50 text-sky-500 rounded-full hover:bg-sky-500 hover:text-white transition-all"><Twitter size={20} /></a>
+                            <div className="flex gap-3 pt-2 items-center justify-center">
+                                {/* Facebook */}
+                                <a
+                                    href="https://www.facebook.com/share/p/1BDVJJtsMz/"
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="w-9 h-9 flex items-center justify-center bg-[#1877F2] text-white rounded-full hover:opacity-80 transition-all shadow-sm"
+                                    title="Suivre sur Facebook"
+                                >
+                                    <Facebook size={18} />
+                                </a>
+
+                                {/* YouTube */}
+                                <a
+                                    href="https://youtube.com/@ccjab-tv?si=_qS64Dbhr7z1fFAJ"
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="w-9 h-9 flex items-center justify-center bg-[#FF0000] text-white rounded-full hover:opacity-80 transition-all shadow-sm"
+                                    title="S'abonner sur YouTube"
+                                >
+                                    <Youtube size={18} />
+                                </a>
+
+                                {/* TikTok */}
+                                <a
+                                    href="https://vm.tiktok.com/ZS9eP6EAxfCF8-zbKMl/"
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="w-9 h-9 flex items-center justify-center bg-black text-white rounded-full hover:bg-gray-800 transition-all shadow-sm"
+                                    title="Suivre sur TikTok"
+                                >
+                                    {/* Utilisation de l'icône FontAwesome ou Music si Lucide n'a pas TikTok */}
+                                    <i className="fa-brands fa-tiktok text-[16px]"></i>
+                                </a>
                             </div>
                         </div>
 

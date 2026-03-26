@@ -220,11 +220,15 @@ export default function CulturalCenterHome() {
                           <div className="flex items-center gap-2 text-gray-500 text-sm mb-3">
                             <Calendar size={16} className="text-emerald-600" />
                             <span dangerouslySetInnerHTML={{ __html: formatEventDate(event.date_debut, event.date_fin) }} />
-                            <MapPin size={16} className="text-emerald-600 ml-2" />
-                            <span className="truncate max-w-[100px]">{event.salle.nom_salle}</span>
                           </div>
-                          <h3 className="text-xl font-bold text-gray-900 mb-2 group-hover/card:text-emerald-700 transition-colors line-clamp-1">{event.categorie}</h3>
-                          <p className="text-sm italic text-gray-600 line-clamp-2 mb-4">{event.description}</p>
+                          <div className="flex items-center gap-2 text-gray-500 text-sm mb-3">
+                            <MapPin size={16} className="text-emerald-600" />
+                            <span className="truncate max-w-[100px] lg:max-w-[150px]" title={event.salles?.map(s => s.nom_salle).join(" + ")}>
+                              {event.salles?.length > 0 ? event.salles.map(s => s.nom_salle).join(" | ") : "Aucune salle"}
+                            </span>
+                          </div>
+                          <h3 className="text-xl uppercase font-bold text-gray-900 mb-2 group-hover/card:text-emerald-700 transition-colors line-clamp-1">{event.nom_evenement || event.description}</h3>
+                          {/* <p className="text-sm italic text-gray-600 line-clamp-2 mb-4">{event.description}</p> */}
                         </div>
                       </div>
                     </div>

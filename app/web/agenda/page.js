@@ -26,13 +26,13 @@ export default function AgendaPage() {
   const filteredEvents = events.filter(event => {
     const now = new Date();
     const endDate = new Date(event.date_fin);
-    
+
     // Si l'événement est terminé, on ne l'affiche pas (return false)
     if (endDate < now) return false;
-    
+
     // Si l'événement est marqué "non visible" par le switch, on ne l'affiche pas
     if (!event.visible) return false;
-    
+
     const matchesTypes = filter === 'Tout' || event.type === filter;
     const matchesSearch = event.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
       event.description?.toLowerCase().includes(searchTerm.toLowerCase());
@@ -160,14 +160,14 @@ export default function AgendaPage() {
                             {dateData.time}
                           </div>
                           <div className="flex items-center text-sm text-gray-500 mb-3">
-                            <MapPin size={14} className="mr-1.5 text-emerald-600" />
-                            {event.salle.nom_salle}
+                            <MapPin size={14} className="mr-1.5 text-emerald-600 shrink-0" />
+                            <span className="truncate" title={event.salles?.map(s => s.nom_salle).join(" + ")}>
+                              {event.salles?.length > 0 ? event.salles.map(s => s.nom_salle).join(" | ") : "Aucune salle"}
+                            </span>
                           </div>
-                          {event.description && (
-                            <p className="text-gray-600 text-sm line-clamp-2 mb-4">
-                              {event.description}
-                            </p>
-                          )}
+                          <div className="text-gray-600 text-sm mb-4">
+                            <h3 className="text-xl uppercase font-bold text-gray-900 mb-2 group-hover/card:text-emerald-700 transition-colors line-clamp-3">{event.nom_evenement || event.description}</h3>
+                          </div>
                         </div>
 
                         {/* <div className="pt-4 mt-auto border-t border-gray-100 flex items-center justify-between">

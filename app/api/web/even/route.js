@@ -8,7 +8,7 @@ export async function GET() {
             orderBy: { createdAt: 'desc' },
             where: { visible: true },
             include: {
-                salle: true,
+                salles: true,
                 agent: true,
             },
         });
