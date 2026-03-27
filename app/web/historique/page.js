@@ -49,23 +49,39 @@ export default function HistoriquePage() {
                             <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
                                 <Users size={120} />
                             </div>
-                            <h3 className="text-xl font-bold text-gray-900 mb-3">Qui était Jacques Aka ?</h3>
+                            <h3 className="text-xl font-bold text-gray-900 mb-3">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Qui était Jacques Aka ?</h3>
                             <p className="text-gray-700 relative z-10">
-                                Le centre porte son nom en hommage à une personnalité engagée dans la valorisation de la culture et du patrimoine ivoirien. À travers cette dénomination, le Centre perpétue un héritage fondé sur la <strong>transmission, l’excellence et l’ouverture</strong>.
+                                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Né le 22 juillet 1910 à Tiébissou, <strong>Jacques AKA KACOU</strong> fut l’une des figures marquantes de la Côte d’Ivoire pré-indépendante. Neveu du <strong>Président Félix Houphouët-Boigny</strong>, commissaire-priseur de formation et négociant influent dans le café et le cacao, il s’impose rapidement comme un acteur politique majeur et un compagnon de lutte du futur Chef de l’État.
+                                Visionnaire, il alerte très tôt sur les dérives d’un développement exclusivement économique, affirmant que la nation « risquait de perdre son âme si elle délaissait le culturel ».
+                                <br />
+                                <br />
+                                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Décédé en 1963 en France, il laisse l’image d’un précurseur lucide et engagé. Pour honorer sa mémoire, le Centre Culturel ivoiro-français de Bouaké est baptisé <strong>Centre Culturel Jacques Aka</strong> lors de son inauguration officielle le 16 février 1974, à l’initiative du Maire <strong>DJIBO Sounkalo</strong> et de l’Ambassadeur Jacques Raphaël Leygues.
                             </p>
                         </div>
                     </div>
 
                     {/* Bloc Image (Placeholder) */}
-                    <div className="relative h-[500px] bg-gray-200 rounded-3xl overflow-hidden shadow-2xl rotate-1 hover:rotate-0 transition-transform duration-500">
-                        {/* Remplacez src par une vraie photo d'archive ou du bâtiment */}
+                    <div className="relative w-full bg-white rounded-2xl overflow-hidden shadow-xl hover:shadow-2xl -rotate-1 hover:rotate-0 transition-all duration-500 group border-[6px] border-white">
+
+                        {/* ✅ w-full et h-auto : l'image garde 100% de ses proportions sans jamais être rognée */}
                         <img
-                            src="https://upload.wikimedia.org/wikipedia/commons/thumb/4/44/Centre_Culturel_Jacques_Aka_de_Bouak%C3%A9_06.jpg/1200px-Centre_Culturel_Jacques_Aka_de_Bouak%C3%A9_06.jpg"
-                            alt="Centre Culturel Jacques Aka Historique"
-                            className="w-full h-full object-cover grayscale hover:grayscale-0 transition-all duration-700"
+                            src="/images/jaka.jpeg"
+                            alt="Jacques Aka Historique"
+                            className="w-full h-auto block grayscale group-hover:grayscale-0 transition-transform duration-700 group-hover:scale-105"
                         />
-                        <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-8">
-                            <p className="text-white font-medium">Le Centre, un pilier culturel à Bouaké.</p>
+
+                        {/* Le dégradé sombre en bas pour que le texte reste lisible */}
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent opacity-90 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"></div>
+
+                        {/* Le texte avec l'effet de glissement vers le haut */}
+                        <div className="absolute bottom-0 left-0 right-0 p-6 transform translate-y-2 group-hover:translate-y-0 transition-transform duration-500 z-10 pointer-events-none">
+                            <h3 className="text-white text-2xl font-bold mb-2 drop-shadow-md">
+                                Jacques AKA KACOU
+                            </h3>
+                            <div className="w-10 h-1 bg-emerald-500 mb-2 rounded-full transition-all duration-500 group-hover:w-16"></div>
+                            <p className="text-gray-200 font-medium text-sm drop-shadow leading-relaxed">
+                                Le Centre, un pilier culturel à Bouaké.
+                            </p>
                         </div>
                     </div>
                 </div>
