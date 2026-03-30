@@ -65,7 +65,7 @@ export default function ArticleDetailPage() {
       try {
         await navigator.share({
           title: post.titre,
-          text: "Découvrez cet article du Centre Culturel Jacques Aka !",
+          text: post.titre + " " + ":" + " ",
           url: shareUrl,
         });
       } catch (error) {
