@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useCallback, useEffect, useState } from 'react';
-import { Calendar, MapPin, ArrowRight, Mic2, Users, Ticket, Megaphone, UserCog, ChevronLeft, ChevronRight, Play } from 'lucide-react';
+import { Calendar, MapPin, ArrowRight, Mic2, Users, Ticket, Megaphone, UserCog, ChevronLeft, ChevronRight, Play, X, ZoomIn } from 'lucide-react';
 import { fetchEvents } from '@/utils/evenWebUtils';
 import { formatEventDate } from '@/lib/evenHelper';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -17,19 +17,20 @@ const isVideo = (url) => {
 
 export default function CulturalCenterHome() {
   const router = useRouter();
-  const [events, setEvents] = useState([])
+  const [events, setEvents] = useState([]);
   const [posts, setPosts] = useState([]);
-  const [isloading, setIsLoading] = useState(true)
+  const [isloading, setIsLoading] = useState(true);
   const [promotedPosts, setPromotedPosts] = useState([]);
+  const [selectedMedia, setSelectedMedia] = useState(null); // État pour la modale
 
   const now = new Date();
   const futureEvents = events.filter(event => {
     // Sécurité pour éviter les erreurs si la date est manquante
-    if (!event.date_fin) return false; 
-    
+    if (!event.date_fin) return false;
+
     const endDate = new Date(event.date_fin);
     return event.visible && endDate > now;
-});
+  });
 
   // --- CONFIG CARROUSEL ÉVÈNEMENTS ---
   const [emblaRef, emblaApi] = useEmblaCarousel({
@@ -81,7 +82,7 @@ export default function CulturalCenterHome() {
   }, []);
 
   const redirect = () => {
-    router.push('/web/espaces');
+    router.push('/web/agenda');
   }
 
   return (
@@ -142,26 +143,40 @@ export default function CulturalCenterHome() {
                 <div className="flex -ml-6">
                   {promotedPosts.map((pub) => (
                     <div key={pub.id} className="flex-[0_0_100%] md:flex-[0_0_50%] pl-6 min-w-0">
-                      <div className="relative rounded-2xl overflow-hidden shadow-lg group h-64 md:h-80 w-full bg-black">
-                        {/* GESTION VIDÉO / IMAGE POUR LES PUBS */}
+                      <div
+                        className="relative rounded-2xl overflow-hidden shadow-lg group h-64 md:h-80 w-full bg-black cursor-pointer"
+                        onClick={() => setSelectedMedia(pub)}
+                      >
                         {pub.mediaUrl ? (
-                          isVideo(pub.mediaUrl) ? (
-                            <video
-                              src={pub.mediaUrl}
-                              className="w-full h-full object-cover"
-                              autoPlay
-                              muted
-                              loop
-                              playsInline
-                            />
-                          ) : (
-                            <img src={pub.mediaUrl} alt={pub.titre} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" />
-                          )
+                          <>
+                            {/* EFFET ESTHÉTIQUE : Image de fond floutée */}
+                            {!isVideo(pub.mediaUrl) && (
+                              <img src={pub.mediaUrl} className="absolute inset-0 w-full h-full object-cover blur-xl opacity-40 scale-110" alt="" />
+                            )}
+
+                            {/* CONTENU CENTRAL : L'image ou vidéo nette */}
+                            <div className="absolute inset-0 flex items-center justify-center p-2 md:p-4">
+                              {isVideo(pub.mediaUrl) ? (
+                                <video src={pub.mediaUrl} className="max-w-full max-h-full object-contain rounded-lg shadow-2xl" autoPlay muted loop playsInline />
+                              ) : (
+                                <img src={pub.mediaUrl} alt={pub.titre} className="max-w-full max-h-full object-contain rounded-lg shadow-2xl transition-transform duration-700 group-hover:scale-105" />
+                              )}
+                            </div>
+
+                            {/* HOVER EFFECT : Icône qui apparaît au survol */}
+                            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-colors duration-300 flex items-center justify-center z-10 opacity-0 group-hover:opacity-100">
+                              {isVideo(pub.mediaUrl) ? (
+                                <Play className="text-white w-12 h-12 drop-shadow-lg scale-50 group-hover:scale-100 transition-transform duration-300" />
+                              ) : (
+                                <ZoomIn className="text-white w-12 h-12 drop-shadow-lg scale-50 group-hover:scale-100 transition-transform duration-300" />
+                              )}
+                            </div>
+                          </>
                         ) : (
-                          <div className="w-full h-full bg-gray-900 flex items-center justify-center text-white">Pas d'image</div>
+                          <div className="w-full h-full bg-gray-900 flex items-center justify-center text-gray-500">Pas d'image</div>
                         )}
 
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent flex flex-col justify-end p-6 pointer-events-none">
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent flex flex-col justify-end p-6 pointer-events-none z-20">
                           <h3 className="text-white text-xl font-bold mb-1">{pub.titre}</h3>
                           {pub.contenu && <p className="text-gray-200 text-sm line-clamp-2">{pub.contenu}</p>}
                         </div>
@@ -228,7 +243,6 @@ export default function CulturalCenterHome() {
                             </span>
                           </div>
                           <h3 className="text-xl uppercase font-bold text-gray-900 mb-2 group-hover/card:text-emerald-700 transition-colors line-clamp-1">{event.nom_evenement || event.description}</h3>
-                          {/* <p className="text-sm italic text-gray-600 line-clamp-2 mb-4">{event.description}</p> */}
                         </div>
                       </div>
                     </div>
@@ -243,7 +257,7 @@ export default function CulturalCenterHome() {
         </div>
       </section>
 
-      {/* ================= ACTUALITÉS (Image ou Vidéo) ================= */}
+      {/* ================= ACTUALITÉS ================= */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 my-20">
         <div className="text-center mb-16">
           <h1 className="text-4xl font-bold text-gray-900 mb-4">Actualités</h1>
@@ -260,24 +274,32 @@ export default function CulturalCenterHome() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 my-12">
             {posts.map(post => (
               <article key={post.id} className="bg-white border border-gray-100 rounded-2xl overflow-hidden shadow-sm hover:shadow-lg transition-all duration-300 flex flex-col h-full">
+
+                {/* 1. SECTION IMAGE / VIDÉO AVEC CLIC ET ZOOM */}
                 {post.mediaUrl && (
-                  <div className="h-48 overflow-hidden bg-gray-100 relative group/media">
-                    {/* GESTION VIDÉO / IMAGE POUR LES ACTUS */}
-                    {isVideo(post.mediaUrl) ? (
-                      <video
-                        src={post.mediaUrl}
-                        className="w-full h-full object-cover"
-                        controls
-                      />
-                    ) : (
-                      <img
-                        src={post.mediaUrl}
-                        alt={post.titre}
-                        className="w-full h-full object-cover hover:scale-105 transition-transform duration-500"
-                      />
+                  <div
+                    className="h-48 overflow-hidden bg-black relative group/media cursor-pointer"
+                    onClick={() => setSelectedMedia(post)}
+                  >
+                    {!isVideo(post.mediaUrl) && (
+                      <img src={post.mediaUrl} className="absolute inset-0 w-full h-full object-cover blur-md opacity-40 scale-110" alt="" />
                     )}
+
+                    <div className="absolute inset-0 flex items-center justify-center p-2">
+                      {isVideo(post.mediaUrl) ? (
+                        <video src={post.mediaUrl} className="max-w-full max-h-full object-contain" autoPlay muted loop playsInline />
+                      ) : (
+                        <img src={post.mediaUrl} alt={post.titre} className="max-w-full max-h-full object-contain transition-transform duration-500 group-hover/media:scale-105" />
+                      )}
+                    </div>
+
+                    <div className="absolute inset-0 bg-black/0 group-hover/media:bg-black/20 transition-colors duration-300 flex items-center justify-center opacity-0 group-hover/media:opacity-100 z-10">
+                      {isVideo(post.mediaUrl) ? <Play className="text-white w-10 h-10" /> : <ZoomIn className="text-white w-10 h-10" />}
+                    </div>
                   </div>
                 )}
+
+                {/* 2. SECTION TEXTE */}
                 <div className="p-6 flex-1 flex flex-col">
                   <div className="flex items-center text-xs text-gray-400 mb-3 gap-3">
                     <span className="flex items-center gap-1"><Calendar size={12} /> {new Date(post.createdAt).toLocaleDateString()}</span>
@@ -286,6 +308,7 @@ export default function CulturalCenterHome() {
                   <h2 className="text-xl font-bold text-gray-900 mb-3">{post.titre}</h2>
                   <p className="text-gray-600 text-sm line-clamp-3 mb-4">{post.contenu}</p>
                 </div>
+
               </article>
             ))}
           </div>
@@ -333,6 +356,48 @@ export default function CulturalCenterHome() {
           </div>
         </div>
       </section>
+
+      {/* ================= MODALE PLEIN ÉCRAN ================= */}
+      {selectedMedia && (
+        <div
+          className="fixed inset-0 z-500 flex items-center justify-center bg-black/95 p-4 md:p-8 backdrop-blur-sm"
+          onClick={() => setSelectedMedia(null)}
+        >
+          <button
+            className="absolute top-4 right-4 md:top-8 md:right-8 text-white/70 hover:text-white bg-white/10 hover:bg-white/20 p-2 md:p-3 rounded-full transition-all z-50"
+            onClick={(e) => {
+              e.stopPropagation();
+              setSelectedMedia(null);
+            }}
+          >
+            <X size={28} />
+          </button>
+
+          <div
+            className="relative w-full max-w-6xl max-h-full flex flex-col items-center justify-center animate-in fade-in zoom-in duration-300"
+            onClick={(e) => e.stopPropagation()} // Empêche la fermeture si on clique sur l'image elle-même
+          >
+            {isVideo(selectedMedia.mediaUrl) ? (
+              <video
+                src={selectedMedia.mediaUrl}
+                className="max-w-full max-h-[85vh] rounded-lg shadow-2xl ring-1 ring-white/10"
+                controls
+                autoPlay
+              />
+            ) : (
+              <img
+                src={selectedMedia.mediaUrl}
+                alt={selectedMedia.titre}
+                className="max-w-full max-h-[85vh] object-contain rounded-lg shadow-2xl ring-1 ring-white/10"
+              />
+            )}
+            <div className="mt-4 text-center max-w-2xl">
+              <h3 className="text-white text-2xl font-bold mb-2">{selectedMedia.titre}</h3>
+              {selectedMedia.contenu && <p className="text-gray-300 text-sm">{selectedMedia.contenu}</p>}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
