@@ -96,6 +96,8 @@ export function DateTimePicker({ label, value, onChange, disabledSlots = [] }) {
               mode="single"
               selected={date}
               captionLayout="dropdown"
+              fromYear={2010} // L'année minimum sélectionnable
+              toYear={new Date().getFullYear() + 10} // Autorise jusqu'à 10 ans dans le futur
               onSelect={handleDateSelect}
               disabled={isDayDisabled}
             />

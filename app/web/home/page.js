@@ -91,7 +91,7 @@ export default function CulturalCenterHome() {
       <section className="relative pt-32 pb-20 lg:pt-48 lg:pb-32 overflow-hidden min-h-[85vh] flex items-center">
         <div className="absolute inset-0 z-0">
           <img
-            src="https://upload.wikimedia.org/wikipedia/commons/thumb/4/44/Centre_Culturel_Jacques_Aka_de_Bouak%C3%A9_06.jpg/1200px-Centre_Culturel_Jacques_Aka_de_Bouak%C3%A9_06.jpg"
+            src="/images/ccjabpic.jpg"
             alt="Centre Culturel Jacques Aka"
             className="w-full h-full object-cover"
           />
