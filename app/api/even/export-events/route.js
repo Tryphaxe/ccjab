@@ -114,15 +114,15 @@ export async function GET(request) {
   try {
     const { searchParams } = new URL(request.url);
     const month = searchParams.get('month');
+    const category = searchParams.get('category'); // Nouveau
+    const type = searchParams.get('type');         // Nouveau
 
-    let events = [];
+    const whereClause = {};
     let monthLabel = "Tous les mois";
+    let filtersArray = [];
 
-    if (month === 'all') {
-      events = await prisma.even.findMany({
-        orderBy: { date_debut: 'desc' }
-      });
-    } else if (month) {
+    // 1. Filtre par Mois
+    if (month && month !== 'all') {
       const [yearStr, monthStr] = month.split('-');
       const y = parseInt(yearStr);
       const m = parseInt(monthStr);
@@ -133,24 +133,42 @@ export async function GET(request) {
       monthLabel = new Intl.DateTimeFormat('fr-FR', { month: 'long', year: 'numeric' }).format(startDate);
       monthLabel = monthLabel.charAt(0).toUpperCase() + monthLabel.slice(1);
 
-      events = await prisma.even.findMany({
-        where: {
-          date_debut: {
-            gte: startDate,
-            lte: endDate,
-          }
-        },
-        orderBy: { date_debut: 'asc' }
-      });
+      whereClause.date_debut = {
+        gte: startDate,
+        lte: endDate,
+      };
     }
 
-    const pdfBuffer = await generatePdfBuffer(events, monthLabel);
+    // 2. Filtre par Catégorie
+    if (category && category !== 'all') {
+      whereClause.categorie = category;
+      filtersArray.push(`Catégorie: ${category}`);
+    }
+
+    // 3. Filtre par Type
+    if (type && type !== 'all') {
+      whereClause.type = type;
+      filtersArray.push(`Type: ${type}`);
+    }
+
+    const filtersLabel = filtersArray.length > 0 ? filtersArray.join(' | ') : "Aucun filtre spécifique";
+
+    // 4. Requête à la base de données avec Prisma
+    const events = await prisma.even.findMany({
+      where: whereClause,
+      orderBy: { date_debut: 'asc' }
+    });
+
+    // 5. Génération du PDF
+    // Vous pouvez passer `filtersLabel` à votre fonction si vous voulez l'afficher sur le PDF
+    const pdfBuffer = await generatePdfBuffer(events, monthLabel, filtersLabel);
 
     return new NextResponse(pdfBuffer, {
       status: 200,
       headers: {
         'Content-Type': 'application/pdf',
-        'Content-Disposition': `attachment; filename="Rapport_Evenements_${month === 'all' ? 'tous' : month}.pdf"`,
+        // Le nom du fichier a déjà été formaté proprement sur le frontend
+        'Content-Disposition': `attachment; filename="rapport.pdf"`,
       },
     });
 
