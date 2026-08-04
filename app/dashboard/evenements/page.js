@@ -35,6 +35,7 @@ import { DateTimePicker } from '@/components/DateTimePicker';
 import { Switch } from '@/components/ui/switch';
 import { uploadImage } from '@/utils/uploadEventsUtils';
 import { uploadFile } from '@/utils/uploadFichesUtils';
+import ExportEventsButton from '@/components/ExportEventsButton';
 const DEFAULT_IMAGE = "/images/default-salle.png";
 
 const ITEMS_PER_PAGE = 10; // Nombre d'éléments par page
@@ -606,14 +607,7 @@ export default function page() {
                             </DialogContent>
                         </Dialog>
 
-                        <Button
-                            variant="outline"
-                            onClick={() => exportEventsToPDF(events)}
-                            disabled={isloading || events.length === 0}
-                            className="bg-white"
-                        >
-                            <Share className="w-4 h-4 mr-2" /> Exporter PDF
-                        </Button>
+                        <ExportEventsButton />
                     </div>
                 </div>
 

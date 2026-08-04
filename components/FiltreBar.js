@@ -274,7 +274,7 @@ export default function EventsPage() {
                                                 </div>
                                                 <div className="text-xs text-gray-500 flex items-center gap-2">
                                                     <span className="font-medium text-gray-700 flex items-center gap-1">
-                                                        <MapPin size={12} /> {event.salle.nom_salle}
+                                                        <MapPin size={12} /> {event.salle?.nom_salle}
                                                     </span>
                                                     <span className="h-1 w-1 rounded-full bg-gray-300"></span>
                                                     <span>{event.categorie}</span>
