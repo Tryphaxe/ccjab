@@ -63,7 +63,7 @@ const UserFormFields = React.memo(({ form, handleChange, handleSelectChange, sel
                         <SelectItem value="ADMIN">Administrateur</SelectItem>
                         <SelectItem value="AGENT">Agent</SelectItem>
                         <SelectItem value="FINANCIER">Financier</SelectItem>
-                        <SelectItem value="EDITOR">Éditeur</SelectItem>
+                        <SelectItem value="EDITEUR">Éditeur</SelectItem>
                     </SelectContent>
                 </Select>
             </div>
