@@ -7,7 +7,9 @@ import {
 } from 'lucide-react';
 import { fetchEvents } from '@/utils/evenWebUtils';
 import { fetchSalles } from '@/utils/salleWebUtils';
+import { Barlow_Condensed } from 'next/font/google';
 
+const barlow = Barlow_Condensed({ subsets: ['latin'], weight: ['600'], display: 'swap' });
 const DEFAULT_IMAGE = '/images/default-salle.png';
 const formatDate = (date, options = { day: 'numeric', month: 'long', year: 'numeric' }) => {
   if (!date) return '';
@@ -61,7 +63,7 @@ export default function CulturalCenterHome() {
   const sideEvents = upcomingEvents.slice(1, 3);
 
   return (
-    <div className="bg-[#fbf8f7] text-[#211b19] selection:bg-[#b63313]/20">
+    <div className="bg-transparent text-[#211b19] selection:bg-[#b63313]/20">
       {/* Immersive introduction */}
       <section className="relative isolate flex min-h-[690px] items-end overflow-hidden bg-[#17100d] pt-28 sm:min-h-[740px]">
         <img
@@ -69,10 +71,10 @@ export default function CulturalCenterHome() {
           alt="Une soirée de spectacle au Centre Culturel Jacques Aka"
           className="absolute inset-0 -z-20 h-full w-full object-cover object-center"
         />
-        <div className="absolute inset-0 -z-10 bg-gradient-to-r from-black/85 via-black/55 to-black/15" />
-        <div className="absolute inset-0 -z-10 bg-gradient-to-t from-black/80 via-transparent to-black/20" />
+        <div className="absolute inset-0 -z-10 bg-gradient-to-r from-black/75 via-black/55 to-black/15" />
+        <div className="absolute inset-0 -z-10 bg-gradient-to-t from-black/30 via-transparent to-black/20" />
 
-        <div className="mx-auto w-full max-w-7xl px-5 pb-16 pt-24 sm:px-8 sm:pb-20 lg:px-12">
+        <div className="mx-auto w-full max-w-7xl px-5 pb-16 pt-12 sm:px-8 sm:pb-20 lg:px-20">
           {featuredEvent && (
             <Link href="/web/agenda" className="mb-14 inline-flex items-center gap-2 rounded-full border border-white/25 bg-black/30 px-4 py-2 text-[10px] font-semibold uppercase tracking-[.16em] text-white backdrop-blur-sm transition hover:bg-black/50 sm:mb-20">
               <span className="h-2 w-2 rounded-full bg-[#d84a20]" />
@@ -84,10 +86,10 @@ export default function CulturalCenterHome() {
 
           <div className="max-w-2xl">
             <p className="mb-4 text-[10px] font-bold uppercase tracking-[.28em] text-[#f07b4a]">Un lieu, mille expressions</p>
-            <h1 className="font-serif text-5xl font-semibold leading-[.98] tracking-[-.045em] text-white sm:text-6xl md:text-7xl">
-              Centre Culturel<br />Jacques Aka
+            <h1 className={`${barlow.className} text-3xl font-semibold leading-[.98] tracking-[-.045em] text-white sm:text-4xl md:text-7xl`}>
+              L'Art de rassembler,<br />la culture de partager !
             </h1>
-            <p className="mt-5 font-serif text-xl italic text-white/90 sm:text-2xl">La culture prend vie à Bouaké.</p>
+            <p className="mt-5 font-serif text-xl italic text-white/90 sm:text-2xl">Centre Culturel Jacques Aka</p>
             <p className="mt-5 max-w-xl text-sm leading-7 text-white/75 sm:text-base">
               Un espace de création, de rencontre et de transmission au cœur de la Côte d’Ivoire. La culture nous rassemble et ouvre de nouveaux horizons.
             </p>
@@ -113,7 +115,7 @@ export default function CulturalCenterHome() {
 
       {/* Publicités mises à la une */}
       {featuredAds.length > 0 && (
-        <section className="border-b border-[#eee5e1] bg-white py-12 sm:py-14">
+        <section className="border-b border-[#eee5e1] bg-white/55 py-12 backdrop-blur-sm sm:py-14">
           <div className="mx-auto max-w-7xl px-5 sm:px-8 lg:px-12">
             <div className="mb-6 flex items-end justify-between gap-4">
               <div>

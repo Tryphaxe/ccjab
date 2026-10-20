@@ -12,7 +12,7 @@ const COLLECTIONS = [
 
 export default function MediathequePage() {
   return (
-    <main className="min-h-screen bg-[#fbf8f7] pt-[72px] text-[#211b19]">
+    <main className="min-h-screen bg-transparent pt-[72px] text-[#211b19]">
       <section className="mx-auto grid max-w-7xl gap-8 px-5 pb-12 pt-9 md:px-8 md:pb-16 md:pt-14 lg:grid-cols-[1fr_0.9fr] lg:items-center lg:gap-14">
         <div>
           <p className="mb-3 inline-flex items-center gap-2 text-[9px] font-bold uppercase tracking-[0.17em] text-[#b43a1a]"><span className="h-1.5 w-1.5 rounded-full bg-[#b43a1a]" /> Lecture · Recherche · Découverte</p>
@@ -28,7 +28,7 @@ export default function MediathequePage() {
         </div>
       </section>
 
-      <section className="border-y border-[#eee5e2] bg-white py-12 md:py-16">
+      <section className="border-y border-[#eee5e2] bg-white/55 py-12 backdrop-blur-sm md:py-16">
         <div className="mx-auto max-w-7xl px-5 md:px-8">
           <div className="mb-7 max-w-2xl"><p className="text-[8px] font-bold uppercase tracking-[0.17em] text-[#52715f]">Un fonds documentaire varié</p><h2 className="mt-1 font-serif text-3xl md:text-4xl">Des ressources pour chaque curiosité</h2><p className="mt-2 text-xs leading-5 text-[#786e69]">La médiathèque accueille les lecteurs, les élèves, les étudiants et toute personne désireuse de consulter des ressources dans un cadre calme.</p></div>
           <div className="grid gap-4 md:grid-cols-3">{COLLECTIONS.map(({ title, text, Icon, tone }) => <article key={title} className="rounded-lg border border-[#eee5e2] bg-[#fbf8f7] p-5 md:p-6"><span className={`flex h-10 w-10 items-center justify-center rounded ${tone}`}><Icon size={18} /></span><h3 className="mt-4 font-serif text-xl">{title}</h3><p className="mt-2 text-xs leading-5 text-[#786e69]">{text}</p></article>)}</div>

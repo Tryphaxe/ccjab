@@ -1,6 +1,16 @@
 import Navbar from "./Navbar";
 import Footer from "./Footer";
+import PublicPageMotion from "./PublicPageMotion";
+import CursorFollow from "./CursorFollow";
+import { Barlow_Condensed } from "next/font/google";
 import "../globals.css"; // Assurez-vous d'importer vos styles globaux (Tailwind)
+
+const barlowCondensed = Barlow_Condensed({
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
+  display: "swap",
+  variable: "--font-barlow-condensed",
+});
 
 
 // Métadonnées SEO (Titre et description par défaut)
@@ -11,7 +21,9 @@ export const metadata = {
 
 export default function WebLayout({ children }) {
   return (
-    <div className={`min-h-screen flex flex-col bg-gray-50 text-gray-900 antialiased scroll-smooth`}>
+    <>
+      <div className={`public-site ${barlowCondensed.variable}`}>
+      <PublicPageMotion>
 
       {/* Navigation (Header) */}
       <Navbar />
@@ -23,7 +35,9 @@ export default function WebLayout({ children }) {
 
       {/* Pied de page (Footer) */}
       <Footer />
-
-    </div>
+      </PublicPageMotion>
+      <CursorFollow />
+      </div>
+    </>
   );
 }

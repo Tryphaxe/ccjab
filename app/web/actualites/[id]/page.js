@@ -100,7 +100,7 @@ export default function ArticleDetailPage() {
 
   if (loading)
     return (
-      <main className="min-h-screen animate-pulse bg-[#fbf8f7] px-5 pb-16 pt-28">
+      <main className="min-h-screen animate-pulse bg-transparent px-5 pb-16 pt-28">
         <div className="mx-auto max-w-6xl">
           <div className="mb-8 h-3 w-48 rounded bg-[#e9e0dd]" />
           <div className="h-14 max-w-3xl rounded bg-[#e9e0dd]" />
@@ -112,7 +112,7 @@ export default function ArticleDetailPage() {
 
   if (!post)
     return (
-      <main className="flex min-h-[65vh] flex-col items-center justify-center bg-[#fbf8f7] px-5 pt-20 text-center">
+      <main className="flex min-h-[65vh] flex-col items-center justify-center bg-transparent px-5 pt-20 text-center">
         <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#b43a1a]">
           Publication indisponible
         </p>
@@ -135,7 +135,7 @@ export default function ArticleDetailPage() {
   const authorName = post.author?.name || "Rédaction du CCJAB";
 
   return (
-    <main className="min-h-screen bg-[#fbf8f7] pt-[72px] text-[#211b19]">
+    <main className="min-h-screen bg-transparent pt-[72px] text-[#211b19]">
       <div className="mx-auto max-w-7xl px-5 pt-6 md:px-8 md:pt-9">
         <nav
           aria-label="Fil d’Ariane"

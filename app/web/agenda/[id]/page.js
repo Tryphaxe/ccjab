@@ -126,7 +126,7 @@ export default function EventDetailPage() {
 
   if (loading) {
     return (
-      <div className="mt-[72px] min-h-[60vh] bg-[#fbf8f7] px-5 py-12">
+      <div className="mt-[72px] min-h-[60vh] bg-transparent px-5 py-12">
         <div className="mx-auto max-w-7xl">
           <div className="h-72 animate-pulse bg-[#eee5e1]" />
           <div className="mt-8 h-8 w-1/2 animate-pulse bg-[#eee5e1]" />
@@ -137,7 +137,7 @@ export default function EventDetailPage() {
 
   if (error || !event) {
     return (
-      <main className="mt-[72px] flex min-h-[60vh] items-center justify-center bg-[#fbf8f7] px-5 py-16 text-center">
+      <main className="mt-[72px] flex min-h-[60vh] items-center justify-center bg-transparent px-5 py-16 text-center">
         <div>
           <p className="text-[9px] font-bold uppercase tracking-[.2em] text-[#b33a1a]">
             Agenda culturel
@@ -163,7 +163,7 @@ export default function EventDetailPage() {
   const eventType = event.type || event.categorie || "Culture";
 
   return (
-    <div className="bg-[#fbf8f7] text-[#211b19]">
+    <div className="bg-transparent text-[#211b19]">
       {/* Event masthead */}
       <section className="relative isolate mt-[72px] overflow-hidden bg-[#211915]">
         <img

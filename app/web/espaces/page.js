@@ -47,7 +47,7 @@ export default function EspacesPage() {
   const roomsWithCapacity = salles.filter((room) => Number(room.nombre_place) > 0).length;
 
   return (
-    <div className="bg-[#fbf8f7] text-[#211b19]">
+    <div className="bg-transparent text-[#211b19]">
       {/* Introduction */}
       <section className="mt-[72px] border-b border-[#eee5e1] bg-[#f7f2f0]">
         <div className="mx-auto grid max-w-7xl items-center gap-8 px-5 py-8 sm:px-8 sm:py-12 md:grid-cols-[1.15fr_.85fr] lg:gap-14 lg:px-12">

@@ -53,8 +53,8 @@ export default function ActualitePage() {
   const updateFeatured = (value) => { setFeaturedOnly(value); setPage(0); };
 
   return (
-    <main className="min-h-screen bg-[#fbf8f7] pt-[72px] text-[#211b19]">
-      <section className="border-b border-[#eee5e2] bg-[#fbf8f7]">
+    <main className="min-h-screen bg-transparent pt-[72px] text-[#211b19]">
+      <section className="border-b border-[#eee5e2] bg-transparent">
         <div className="mx-auto max-w-7xl px-5 pb-8 pt-10 md:px-8 md:pb-10 md:pt-14">
           <p className="mb-3 text-[10px] font-bold uppercase tracking-[0.18em] text-[#b43a1a]">Chroniques &amp; vie culturelle · Bouaké</p>
           <div className="flex flex-col justify-between gap-6 lg:flex-row lg:items-end">

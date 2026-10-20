@@ -100,7 +100,7 @@ export default function ContactPage() {
   const [openFaqIndex, setOpenFaqIndex] = useState(0);
 
   return (
-    <main className="min-h-screen bg-[#fbf8f7] pt-[72px] text-[#211b19]">
+    <main className="min-h-screen bg-transparent pt-[72px] text-[#211b19]">
       <section className="relative overflow-hidden border-b border-[#eee5e2] bg-[#f4eeec]">
         <div className="pointer-events-none absolute -right-20 -top-24 h-80 w-80 rounded-full bg-[#eadad4] blur-3xl" />
         <div className="relative mx-auto max-w-7xl px-5 pb-14 pt-10 md:px-8 md:pb-16 md:pt-14">

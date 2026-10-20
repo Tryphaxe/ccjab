@@ -40,7 +40,7 @@ const MISSIONS = [
 
 export default function HistoriquePage() {
   return (
-    <main className="min-h-screen bg-[#fbf8f7] pt-[72px] text-[#211b19]">
+    <main className="min-h-screen bg-transparent pt-[72px] text-[#211b19]">
       <section className="mx-auto grid max-w-7xl gap-8 px-5 pb-12 pt-9 md:px-8 md:pb-16 md:pt-14 lg:grid-cols-[1fr_0.8fr] lg:items-center lg:gap-16">
         <div>
           <p className="mb-3 inline-flex items-center gap-2 text-[9px] font-bold uppercase tracking-[0.17em] text-[#b43a1a]">
@@ -86,7 +86,7 @@ export default function HistoriquePage() {
         </div>
       </section>
 
-      <section className="border-y border-[#eee5e2] bg-white py-12 md:py-16">
+      <section className="border-y border-[#eee5e2] bg-white/55 py-12 backdrop-blur-sm md:py-16">
         <div className="mx-auto max-w-7xl px-5 md:px-8">
           <div className="mb-8 max-w-2xl">
             <p className="text-[8px] font-bold uppercase tracking-[0.17em] text-[#52715f]">
@@ -188,7 +188,7 @@ export default function HistoriquePage() {
         </div>
       </section>
 
-      <section className="border-y border-[#eee5e2] bg-white py-12 md:py-16">
+      <section className="border-y border-[#eee5e2] bg-white/55 py-12 backdrop-blur-sm md:py-16">
         <div className="mx-auto max-w-7xl px-5 md:px-8">
           <div className="mb-7 max-w-2xl">
             <p className="text-[8px] font-bold uppercase tracking-[0.17em] text-[#52715f]">

@@ -74,7 +74,7 @@ export default function AgendaPage() {
   const eventCountLabel = upcomingEvents.length;
 
   return (
-    <div className="min-h-screen bg-[#fbf8f7] text-[#211b19]">
+    <div className="min-h-screen bg-transparent text-[#211b19]">
       {/* Page introduction */}
       <section className="mt-[72px] border-b border-[#eee5e1] bg-[#fcf9f8]">
         <div className="mx-auto max-w-7xl px-5 pb-7 pt-8 sm:px-8 sm:pb-9 sm:pt-10 lg:px-12">

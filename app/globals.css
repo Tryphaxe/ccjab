@@ -1,5 +1,39 @@
 @import "tailwindcss";
 
+.public-atmosphere {
+  isolation: isolate;
+  background-color: #fbf8f7;
+  background-image:
+    radial-gradient(ellipse 48rem 34rem at 8% 7%, rgb(245 226 218 / 52%), transparent 72%),
+    radial-gradient(ellipse 44rem 38rem at 94% 46%, rgb(224 237 228 / 46%), transparent 74%),
+    linear-gradient(145deg, #fbf8f7 0%, #fdfbf9 46%, #f8f5f2 100%);
+}
+
+.public-atmosphere::after {
+  position: absolute;
+  z-index: 0;
+  inset: 0;
+  background-image:
+    linear-gradient(to right, rgb(97 72 61 / 4%) 1px, transparent 1px),
+    linear-gradient(to bottom, rgb(97 72 61 / 4%) 1px, transparent 1px);
+  background-size: 72px 72px;
+  content: "";
+  pointer-events: none;
+  mask-image: linear-gradient(to bottom, rgb(0 0 0 / 62%), transparent 88%);
+}
+
+.public-atmosphere-content {
+  isolation: isolate;
+}
+
+.public-site :is(h1, h2),
+.public-site h3[class*="text-xl"],
+.public-site h3[class*="text-2xl"],
+.public-site h3[class*="text-3xl"],
+.public-site h3[class*="text-4xl"] {
+  font-family: var(--font-barlow-condensed), sans-serif;
+}
+
 @custom-variant dark (&:is(.dark *));
 
 .custom-scrollbar::-webkit-scrollbar {
