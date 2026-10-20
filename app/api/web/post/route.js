@@ -4,12 +4,14 @@ import prisma from "@/lib/prisma";
 export async function GET(request) {
   const { searchParams } = new URL(request.url);
   const type = searchParams.get('type'); // 'ACTU' ou 'PUB'
-  const promotedOnly = searchParams.get('promoted'); // 'true'
+  if (!['ACTU', 'PUB'].includes(type)) {
+    return NextResponse.json({ error: "Type public invalide" }, { status: 400 });
+  }
 
   try {
     const whereClause = {};
-    if (type) whereClause.type = type;
-    if (promotedOnly === 'true') whereClause.isPromoted = true;
+    whereClause.type = type;
+    if (type === 'PUB') whereClause.isPromoted = true;
 
     const posts = await prisma.post.findMany({
       where: whereClause,
@@ -22,6 +24,7 @@ export async function GET(request) {
         type: true,
         isPromoted: true,
         createdAt: true,
+        author: { select: { name: true } },
       }
     });
     return NextResponse.json(posts);

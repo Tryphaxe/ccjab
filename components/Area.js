@@ -8,7 +8,7 @@ import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/
 export default function ChartAreaDefault({ data }) {
     const chartConfig = {
         desktop: {
-            label: "Revenu",
+            label: "Paiement reçu",
             color: "#2563eb",
         },
     };
@@ -16,8 +16,8 @@ export default function ChartAreaDefault({ data }) {
     return (
         <Card>
             <CardHeader>
-                <CardTitle>Évolution des revenus</CardTitle>
-                <CardDescription>Montants des réservations</CardDescription>
+                <CardTitle>Évolution des encaissements</CardTitle>
+                <CardDescription>Paiements enregistrés, regroupés par date de réception</CardDescription>
             </CardHeader>
             <CardContent>
                 <ChartContainer config={chartConfig} className="w-full h-65">

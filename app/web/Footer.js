@@ -29,7 +29,7 @@ export default function Footer() {
     }, 1000);
   };
   return (
-    <footer className="bg-gray-950 text-white pt-20 pb-10 border-t border-gray-900">
+    <footer className="border-t border-[#e9dfdb] bg-[#f8f4f2] pb-8 pt-14 text-[#40332e]">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12 mb-16">
 
@@ -45,9 +45,9 @@ export default function Footer() {
                 className="h-8 w-8 object-contain cursor-pointer active:scale-95 transition-transform" /* Ajout d'un petit effet visuel au clic */
                 priority
               />
-              <span className="font-bold text-xl tracking-tight">CENTRE<span className="text-emerald-500">CULTUREL</span></span>
+              <span className="font-serif text-xl font-bold tracking-tight text-[#33241f]">CENTRE<span className="text-[#b33a1a]">CULTUREL</span></span>
             </div>
-            <p className="text-gray-400 text-sm leading-relaxed">
+            <p className="text-sm leading-relaxed text-[#81736e]">
               Le carrefour ideal de l'expression culturelle à Bouaké
             </p>
             <div className="flex gap-3 pt-2 items-center">
@@ -89,7 +89,7 @@ export default function Footer() {
 
           {/* COLONNE 2 : LIENS */}
           <div>
-            <h4 className="font-bold text-lg mb-6 text-white">Plan du site</h4>
+            <h4 className="mb-5 font-serif text-lg text-[#33241f]">Plan du site</h4>
             <ul className="space-y-3">
               <FooterLink href="/web/home" label="Accueil" />
               <FooterLink href="/web/agenda" label="Programmation" />
@@ -100,26 +100,37 @@ export default function Footer() {
 
           {/* COLONNE 3 : CONTACT */}
           <div>
-            <h4 className="font-bold text-lg mb-6 text-white">Nous trouver</h4>
-            <ul className="space-y-4 text-gray-400 text-sm">
+            <h4 className="mb-5 font-serif text-lg text-[#33241f]">Nous trouver</h4>
+            <ul className="space-y-4 text-sm text-[#81736e]">
               <li className="flex items-start gap-3">
-                <MapPin size={18} className="text-emerald-500 mt-0.5 shrink-0" />
+                <MapPin size={18} className="mt-0.5 shrink-0 text-[#b33a1a]" />
                 <span>Centre Culturel Jacques Aka,<br />Bouaké, Côte d'Ivoire</span>
               </li>
               <li className="flex items-center gap-3">
-                <Phone size={18} className="text-emerald-500 shrink-0" />
+                <Phone size={18} className="shrink-0 text-[#b33a1a]" />
                 <span>+225 01 50 985 220</span>
               </li>
               <li className="flex items-center gap-3">
-                <Mail size={18} className="text-emerald-500 shrink-0" />
+                <Mail size={18} className="shrink-0 text-[#b33a1a]" />
                 <span>jacquesaka1974@gmail.com</span>
               </li>
             </ul>
           </div>
+
+          <div>
+            <h4 className="mb-5 font-serif text-lg text-[#33241f]">La vie du centre</h4>
+            <ul className="space-y-3">
+              <FooterLink href="/web/historique" label="Notre histoire" />
+              <FooterLink href="/web/mediatheque" label="Médiathèque" />
+              <FooterLink href="/web/ludotheque" label="Ludothèque" />
+              <FooterLink href="/web/contact" label="Accès & horaires" />
+            </ul>
+            <Link href="/web/actualites" className="mt-5 inline-flex items-center rounded-sm bg-[#315b43] px-4 py-2 text-[10px] font-semibold text-white transition hover:bg-[#244734]">Suivre nos actualités</Link>
+          </div>
         </div>
 
         {/* COPYRIGHT */}
-        <div className="border-t border-gray-900 pt-8 flex flex-col md:flex-row justify-between items-center gap-4 text-sm text-gray-600">
+        <div className="mt-4 flex flex-col items-center justify-between gap-4 border-t border-[#e9dfdb] pt-6 text-sm text-[#95857e] md:flex-row">
           <p>© {new Date().getFullYear()} RELAIS IT pour CCJAB. Tous droits réservés.</p>
           <div className="flex gap-6">
             <Link href="#" className="hover:text-emerald-500 transition-colors">Mentions légales</Link>
@@ -135,7 +146,7 @@ export default function Footer() {
 function FooterLink({ href, label }) {
   return (
     <li>
-      <Link href={href} className="text-gray-400 hover:text-emerald-400 hover:translate-x-1 transition-all inline-flex items-center gap-1">
+          <Link href={href} className="inline-flex items-center gap-1 text-[#81736e] transition-all hover:translate-x-1 hover:text-[#a83113]">
         {label}
       </Link>
     </li>

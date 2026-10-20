@@ -36,6 +36,7 @@ import { fetchEvents } from '@/utils/evenUtils';
 import { fetchAgents } from '@/utils/agentUtils';
 import { fetchSalles } from '@/utils/salleUtils';
 import { formatEventDate, getEventStatus } from '@/lib/evenHelper';
+import { EventOriginBadge, EventOriginLegend, getEventOriginColor } from '@/components/EventOrigin';
 import { useAuth } from '@/lib/AuthContext';
 
 export default function EventsPage() {
@@ -230,6 +231,7 @@ export default function EventsPage() {
                 <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden flex flex-col min-h-[400px]">
                     <div className="p-4 border-b border-gray-100 bg-gray-50/50">
                         <h2 className="font-semibold text-gray-900">Résultats ({filteredEvents.length})</h2>
+                        <EventOriginLegend className="mt-2" />
                     </div>
 
                     {isloading || loading ? (
@@ -253,7 +255,8 @@ export default function EventsPage() {
                                     return (
                                         <div 
                                             key={event.id} 
-                                            className="group p-4 border-b border-gray-100 last:border-b-0 hover:bg-gray-50 transition-colors duration-200 flex flex-col md:flex-row md:items-center justify-between gap-4"
+                                            style={{ borderLeftColor: getEventOriginColor(event) }}
+                                            className="group p-4 border-l-4 border-b border-gray-100 last:border-b-0 hover:bg-gray-50 transition-colors duration-200 flex flex-col md:flex-row md:items-center justify-between gap-4"
                                         >
                                             {/* Colonne 1 : Infos principales */}
                                             <div className="flex-1 min-w-0">
@@ -264,6 +267,7 @@ export default function EventsPage() {
                                                     <Badge variant="outline" className={`text-[10px] px-2 py-0.5 font-semibold border ${getStatusBadgeStyles(status)}`}>
                                                         {status}
                                                     </Badge>
+                                                    <EventOriginBadge event={event} className="text-[10px]" />
                                                 </div>
                                                 
                                                 <div className="flex items-center text-sm text-gray-500 gap-4 mb-1">

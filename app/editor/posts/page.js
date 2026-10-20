@@ -43,6 +43,9 @@ export default function PostsPage() {
   };
 
   useEffect(() => { fetchPosts(); }, []);
+  useEffect(() => () => {
+    if (previewUrl?.startsWith('blob:')) URL.revokeObjectURL(previewUrl);
+  }, [previewUrl]);
 
   // --- GESTION DU FORMULAIRE ---
   const resetForm = () => {
@@ -95,6 +98,10 @@ export default function PostsPage() {
   };
 
   const handleFile = (file) => {
+    if (!file.type.startsWith('image/') && !file.type.startsWith('video/')) {
+      toast.error('Choisissez une image ou une vidéo valide.');
+      return;
+    }
     if (file.size > 50 * 1024 * 1024) {
       toast.error("Fichier trop volumineux (Max 50Mo)");
       return;

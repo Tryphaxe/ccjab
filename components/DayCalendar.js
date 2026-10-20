@@ -1,198 +1,135 @@
 "use client";
 
-import React, { useEffect, useState, useRef } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import dayjs from "dayjs";
 import "dayjs/locale/fr";
-import { ChevronLeft, ChevronRight, Clock, MapPin, User, Calendar as CalendarIcon } from "lucide-react";
+import { CalendarDays, ChevronLeft, ChevronRight, Clock3, RotateCcw } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
+import { EventOriginLegend, getEventOriginColor } from "@/components/EventOrigin";
+import CalendarEventDialog from "@/components/CalendarEventDialog";
 
 dayjs.locale("fr");
+const HOUR_HEIGHT = 64;
+const hourLabels = Array.from({ length: 24 }, (_, hour) => hour);
 
-const HOUR_HEIGHT = 80; // Hauteur d'une heure en pixels pour plus d'aération
+function layoutOverlappingEvents(items) {
+    const sorted = [...items].sort((a, b) => a.start - b.start || b.end - a.end);
+    const output = [];
+    let cluster = [];
+    let clusterEnd = -1;
+
+    const flushCluster = () => {
+        if (!cluster.length) return;
+        const laneEnds = [];
+        const placed = cluster.map((item) => {
+            let lane = laneEnds.findIndex((end) => end <= item.start);
+            if (lane === -1) lane = laneEnds.length;
+            laneEnds[lane] = item.end;
+            return { ...item, lane };
+        });
+        output.push(...placed.map((item) => ({ ...item, columns: laneEnds.length })));
+        cluster = [];
+        clusterEnd = -1;
+    };
+
+    for (const item of sorted) {
+        if (cluster.length && item.start >= clusterEnd) flushCluster();
+        cluster.push(item);
+        clusterEnd = Math.max(clusterEnd, item.end);
+    }
+    flushCluster();
+    return output;
+}
 
 export default function DayCalendar({ events = [] }) {
     const [currentTime, setCurrentTime] = useState(dayjs());
     const [selectedDay, setSelectedDay] = useState(dayjs());
+    const [selectedEvent, setSelectedEvent] = useState(null);
     const scrollContainerRef = useRef(null);
 
-    // ⏰ Mise à jour de l'heure et scroll automatique au chargement
     useEffect(() => {
         const interval = setInterval(() => setCurrentTime(dayjs()), 60000);
-        
-        // Scroll initial vers 8h du matin pour voir le début de journée
-        if (scrollContainerRef.current) {
-            scrollContainerRef.current.scrollTop = 8 * HOUR_HEIGHT;
-        }
-
         return () => clearInterval(interval);
     }, []);
 
-    // 🕒 Position verticale (pixels)
-    const getTimePosition = (date) => {
-        const totalMinutes = date.hour() * 60 + date.minute();
-        return (totalMinutes / 60) * HOUR_HEIGHT;
-    };
+    useEffect(() => {
+        const container = scrollContainerRef.current;
+        if (!container) return;
+        const startHour = selectedDay.isSame(currentTime, "day") ? Math.max(0, currentTime.hour() - 1) : 8;
+        container.scrollTop = startHour * HOUR_HEIGHT;
+    }, [selectedDay]);
 
-    const prevDay = () => setSelectedDay(selectedDay.subtract(1, "day"));
-    const nextDay = () => setSelectedDay(selectedDay.add(1, "day"));
+    const eventLayouts = useMemo(() => {
+        const dayStart = selectedDay.startOf("day");
+        const dayEnd = selectedDay.endOf("day");
+        const items = events.flatMap((event) => {
+            if (!event.date_debut || !event.date_fin) return [];
+            const start = dayjs(event.date_debut);
+            const end = dayjs(event.date_fin);
+            if (!start.isValid() || !end.isValid() || end.isBefore(dayStart) || start.isAfter(dayEnd)) return [];
+            const visibleStart = start.isBefore(dayStart) ? dayStart : start;
+            const visibleEnd = end.isAfter(dayEnd) ? dayEnd : end;
+            return [{ event, start: visibleStart.valueOf(), end: Math.max(visibleEnd.valueOf(), visibleStart.valueOf() + 30 * 60000), startLabel: start.format("HH:mm"), endLabel: end.format("HH:mm"), continuesBefore: start.isBefore(dayStart), continuesAfter: end.isAfter(dayEnd) }];
+        });
+        return layoutOverlappingEvents(items);
+    }, [events, selectedDay]);
+
+    const previousDay = () => setSelectedDay((day) => day.subtract(1, "day"));
+    const nextDay = () => setSelectedDay((day) => day.add(1, "day"));
     const goToToday = () => setSelectedDay(dayjs());
+    const dateLabel = selectedDay.format("dddd D MMMM YYYY");
 
     return (
-        <div className="flex flex-col h-[600px] bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
-            
-            {/* --- En-tête --- */}
-            <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100 bg-white z-20">
-                <div className="flex items-center gap-4">
-                    <div className="flex items-center gap-2 bg-gray-50 px-3 py-1.5 rounded-lg border border-gray-100">
-                        <CalendarIcon className="w-4 h-4 text-gray-500" />
-                        <span className="text-sm font-semibold text-gray-900 capitalize">
-                            {selectedDay.format("dddd D MMMM YYYY")}
-                        </span>
+        <section aria-label="Calendrier journalier" className="min-w-0 space-y-4">
+            <header className="flex flex-col justify-between gap-3 sm:flex-row sm:items-center">
+                <div className="flex min-w-0 items-center gap-3">
+                    <span className="rounded-xl bg-[#fae9e3] p-3 text-[#a93105]"><CalendarDays size={20} /></span>
+                    <div className="min-w-0"><h3 className="truncate font-[Georgia] text-xl font-semibold capitalize text-[#1b1b1d]">{dateLabel}</h3><p className="mt-0.5 text-xs text-[#765f58]">{eventLayouts.length} événement{eventLayouts.length === 1 ? "" : "s"} · Heure locale</p></div>
+                </div>
+                <div className="flex items-center gap-2 self-start sm:self-auto">
+                    <Button variant="outline" size="sm" onClick={goToToday} disabled={selectedDay.isSame(dayjs(), "day")} className="h-9 gap-2 border-[#eee8eb] bg-white text-[#59413a] hover:bg-[#f6f3f5]"><RotateCcw size={14} />Aujourd’hui</Button>
+                    <div className="inline-flex items-center rounded-xl border border-[#eee8eb] bg-white p-1 shadow-sm">
+                        <Button aria-label="Jour précédent" variant="ghost" size="icon" onClick={previousDay} className="h-8 w-8 text-[#765f58] hover:bg-[#f6f3f5] hover:text-[#a93105]"><ChevronLeft size={17} /></Button>
+                        <span className="mx-1 h-5 w-px bg-[#eee8eb]" />
+                        <Button aria-label="Jour suivant" variant="ghost" size="icon" onClick={nextDay} className="h-8 w-8 text-[#765f58] hover:bg-[#f6f3f5] hover:text-[#a93105]"><ChevronRight size={17} /></Button>
                     </div>
-                    {!selectedDay.isSame(dayjs(), 'day') && (
-                        <Button variant="ghost" size="sm" onClick={goToToday} className="text-xs h-8">
-                            Aujourd'hui
-                        </Button>
-                    )}
                 </div>
+            </header>
 
-                <div className="flex items-center gap-1">
-                    <Button variant="ghost" size="icon" onClick={prevDay} className="h-8 w-8 hover:bg-gray-100">
-                        <ChevronLeft className="w-4 h-4" />
-                    </Button>
-                    <Button variant="ghost" size="icon" onClick={nextDay} className="h-8 w-8 hover:bg-gray-100">
-                        <ChevronRight className="w-4 h-4" />
-                    </Button>
-                </div>
+            <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-[#eee8eb] bg-[#f6f3f5] px-3 py-2.5">
+                <EventOriginLegend />
+                <p className="inline-flex items-center gap-1.5 text-[11px] text-[#765f58]"><span className="h-2 w-2 rounded-full bg-rose-500" />Ligne rouge : heure actuelle</p>
             </div>
 
-            {/* --- Zone Scrollable --- */}
-            <div 
-                ref={scrollContainerRef}
-                className="relative flex-1 overflow-y-auto no-scrollbar"
-            >
-                {/* Grille horaire de fond */}
-                <div className="relative min-h-[1920px]"> {/* 24 * 80px */}
-                    {[...Array(24)].map((_, hour) => (
-                        <div
-                            key={hour}
-                            className="group flex border-b border-gray-100/60"
-                            style={{ height: `${HOUR_HEIGHT}px` }}
-                        >
-                            {/* Colonne Heure */}
-                            <div className="w-16 flex-shrink-0 border-r border-gray-100 bg-gray-50/50 flex flex-col items-center justify-start pt-2">
-                                <span className="text-xs font-medium text-gray-500">
-                                    {String(hour).padStart(2, "0")}:00
-                                </span>
-                            </div>
-                            
-                            {/* Lignes horizontales subtiles */}
-                            <div className="flex-1 relative">
-                                {/* Ligne demi-heure (optionnel) */}
-                                <div className="absolute top-1/2 w-full border-t border-dashed border-gray-50"></div>
-                            </div>
+            <div className="overflow-hidden rounded-2xl border border-[#eee8eb] bg-white shadow-[0_2px_12px_rgba(42,24,30,0.035)]">
+                <div ref={scrollContainerRef} className="relative h-[min(68vh,720px)] min-h-[420px] overflow-y-auto overscroll-contain">
+                    <div className="relative min-h-[1576px] pb-10">
+                        {hourLabels.map((hour) => <div key={hour} className="flex border-b border-[#eee8eb]/70" style={{ height: `${HOUR_HEIGHT}px` }}>
+                            <div className="sticky left-0 z-[5] w-[62px] shrink-0 border-r border-[#eee8eb] bg-[#faf8f9] px-2 pt-2 text-right text-[10px] font-semibold tabular-nums text-[#8d7169] sm:w-[72px]">{String(hour).padStart(2, "0")}:00</div>
+                            <div className="relative flex-1"><span className="absolute inset-x-0 top-1/2 border-t border-dashed border-[#eee8eb]/70" /></div>
+                        </div>)}
+
+                        {selectedDay.isSame(currentTime, "day") && <div className="pointer-events-none absolute left-[62px] right-0 z-20 border-t-2 border-rose-500 sm:left-[72px]" style={{ top: `${(currentTime.hour() * 60 + currentTime.minute()) / 60 * HOUR_HEIGHT}px` }}>
+                            <span className="absolute -left-1.5 -top-[7px] h-3 w-3 rounded-full border-2 border-white bg-rose-500" /><span className="absolute right-2 -top-5 rounded bg-rose-500 px-1.5 py-0.5 text-[10px] font-bold tabular-nums text-white">{currentTime.format("HH:mm")}</span>
+                        </div>}
+
+                        <div className="pointer-events-none absolute inset-y-0 left-[62px] right-2 sm:left-[72px] sm:right-3">
+                            {eventLayouts.map(({ event, start, end, startLabel, endLabel, continuesBefore, continuesAfter, lane, columns }) => {
+                                const top = (start - selectedDay.startOf("day").valueOf()) / 3600000 * HOUR_HEIGHT;
+                                const height = Math.max((end - start) / 3600000 * HOUR_HEIGHT, 36);
+                                const title = event.nom_evenement || event.description || event.type || "Événement sans titre";
+                                return <button key={event.id} type="button" onClick={() => setSelectedEvent(event)} aria-label={`${title}, ${continuesBefore ? "commence avant cette journée" : startLabel}, ${continuesAfter ? "se poursuit après cette journée" : endLabel}. Voir le détail`} title={`${title} · ${continuesBefore ? "En cours à minuit" : startLabel} – ${continuesAfter ? "après minuit" : endLabel}`} className="pointer-events-auto absolute overflow-hidden rounded-lg border border-[#eee8eb] border-l-4 bg-white/95 p-2 text-left shadow-sm transition hover:z-30 hover:shadow-md focus-visible:z-30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#a93105]" style={{ top: `${top}px`, height: `${height}px`, left: `${lane * 100 / columns}%`, width: `${100 / columns}%`, borderLeftColor: getEventOriginColor(event) }}>
+                                    <span className="block truncate text-[11px] font-bold leading-4 text-[#1b1b1d] sm:text-xs">{title}</span>
+                                    <span className="mt-1 block truncate text-[10px] font-medium tabular-nums text-[#765f58]">{continuesBefore ? "← En cours" : startLabel} – {continuesAfter ? "Se poursuit →" : endLabel}</span>
+                                    {height >= 62 && <span className="mt-1 block truncate text-[10px] text-[#8d7169]">{event.salles?.map((room) => room.nom_salle).join(" · ") || event.nom_salle || "Lieu à confirmer"}</span>}
+                                    {height >= 94 && event.nom_client && <span className="mt-1 block truncate text-[10px] text-[#8d7169]">{event.nom_client}</span>}
+                                </button>;
+                            })}
                         </div>
-                    ))}
-
-                    {/* Ligne rouge = Heure actuelle */}
-                    {selectedDay.isSame(currentTime, "day") && (
-                        <div
-                            className="absolute left-16 right-0 border-t-2 border-red-500 z-30 pointer-events-none"
-                            style={{ top: `${getTimePosition(currentTime)}px` }}
-                        >
-                            <div className="absolute -left-1.5 -top-1.5 w-3 h-3 bg-red-500 rounded-full ring-2 ring-white"></div>
-                            <span className="absolute left-2 -top-6 bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded shadow-sm">
-                                {currentTime.format("HH:mm")}
-                            </span>
-                        </div>
-                    )}
-
-                    {/* Événements */}
-                    {events
-                        .filter((e) => {
-                            if (!e.date_debut || !e.date_fin) return false;
-                            const start = dayjs(e.date_debut);
-                            const end = dayjs(e.date_fin);
-                            // Vérifie si l'événement chevauche la journée sélectionnée
-                            return (
-                                selectedDay.isSame(start, "day") ||
-                                selectedDay.isSame(end, "day") ||
-                                (selectedDay.isAfter(start, "day") && selectedDay.isBefore(end, "day"))
-                            );
-                        })
-                        .map((e) => {
-                            const start = dayjs(e.date_debut);
-                            const end = dayjs(e.date_fin);
-
-                            // Clamp l'événement aux limites de la journée (00:00 -> 23:59)
-                            const eventStart = selectedDay.isAfter(start, "day")
-                                ? selectedDay.startOf("day")
-                                : start;
-                            const eventEnd = selectedDay.isBefore(end, "day")
-                                ? selectedDay.endOf("day")
-                                : end;
-
-                            const top = getTimePosition(eventStart);
-                            const durationMinutes = eventEnd.diff(eventStart, 'minute');
-                            // Hauteur minimum de 30px pour visibilité
-                            const height = Math.max((durationMinutes / 60) * HOUR_HEIGHT, 40); 
-
-                            return (
-                                <div
-                                    key={e.id}
-                                    className="absolute left-20 right-4 rounded-md border-l-4 shadow-sm hover:shadow-md transition-all duration-200 cursor-pointer z-10 overflow-hidden bg-white border border-gray-200"
-                                    style={{ 
-                                        top: `${top}px`, 
-                                        height: `${height}px`,
-                                        borderLeftColor: '#1c9902ff'
-                                    }}
-                                >
-                                    {/* Fond coloré très léger */}
-                                    <div className="absolute inset-0 opacity-5 bg-gradient-to-r from-gray-100 to-white pointer-events-none"></div>
-
-                                    <div className="relative p-2 h-full flex flex-col justify-between">
-                                        <div>
-                                            <div className="flex items-center justify-between mb-1">
-                                                <span className="font-bold text-sm text-gray-900 truncate pr-2">
-                                                    {e.nom_evenement || e.description || "Évènement sans nom"}
-                                                </span>
-                                                <span className="font-bold text-sm text-gray-900 truncate pr-2">
-                                                    {(e.salles?.length > 0 ? e.salles.map(s => s.nom_salle).join(" + ") : "Aucune salle")}
-                                                </span>
-                                                <Badge variant="outline" className="text-[10px] px-1 py-0 h-5 bg-gray-50 text-gray-600 border-gray-200">
-                                                    {e.categorie}
-                                                </Badge>
-                                            </div>
-                                            
-                                            <div className="flex items-center gap-2 text-xs text-gray-500 font-medium mb-1">
-                                                <Clock size={12} className="text-gray-400" />
-                                                <span>
-                                                    {start.format("HH:mm")} - {end.format("HH:mm")}
-                                                </span>
-                                            </div>
-                                            
-                                            <div className="text-xs text-gray-600 truncate flex items-center gap-1.5">
-                                                 <User size={12} className="text-gray-400" />
-                                                 {e.nom_client || "Client inconnu"}
-                                            </div>
-                                        </div>
-
-                                        {/* Afficher plus d'infos si la boîte est assez grande */}
-                                        {height > 100 && (
-                                            <div className="mt-auto pt-2 border-t border-gray-50 flex justify-between items-end">
-                                                <span className="text-[10px] text-gray-400">Agent: {e.agent?.name}</span>
-                                                <span className="font-bold text-xs text-gray-900">
-                                                    {e.montant?.toLocaleString()} FCFA
-                                                </span>
-                                            </div>
-                                        )}
-                                    </div>
-                                </div>
-                            );
-                        })}
+                    </div>
                 </div>
             </div>
-        </div>
+            <CalendarEventDialog event={selectedEvent} open={!!selectedEvent} onOpenChange={(open) => !open && setSelectedEvent(null)} />
+        </section>
     );
 }

@@ -13,7 +13,9 @@ import {
     LogOut,
     Slash, // Icône pour le style breadcrumb
     X,
-    HandCoins
+    HandCoins,
+    ClipboardList,
+    Ticket
 } from 'lucide-react';
 import { Menu, MenuButton, MenuItem, MenuItems, Transition } from '@headlessui/react';
 import { Fragment, useEffect, useState } from 'react';
@@ -31,7 +33,9 @@ const navigation = [
     { name: 'Posts', href: '/dashboard/posts', icon: Newspaper },
     { name: 'Évènements', href: '/dashboard/evenements', icon: PartyPopper },
     { name: 'Finance', href: '/dashboard/accounting', icon: HandCoins },
+    { name: 'Audit', href: '/dashboard/audit', icon: ClipboardList },
     { name: 'Équipe', href: '/dashboard/users', icon: ShieldUser },
+    { name: 'Billetterie', href: '/dashboard/tickets', icon: Ticket },
 ];
 
 const finance = [
@@ -45,12 +49,17 @@ const editor = [
     { name: 'Contenus', href: '/editor/posts', icon: Newspaper },
 ];
 
+const assistant = [
+    { name: 'Vue d\'ensemble', href: '/dashboard/home', icon: Home },
+    { name: 'Évènements', href: '/dashboard/evenements', icon: PartyPopper },
+];
+
 export default function Header() {
-    const { user, logout, isAdmin, isFinancial, isEditor } = useAuth();
+    const { user, logout, isAdmin, isFinancial, isEditor, isAgent, isAssistant } = useAuth();
     const pathname = usePathname();
     const [loading, setLoading] = useState(true);
     const [openDrawer, setOpenDrawer] = useState(false);
-    const { notifs, nonluCount, markAllAsRead, markAsRead } = useNotifications();
+    const { notifs, nonluCount, markAllAsRead, markAsRead, isLoading: notificationsLoading, error: notificationsError } = useNotifications();
 
     const isActive = (href) => pathname.startsWith(href);
 
@@ -69,13 +78,13 @@ export default function Header() {
     }, [user]);
 
     // Détermine quelle liste de navigation utiliser
-    const currentNav = isAdmin ? navigation : isFinancial ? finance : isEditor ? editor : [];
+    const currentNav = isAdmin ? navigation : isAssistant ? assistant : isFinancial ? finance : isEditor ? editor : [];
 
     return (
-        <div className="sticky top-0 z-40 w-full bg-white border-b border-gray-200">
+        <div className="sticky top-0 z-40 w-full border-b border-[#e9e1e4] bg-[#fcf8fb]/95 shadow-[0_1px_10px_rgba(42,24,30,0.045)] backdrop-blur-xl">
             {/* 1. NIVEAU SUPÉRIEUR : Identité & Actions */}
             <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-                <div className="flex h-16 items-center justify-between">
+                <div className="flex h-[68px] items-center justify-between">
 
                     {/* Gauche : Logo + Breadcrumb */}
                     <div className="flex items-center">
@@ -83,21 +92,24 @@ export default function Header() {
                             <Image
                                 alt="Logo CCJAB"
                                 src="/images/favicon.png"
-                                width={32}
-                                height={32}
-                                className="h-8 w-8 object-contain"
+                                width={38}
+                                height={38}
+                                className="h-9 w-9 rounded-lg bg-white p-1 object-contain shadow-sm ring-1 ring-[#e9e1e4]"
                                 priority
                             />
                         </Link>
 
                         {/* Séparateur Slash Vercel */}
-                        <Slash className="mx-3 h-5 w-5 text-gray-300 transform -rotate-12" />
+                        <Slash className="mx-3 h-5 w-5 -rotate-12 text-[#d7c8c4]" />
 
                         <div className="flex items-center gap-2">
-                            <span className="text-sm font-semibold text-gray-900 tracking-tight">CCJAB</span>
+                            <div className="flex flex-col leading-tight">
+                                <span className="font-[Georgia] text-base font-semibold tracking-tight text-[#1b1b1d]">CCJAB</span>
+                                <span className="text-[9px] font-bold uppercase tracking-[0.16em] text-[#8d7169]">Console · Bouaké</span>
+                            </div>
 
                             {!loading && user && (
-                                <Badge variant="outline" className="hidden sm:flex ml-2 border-gray-200 bg-gray-50 text-gray-500 text-[10px] uppercase tracking-wider font-medium px-2 py-0.5 h-5">
+                                <Badge variant="outline" className="ml-1 hidden h-5 border-[#e8d9d4] bg-[#f6ece8] px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-[#a93105] sm:flex">
                                     {user.role}
                                 </Badge>
                             )}
@@ -105,13 +117,16 @@ export default function Header() {
                     </div>
 
                     {/* Droite : Notifications & Profile */}
-                    <div className="flex items-center gap-4">
+                    <div className="flex items-center gap-3">
 
                         {/* Notifications */}
-                        {!loading && !isAdmin && !isFinancial && !isEditor && (
+                        {!loading && isAgent && (
                             <button
+                                type="button"
                                 onClick={() => setOpenDrawer(true)}
-                                className="relative p-1.5 rounded-full text-gray-500 hover:text-gray-900 hover:bg-gray-100 transition-all duration-200 focus:outline-none"
+                                aria-label={`Notifications${nonluCount > 0 ? `, ${nonluCount} non lue${nonluCount === 1 ? '' : 's'}` : ''}`}
+                                title="Notifications"
+                                className="relative rounded-xl border border-[#e9e1e4] bg-white p-2 text-[#765f58] transition hover:bg-[#f6f3f5] hover:text-[#a93105] focus:outline-none"
                             >
                                 <Bell className="w-5 h-5" />
                                 {nonluCount > 0 && (
@@ -125,11 +140,11 @@ export default function Header() {
 
                         {/* Avatar Menu */}
                         {loading ? (
-                            <div className="h-8 w-8 bg-gray-100 rounded-full animate-pulse" />
+                                    <div className="h-9 w-9 animate-pulse rounded-full bg-[#f0edef]" />
                         ) : (
                             <Menu as="div" className="relative">
                                 <MenuButton className="flex items-center gap-2 focus:outline-none group">
-                                    <div className="h-8 w-8 rounded-full bg-gradient-to-tr from-gray-700 to-gray-900 flex items-center justify-center text-white text-xs font-medium shadow-sm ring-2 ring-transparent group-hover:ring-gray-100 transition-all">
+                                    <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[#a93105] text-xs font-bold text-white shadow-sm ring-2 ring-transparent transition-all group-hover:ring-[#fae9e3]">
                                         {user?.name?.charAt(0).toUpperCase()}
                                     </div>
                                 </MenuButton>
@@ -143,10 +158,10 @@ export default function Header() {
                                     leaveFrom="transform opacity-100 scale-100"
                                     leaveTo="transform opacity-0 scale-95"
                                 >
-                                    <MenuItems className="absolute right-0 z-50 mt-2 w-56 origin-top-right rounded-md bg-white py-1 shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none border border-gray-100">
-                                        <div className="px-4 py-3 border-b border-gray-100 bg-gray-50/30">
-                                            <p className="text-sm font-medium text-gray-900 truncate">{user?.name}</p>
-                                            <p className="text-xs text-gray-500 truncate">{user?.email}</p>
+                                    <MenuItems className="absolute right-0 z-50 mt-2 w-60 origin-top-right rounded-xl border border-[#e9e1e4] bg-white py-1 shadow-xl focus:outline-none">
+                                        <div className="border-b border-[#f0edef] bg-[#fcf8fb] px-4 py-3">
+                                            <p className="truncate text-sm font-bold text-[#1b1b1d]">{user?.name}</p>
+                                            <p className="truncate text-xs text-[#8d7169]">{user?.email}</p>
                                         </div>
                                         <div className="p-1">
                                             <MenuItem>
@@ -154,7 +169,7 @@ export default function Header() {
                                                     <button
                                                         onClick={handleLogout}
                                                         className={`${active ? 'bg-gray-50 text-gray-900' : 'text-gray-500'
-                                                            } group flex w-full items-center gap-2 rounded-md px-3 py-2 text-sm`}
+                                                            } group flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm`}
                                                     >
                                                         <LogOut className="w-4 h-4" />
                                                         Se déconnecter
@@ -171,24 +186,24 @@ export default function Header() {
             </div>
 
             {/* 2. NIVEAU INFÉRIEUR : Navigation avec ICÔNES */}
-            {(isAdmin || isFinancial || isEditor || pathname.includes('/agent')) && (
-                <div className="border-t border-gray-100 bg-white">
+            {(isAdmin || isAssistant || isFinancial || isEditor || pathname.includes('/agent')) && (
+                <div className="border-t border-[#f0edef] bg-[#fcf8fb]">
                     <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-                        <nav className="flex -mb-px space-x-6 overflow-x-auto no-scrollbar">
+                        <nav className="flex gap-1.5 overflow-x-auto py-2 no-scrollbar">
 
                             {/* Navigation Agent */}
-                            {!isAdmin && !isFinancial && !isEditor && (
+                            {!isAdmin && !isAssistant && !isFinancial && !isEditor && isAgent && (
                                 <Link
                                     href="/agent/home"
                                     className={`
-                                        whitespace-nowrap py-3 px-1 border-b-2 text-sm font-medium transition-colors duration-200 flex items-center gap-2
+                                        whitespace-nowrap rounded-lg px-3 py-2 text-sm font-semibold transition-colors duration-200 flex items-center gap-2
                                         ${pathname.includes('/agent')
-                                            ? 'border-black text-black'
-                                            : 'border-transparent text-gray-500 hover:text-gray-900 hover:border-gray-200'
+                                            ? 'bg-[#a93105] text-white shadow-sm'
+                                            : 'text-[#765f58] hover:bg-white hover:text-[#a93105]'
                                         }
                                     `}
                                 >
-                                    <Home size={16} className={pathname.includes('/agent') ? "text-black" : "text-gray-400 group-hover:text-gray-600"} />
+                                    <Home size={16} className={pathname.includes('/agent') ? "text-white" : "text-[#8d7169] group-hover:text-[#a93105]"} />
                                     Accueil Agent
                                 </Link>
                             )}
@@ -202,16 +217,16 @@ export default function Header() {
                                         key={item.name}
                                         href={item.href}
                                         className={`
-                                            group whitespace-nowrap py-3 px-1 border-b-2 text-sm font-medium transition-colors duration-200 flex items-center gap-2
+                                            group whitespace-nowrap rounded-lg px-3 py-2 text-sm font-semibold transition-colors duration-200 flex items-center gap-2
                                             ${active
-                                                ? 'border-black text-black'
-                                                : 'border-transparent text-gray-500 hover:text-gray-900 hover:border-gray-200'
+                                                ? 'bg-[#a93105] text-white shadow-sm'
+                                                : 'text-[#765f58] hover:bg-white hover:text-[#a93105]'
                                             }
                                         `}
                                     >
                                         <Icon
                                             size={16}
-                                            className={`transition-colors duration-200 ${active ? "text-black" : "text-gray-400 group-hover:text-gray-600"
+                                            className={`transition-colors duration-200 ${active ? "text-white" : "text-[#8d7169] group-hover:text-[#a93105]"
                                                 }`}
                                         />
                                         {item.name}
@@ -246,7 +261,7 @@ export default function Header() {
                                 <div className="flex-1 overflow-y-auto p-0">
                                     {notifs.length === 0 ? (
                                         <div className="h-full flex flex-col items-center justify-center text-center space-y-3 p-6">
-                                            <p className="text-gray-500 text-sm">Aucune nouvelle notification.</p>
+                                            <p className="text-gray-500 text-sm">{notificationsLoading ? "Chargement des notifications…" : notificationsError || "Aucune nouvelle notification."}</p>
                                         </div>
                                     ) : (
                                         <ul className="divide-y divide-gray-100">

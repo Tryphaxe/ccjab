@@ -128,3 +128,21 @@ export const updateEventVisibility = async (id, visible) => {
     toast.error(error?.response?.data?.error || "Erreur lors de la mise à jour");
   }
 };
+
+export const fetchEventPage = async ({ page, pageSize, filters = {} }, setData, setTotal, setIsLoading) => {
+    setIsLoading?.(true);
+    try {
+        const params = new URLSearchParams({ page: String(page), pageSize: String(pageSize) });
+        const keys = { agent: 'agent', type: 'type', categorie: 'category', statut: 'status', date_debut: 'dateStart', date_fin: 'dateEnd', q: 'q' };
+        Object.entries(keys).forEach(([key, queryKey]) => {
+            if (filters[key]) params.set(queryKey, filters[key]);
+        });
+        const { data } = await axios.get(`/api/even/search?${params.toString()}`);
+        setData(data.events);
+        setTotal(data.total);
+    } catch (error) {
+        toast.error(error?.response?.data?.error || 'Erreur lors du chargement des événements.');
+    } finally {
+        setIsLoading?.(false);
+    }
+};

@@ -44,6 +44,10 @@ export default function page() {
         nom: '',
     });
 
+    useEffect(() => () => {
+        if (preview?.startsWith('blob:')) URL.revokeObjectURL(preview);
+    }, [preview]);
+
     const toggle = (id) => {
         setSelected(prev =>
             prev.includes(id)
@@ -68,8 +72,7 @@ export default function page() {
     const isSalleOccupee = (salleId) => {
         const now = new Date();
         return events.some((ev) => {
-            if (!ev.salle_id) return false;
-            if (ev.salle_id !== salleId) return false;
+            if (!ev.salles?.some((salle) => salle.id === salleId)) return false;
             const d1 = new Date(ev.date_debut);
             const d2 = new Date(ev.date_fin);
             return now >= d1 && now <= d2;
@@ -182,18 +185,19 @@ export default function page() {
     const DEFAULT_IMAGE = "/images/default-salle.png";
 
     return (
-        <div className="min-h-screen bg-gray-50/50 p-4 text-gray-900">
-            <div className="max-w-7xl mx-auto">
+        <main className="min-h-screen bg-[#fcf8fb] px-4 py-7 text-[#1b1b1d] sm:px-6 lg:px-8 lg:py-10">
+            <div className="mx-auto w-full max-w-7xl">
 
                 {/* Header de la page */}
                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
                     <div>
-                        <h1 className="text-2xl font-bold tracking-tight text-gray-900">Gestion des Espaces</h1>
+                        <p className="mb-2 text-[10px] font-bold uppercase tracking-[0.15em] text-[#a93105]">Patrimoine · Centre culturel</p>
+                        <h1 className="font-[Georgia] text-3xl font-semibold tracking-tight text-[#1b1b1d]">Gestion des Espaces</h1>
                         <p className="text-sm text-gray-500 mt-1">Gérez vos salles et leurs équipements.</p>
                     </div>
 
                     {/* Légende rapide */}
-                    <div className="flex items-center gap-4 bg-white px-4 py-2 rounded-full border border-gray-200 shadow-sm text-sm">
+                    <div className="flex items-center gap-4 bg-white px-4 py-2 rounded-full border border-[#eee8eb] shadow-sm text-sm">
                         <div className="flex items-center gap-2">
                             <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
                             <span className="text-gray-600 font-medium">Disponible</span>
@@ -206,18 +210,31 @@ export default function page() {
                     </div>
                 </div>
 
+                <section aria-label="Résumé des espaces" className="mb-8 grid grid-cols-1 gap-3 sm:grid-cols-3">
+                    {[
+                        { label: 'Espaces répertoriés', value: salles.length, note: `${commodites.length} équipements disponibles au catalogue`, icon: BoxSelect, tone: 'bg-[#fae9e3] text-[#a93105]' },
+                        { label: 'Disponibles maintenant', value: salles.filter((salle) => !isSalleOccupee(salle.id)).length, note: 'Selon les événements en cours', icon: Eye, tone: 'bg-[#e2f1e8] text-[#446554]' },
+                        { label: 'Capacité totale', value: salles.reduce((total, salle) => total + (Number(salle.nombre_place) || 0), 0).toLocaleString('fr-FR'), note: 'Places cumulées sur tous les espaces', icon: Armchair, tone: 'bg-[#ffeed1] text-[#7b5500]' },
+                    ].map(({ label, value, note, icon: Icon, tone }) => (
+                        <article key={label} className="flex items-center gap-4 rounded-2xl border border-[#eee8eb] bg-white p-4 shadow-[0_2px_12px_rgba(42,24,30,0.035)] sm:p-5">
+                            <span className={`rounded-xl p-3 ${tone}`}><Icon size={19} /></span>
+                            <div><p className="text-xs font-semibold text-[#765f58]">{label}</p><p className="mt-1 text-2xl font-bold tracking-tight text-[#1b1b1d]">{value}</p><p className="mt-0.5 text-[11px] text-[#8d7169]">{note}</p></div>
+                        </article>
+                    ))}
+                </section>
+
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
 
                     {/* SECTION GAUCHE : LISTE DES SALLES (Prend 8/12 colonnes sur desktop) */}
                     <div className="lg:col-span-8 space-y-6">
                         <div className="flex items-center justify-between">
-                            <h2 className="text-lg font-semibold flex items-center gap-2">
+                            <div><h2 className="font-[Georgia] text-xl font-semibold tracking-tight text-[#1b1b1d] flex items-center gap-2">
                                 <BoxSelect className="w-5 h-5 text-gray-500" />
                                 Liste des salles
-                            </h2>
+                            </h2><p className="mt-1 text-xs text-[#8d7169]">État, capacité et équipements de chaque espace.</p></div>
                             <Dialog>
                                 <DialogTrigger asChild>
-                                    <Button className="bg-gray-900 text-white hover:bg-gray-800 shadow-lg shadow-gray-900/20">
+                                    <Button className="bg-[#a93105] text-white hover:bg-[#862300] shadow-sm">
                                         <Plus className="w-4 h-4 mr-2" /> Nouvelle Salle
                                     </Button>
                                 </DialogTrigger>
@@ -262,7 +279,7 @@ export default function page() {
                                                 <Label>Commodités incluses</Label>
                                                 <div className="grid grid-cols-2 gap-3 p-3 bg-gray-50 rounded-lg border border-gray-100 max-h-40 overflow-y-auto">
                                                     {commodites.map(c => (
-                                                        <label key={c.id} className="flex items-center gap-2 text-sm text-gray-700 cursor-pointer hover:text-gray-900">
+                                                        <label key={c.id} className="flex items-center gap-2 text-sm text-gray-700 cursor-pointer hover:text-[#1b1b1d]">
                                                             <input
                                                                 type="checkbox"
                                                                 className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
@@ -300,7 +317,7 @@ export default function page() {
                                 <div className="bg-gray-50 p-4 rounded-full mb-3">
                                     <Info className='w-6 h-6 text-gray-400' />
                                 </div>
-                                <h3 className="text-lg font-medium text-gray-900">Aucune salle</h3>
+                                <h3 className="text-lg font-medium text-[#1b1b1d]">Aucune salle</h3>
                                 <p className="text-gray-500 max-w-sm mt-1 mb-4">Commencez par ajouter votre première salle pour gérer les événements.</p>
                             </div>
                         ) : (
@@ -309,7 +326,7 @@ export default function page() {
                                     const occupee = isSalleOccupee(sal.id);
 
                                     return (
-                                        <div key={sal.id} className="group relative bg-white rounded-xl border border-gray-200 shadow-sm hover:shadow-lg hover:border-gray-300 transition-all duration-300 overflow-hidden flex flex-col">
+                                        <article key={sal.id} className="group relative flex flex-col overflow-hidden rounded-2xl border border-[#eee8eb] bg-white shadow-[0_2px_12px_rgba(42,24,30,0.035)] transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg">
 
                                             {/* Barre de statut latérale */}
                                             <div className={`absolute top-0 left-0 bottom-0 w-1.5 z-10 ${occupee ? "bg-rose-500" : "bg-emerald-500"}`}></div>
@@ -333,7 +350,7 @@ export default function page() {
                                                         <p className="text-xs font-semibold uppercase tracking-wider text-gray-400 mb-1">
                                                             {sal.nombre_place} places
                                                         </p>
-                                                        <h3 className="text-lg font-bold text-gray-900 group-hover:text-blue-600 transition-colors">
+                                                        <h3 className="font-[Georgia] text-xl font-semibold text-[#1b1b1d] transition-colors group-hover:text-[#a93105]">
                                                             {sal.nom_salle}
                                                         </h3>
                                                     </div>
@@ -384,7 +401,7 @@ export default function page() {
                                                             variant="outline"
                                                             size="sm"
                                                             onClick={() => handleEditClick(sal)}
-                                                            className="h-8 w-8 p-0 border-gray-200 text-gray-500 hover:text-blue-600 hover:bg-blue-50"
+                                                            className="h-8 w-8 p-0 border-[#eee8eb] text-gray-500 hover:text-blue-600 hover:bg-blue-50"
                                                         >
                                                             <Pen size={14} />
                                                         </Button>
@@ -400,7 +417,7 @@ export default function page() {
                                                     </div>
                                                 </div>
                                             </div>
-                                        </div>
+                                        </article>
                                     );
                                 })}
                             </div>
@@ -409,9 +426,9 @@ export default function page() {
 
                     {/* SECTION DROITE : COMMODITÉS (Sticky sidebar sur desktop) */}
                     <div className="lg:col-span-4">
-                        <div className="sticky top-6 bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
-                            <div className="p-4 border-b border-gray-100 flex items-center justify-between bg-gray-50/50">
-                                <h2 className="font-semibold text-gray-900 flex items-center gap-2">
+                        <div className="sticky top-6 bg-white rounded-xl border border-[#eee8eb] shadow-sm overflow-hidden">
+                            <div className="p-4 border-b border-gray-100 flex items-center justify-between bg-[#fcf8fb]">
+                                <h2 className="font-semibold text-[#1b1b1d] flex items-center gap-2">
                                     <Armchair className="w-4 h-4 text-gray-500" />
                                     Commodités
                                 </h2>
@@ -447,7 +464,7 @@ export default function page() {
                                 ) : (
                                     <div className="space-y-2">
                                         {commodites.map(c => (
-                                            <div key={c.id} className="group flex items-center justify-between p-2.5 rounded-lg border border-gray-100 hover:bg-gray-50 hover:border-gray-200 transition-colors">
+                                            <div key={c.id} className="group flex items-center justify-between p-2.5 rounded-lg border border-gray-100 hover:bg-gray-50 hover:border-[#eee8eb] transition-colors">
                                                 <span className="text-sm font-medium text-gray-700">{c.nom}</span>
                                                 <Button
                                                     variant="ghost"
@@ -581,6 +598,6 @@ export default function page() {
                 </Dialog>
 
             </div>
-        </div>
+        </main>
     )
 }

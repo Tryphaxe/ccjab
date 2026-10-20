@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useMemo } from 'react'
-import { Info, Plus, Loader, Trash2, Share, CalendarCheck2, Phone, Pen, User, PartyPopper, UserStar, FilterX, FileText, ChevronLeft, ChevronRight, Eye, EyeOff, Upload, Image } from 'lucide-react';
+import { Info, Plus, Loader, Trash2, Share, CalendarCheck2, Phone, Pen, User, PartyPopper, UserStar, FilterX, FileText, ChevronLeft, ChevronRight, Eye, EyeOff, Upload, Image, CreditCard } from 'lucide-react';
 import { Button } from "@/components/ui/button"
 import {
     Dialog,
@@ -26,7 +26,7 @@ import {
 } from "@/components/ui/select"
 import { Badge } from "@/components/ui/badge";
 import { eventCategories, eventTypesByCategory } from '@/lib/list';
-import { submitForm, fetchEvents, deleteEvent, updateEvent, deleteManyEvents, updateEventVisibility } from '@/utils/evenUtils';
+import { submitForm, fetchEventPage, deleteEvent, updateEvent, deleteManyEvents, updateEventVisibility } from '@/utils/evenUtils';
 import { fetchAgents } from '@/utils/agentUtils';
 import { fetchSalles } from '@/utils/salleUtils';
 import { formatEventDate, getEventStatus } from '@/lib/evenHelper';
@@ -35,6 +35,8 @@ import { DateTimePicker } from '@/components/DateTimePicker';
 import { Switch } from '@/components/ui/switch';
 import { uploadImage } from '@/utils/uploadEventsUtils';
 import { uploadFile } from '@/utils/uploadFichesUtils';
+import RecordPaymentDialog from '@/components/RecordPaymentDialog';
+import { EventOriginBadge, EventOriginLegend, getEventOriginColor } from '@/components/EventOrigin';
 const DEFAULT_IMAGE = "/images/default-salle.png";
 
 const ITEMS_PER_PAGE = 10; // Nombre d'éléments par page
@@ -133,6 +135,10 @@ const EventFormFields = React.memo(
                         <Input id="contact" name="contact_client" value={form.contact_client} onChange={handleChange} placeholder="ex: 0102030405" />
                     </div>
                 </div>
+                <label className="flex items-start gap-2 rounded-lg border border-orange-200 bg-orange-50/60 p-3 text-sm text-gray-700 cursor-pointer">
+                    <input type="checkbox" checked={form.organise_par_ccjab === true} onChange={(event) => setForm({ ...form, organise_par_ccjab: event.target.checked })} className="mt-0.5 rounded border-gray-300 text-orange-700 focus:ring-orange-600" />
+                    <span><strong>Évènement organisé par le CCJAB</strong><span className="block text-xs text-gray-500">Décochez cette case pour un évènement organisé par un client externe.</span></span>
+                </label>
             </div>
 
             {/* Section Évènement */}
@@ -181,7 +187,7 @@ const EventFormFields = React.memo(
                             label="Date début"
                             value={form.date_debut ? new Date(form.date_debut) : undefined}
                             onChange={(dateTime) => setForm(prev => ({ ...prev, date_debut: dateTime.toISOString() }))}
-                            disabledSlots={getOccupiedSlots(form.salle_id)}
+                            disabledSlots={getOccupiedSlots(form.salle_ids)}
                         />
                     </div>
                     <div className="space-y-1">
@@ -189,7 +195,7 @@ const EventFormFields = React.memo(
                             label="Date fin"
                             value={form.date_fin ? new Date(form.date_fin) : undefined}
                             onChange={(dateTime) => setForm(prev => ({ ...prev, date_fin: dateTime.toISOString() }))}
-                            disabledSlots={getOccupiedSlots(form.salle_id)}
+                            disabledSlots={getOccupiedSlots(form.salle_ids)}
                         />
                     </div>
 
@@ -259,12 +265,15 @@ const EventFormFields = React.memo(
 export default function page() {
     const [filters, setFilters] = useState({});
     const [events, setEvents] = useState([])
+    const [occupancyEvents, setOccupancyEvents] = useState([]);
+    const [totalResults, setTotalResults] = useState(0);
     const [agents, setAgents] = useState([])
     const [salles, setSalles] = useState([])
     const [isloading, setIsLoading] = useState(true)
     const [loading, setLoading] = useState(false)
     // const [openn, setOpenn] = useState(false);
     const [selectedEvent, setSelectedEvent] = useState(null);
+    const [paymentEvent, setPaymentEvent] = useState(null);
     const [eventToDelete, setEventToDelete] = useState(null);
     const [open, setOpen] = useState(false);
 
@@ -283,6 +292,7 @@ export default function page() {
         date_fin: '',
         description: '',
         nom_client: '',
+        organise_par_ccjab: false,
         contact_client: '',
         type: '',
         salle_ids: [],
@@ -296,6 +306,10 @@ export default function page() {
 
     // États pour la sélection multiple
     const [selectedIds, setSelectedIds] = useState([]);
+
+    useEffect(() => () => {
+        if (preview?.startsWith('blob:')) URL.revokeObjectURL(preview);
+    }, [preview]);
     const [isBulkDeleteDialogOpen, setIsBulkDeleteDialogOpen] = useState(false);
 
     const handleChange = (e) => {
@@ -307,12 +321,32 @@ export default function page() {
     };
 
     useEffect(() => {
-        fetchEvents(setEvents, setIsLoading);
         fetchAgents(setAgents, setIsLoading);
         fetchSalles(setSalles, setIsLoading);
     }, []);
 
-    const reloadEvents = () => fetchEvents(setEvents, setIsLoading);
+    useEffect(() => {
+        const timer = setTimeout(() => fetchEventPage({ page: currentPage, pageSize: ITEMS_PER_PAGE, filters }, setEvents, setTotalResults, setIsLoading), 250);
+        return () => clearTimeout(timer);
+    }, [currentPage, filters]);
+
+    useEffect(() => {
+        const roomIds = form.salle_ids || [];
+        if (!roomIds.length) { setOccupancyEvents([]); return; }
+        const controller = new AbortController();
+        const params = new URLSearchParams();
+        roomIds.forEach((id) => params.append('roomId', id));
+        fetch(`/api/even/occupancy?${params}`, { signal: controller.signal })
+            .then(async (response) => {
+                const data = await response.json();
+                if (!response.ok) throw new Error(data.error || 'Erreur de disponibilité.');
+                setOccupancyEvents(data);
+            })
+            .catch((error) => { if (error.name !== 'AbortError') console.error(error); });
+        return () => controller.abort();
+    }, [form.salle_ids]);
+
+    const reloadEvents = () => fetchEventPage({ page: currentPage, pageSize: ITEMS_PER_PAGE, filters }, setEvents, setTotalResults, setIsLoading);
 
     const onClose = () => {
         setOpen(false); setPreview(null);
@@ -329,6 +363,7 @@ export default function page() {
             date_fin: '',
             description: '',
             nom_client: '',
+            organise_par_ccjab: false,
             contact_client: '',
             type: '',
             salle_ids: [],
@@ -361,7 +396,7 @@ export default function page() {
         const start = new Date(startIso);
         const end = new Date(endIso);
 
-        return events.some(e => {
+        return occupancyEvents.some(e => {
             if (e.id === excludeId) return false;
             // Conflit si l'évènement existant occupe l'une des salles qu'on tente de réserver
             const occupeUneDesSalles = e.salles?.some(s => salleIds.includes(s.id));
@@ -372,7 +407,7 @@ export default function page() {
     const isConflict = useMemo(() => {
         const excludeId = selectedEvent ? selectedEvent.id : null;
         return hasConflict(form.date_debut, form.date_fin, form.salle_ids, excludeId);
-    }, [form.date_debut, form.date_fin, form.salle_ids, events, selectedEvent]);
+    }, [form.date_debut, form.date_fin, form.salle_ids, occupancyEvents, selectedEvent]);
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -396,7 +431,7 @@ export default function page() {
             await submitForm({
                 data: { ...form, image: imageUrl, fiche: pdfUrl }, // On injecte l'URL
                 setLoading,
-                reload: () => fetchEvents(setEvents, setIsLoading),
+                reload: reloadEvents,
                 successMessage: "Évènement ajouté avec succès.",
                 errorMessage: "Erreur lors de l'ajout.",
             });
@@ -408,37 +443,20 @@ export default function page() {
     };
 
     const filteredEvents = useMemo(() => {
-        return events.filter((e) => {
-            const statut = getEventStatus(e.date_debut, e.date_fin);
-            if (filters.agent && e.agent.name !== filters.agent) return false;
-            if (filters.type && e.type !== filters.type) return false;
-            if (filters.categorie && e.categorie !== filters.categorie) return false;
-            if (filters.statut && statut !== filters.statut) return false;
-            if (filters.date_debut && new Date(e.date_debut) < new Date(filters.date_debut)) return false;
-            if (filters.date_fin && new Date(e.date_fin) > new Date(filters.date_fin)) return false;
-            return true;
-        });
-    }, [events, filters]);
+        return events;
+    }, [events]);
 
     // Réinitialiser la page quand les filtres changent
     useEffect(() => {
         setCurrentPage(1);
+        setSelectedIds([]);
     }, [filters]);
 
     // Logique de pagination
-    const totalPages = Math.ceil(filteredEvents.length / ITEMS_PER_PAGE);
-    const indexOfLastItem = currentPage * ITEMS_PER_PAGE;
-    const indexOfFirstItem = indexOfLastItem - ITEMS_PER_PAGE;
-    const currentEvents = filteredEvents.slice(indexOfFirstItem, indexOfLastItem);
-
-    // Petit loader visuel lors du filtrage
-    useEffect(() => {
-        if (Object.keys(filters).length > 0) {
-            setLoading(true);
-            const timer = setTimeout(() => setLoading(false), 300);
-            return () => clearTimeout(timer);
-        }
-    }, [filters]);
+    const totalPages = Math.ceil(totalResults / ITEMS_PER_PAGE);
+    const indexOfFirstItem = totalResults ? (currentPage - 1) * ITEMS_PER_PAGE + 1 : 0;
+    const indexOfLastItem = Math.min(currentPage * ITEMS_PER_PAGE, totalResults);
+    const currentEvents = filteredEvents;
 
     const handleUpdate = async (e) => {
         e.preventDefault();
@@ -506,10 +524,10 @@ export default function page() {
         setSelectedIds([]);
     };
 
-    const getOccupiedSlots = (salleId) => {
-        if (!salleId) return [];
-        return events
-            .filter(e => e.salle_id === salleId)
+    const getOccupiedSlots = (salleIds = []) => {
+        if (!Array.isArray(salleIds) || salleIds.length === 0) return [];
+        return occupancyEvents
+            .filter(e => e.salles?.some(salle => salleIds.includes(salle.id)))
             .map(e => ({
                 start: new Date(e.date_debut),
                 end: new Date(e.date_fin)
@@ -520,7 +538,7 @@ export default function page() {
         if (open || selectedEvent) {
             // Reset form dates if needed or handle side effects
         }
-    }, [form.salle_ids]);
+    }, [form.salle_ids, occupancyEvents]);
 
     const handleVisibilityToggle = async (ev) => {
         // 1. Mise à jour optimiste (on change l'état local immédiatement pour que ce soit fluide)
@@ -533,7 +551,7 @@ export default function page() {
             // 2. Appel à la base de données
             await updateEventVisibility(ev.id, !ev.visible);
         } catch (error) {
-            fetchEvents(setEvents, setIsLoading); // On recharge les données réelles
+            reloadEvents(); // On recharge les données réelles
         }
     };
 
@@ -551,7 +569,11 @@ export default function page() {
 
                 {/* Filtres */}
                 <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm mb-6">
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 items-end">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-4 items-end">
+                        <div className="space-y-1.5">
+                            <Label htmlFor="event-search" className="text-xs font-medium text-gray-500">Recherche</Label>
+                            <Input id="event-search" type="search" placeholder="Événement, client…" value={filters.q || ""} onChange={(e) => setFilters({ ...filters, q: e.target.value })} />
+                        </div>
                         <div className="space-y-1.5">
                             <Label className="text-xs font-medium text-gray-500">Agent</Label>
                             <Select value={filters.agent || ""} onValueChange={(value) => setFilters({ ...filters, agent: value })}>
@@ -640,8 +662,9 @@ export default function page() {
                 ) : (
 
                     <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden flex flex-col">
+                        <EventOriginLegend className="px-4 py-3 border-b border-gray-100 bg-gray-50/70" />
                         {currentEvents.map((event) => (
-                            <div key={event.id} className="group p-4 border-b border-gray-100 last:border-b-0 hover:bg-gray-50 transition-all duration-200 flex flex-col md:flex-row md:items-center gap-4 justify-between">
+                            <div key={event.id} style={{ borderLeftColor: getEventOriginColor(event) }} className="group p-4 border-l-4 border-b border-gray-100 last:border-b-0 hover:bg-gray-50 transition-all duration-200 flex flex-col md:flex-row md:items-center gap-4 justify-between">
 
                                 {/* 1. Bloc Image + Infos Principales (Regroupés pour l'alignement) */}
                                 <div className="flex items-center gap-4 md:w-1/3 min-w-0">
@@ -669,6 +692,7 @@ export default function page() {
                                                 }`}>
                                                 {getEventStatus(event.date_debut, event.date_fin)}
                                             </span>
+                                            <EventOriginBadge event={event} className="text-[10px]" />
                                         </div>
                                         <div className="text-sm text-gray-500 flex gap-2 items-start">
                                             <CalendarCheck2 size={14} className="mt-0.5 shrink-0" />
@@ -690,11 +714,14 @@ export default function page() {
                                     </div>
                                     <div className="pl-5">
                                         <p className="text-sm font-medium text-gray-700">
-                                            {event.montant.toLocaleString("fr-FR")} Fcfa
+                                            {(event.montant || 0).toLocaleString("fr-FR")} Fcfa
                                         </p>
                                         <p className="text-xs text-gray-500 truncate" title={`Avance: ${event.avance} • ${event.categorie}`}>
                                             Avance: {event.avance === 0 ? event.avance : (event.avance || 0) + " Fcfa"}
                                         </p>
+                                        <Button type="button" size="sm" variant="outline" className="mt-2 h-8" onClick={() => setPaymentEvent(event)}>
+                                            <CreditCard size={14} className="mr-2" /> Paiements
+                                        </Button>
                                     </div>
                                 </div>
 
@@ -712,7 +739,7 @@ export default function page() {
                                     <div className="flex items-start gap-2">
                                         <UserStar size={14} className="mt-0.5 text-gray-400" />
                                         <div className="min-w-0">
-                                            <p className="text-sm font-medium text-gray-700 leading-none truncate">{event.agent.name}</p>
+                                            <p className="text-sm font-medium text-gray-700 leading-none truncate">{event.agent?.name || 'Non assigné'}</p>
                                         </div>
                                     </div>
                                 </div>
@@ -753,6 +780,7 @@ export default function page() {
                 )}
 
             </div>
+            <RecordPaymentDialog event={paymentEvent} onClose={() => setPaymentEvent(null)} onSaved={reloadEvents} />
         </div>
     )
 }

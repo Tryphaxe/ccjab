@@ -63,6 +63,8 @@ export default function Page() {
     const formattedEvents = useMemo(() => events.map((e) => ({
         id: e.id,
         nom_evenement: e.nom_evenement,
+        nom_client: e.nom_client,
+        organise_par_ccjab: e.organise_par_ccjab,
         nom_salle: e.salles?.length > 0 ? e.salles.map(s => s.nom_salle).join(" + ") : "Aucune salle",
         agent: { nom: e.agent.name },
         type_evenement: e.type,

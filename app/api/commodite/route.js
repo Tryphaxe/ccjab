@@ -1,8 +1,12 @@
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
+import { authorize } from '@/lib/apiAuth';
+import { writeAuditLog } from '@/lib/auditLog';
 
 // 📄 GET : liste de toutes les commodites
-export async function GET() {
+export async function GET(request) {
+  const auth = await authorize(request, ['ADMIN', 'AGENT', 'FINANCIER', 'EDITEUR']);
+  if (auth.response) return auth.response;
   try {
     const commodites = await prisma.commodite.findMany({
       orderBy: { nom: 'asc' },
@@ -16,6 +20,8 @@ export async function GET() {
 
 // ➕ POST : créer une nouvelle commodite
 export async function POST(req) {
+  const auth = await authorize(req, ['ADMIN']);
+  if (auth.response) return auth.response;
   try {
     const { nom } = await req.json();
 
@@ -23,10 +29,15 @@ export async function POST(req) {
       return NextResponse.json({ error: 'Nom de la commodité requis !' }, { status: 400 });
     }
 
-    const commodite = await prisma.commodite.create({
+    const commodite = await prisma.$transaction(async (tx) => {
+    const created = await tx.commodite.create({
       data: {
         nom
       },
+    });
+
+    await writeAuditLog({ actor: auth.user, action: 'CREATE', entity: 'Commodité', entityId: created.id, summary: `a créé la commodité « ${created.nom} »`, client: tx });
+    return created;
     });
 
     return NextResponse.json(commodite, { status: 201 });

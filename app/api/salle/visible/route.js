@@ -1,8 +1,11 @@
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
+import { authorize } from '@/lib/apiAuth';
 
 // 📄 GET : liste de toutes les salles
-export async function GET() {
+export async function GET(request) {
+  const auth = await authorize(request, ['ADMIN', 'AGENT', 'FINANCIER', 'EDITEUR']);
+  if (auth.response) return auth.response;
   try {
     const salles = await prisma.salle.findMany({
       orderBy: { nom_salle: 'asc' },

@@ -6,7 +6,10 @@ export async function GET(request, { params }) {
 
   try {
     const post = await prisma.post.findUnique({
-      where: { id: id },
+      where: {
+        id,
+        OR: [{ type: 'ACTU' }, { type: 'PUB', isPromoted: true }],
+      },
       include: {
         author: {
           select: { name: true } // On récupère le nom de l'auteur si disponible

@@ -1,9 +1,12 @@
 import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
-import { verifyJWT } from "@/lib/jwt";
+import { authorize } from "@/lib/apiAuth";
+import { writeAuditLog } from '@/lib/auditLog';
 
 // GET : Récupérer tous les posts (Pour le dashboard éditeur)
 export async function GET(request) {
+  const auth = await authorize(request, ['ADMIN', 'EDITEUR']);
+  if (auth.response) return auth.response;
   try {
     const posts = await prisma.post.findMany({
       orderBy: { createdAt: 'desc' },
@@ -22,12 +25,8 @@ export async function GET(request) {
 // POST : Créer un post (Sécurisé)
 export async function POST(request) {
   try {
-    const token = request.cookies.get("token")?.value;
-    const payload = token ? await verifyJWT(token) : null;
-
-    if (!payload || (payload.role !== 'EDITEUR' && payload.role !== 'ADMIN')) {
-      return NextResponse.json({ error: "Non autorisé" }, { status: 401 });
-    }
+    const auth = await authorize(request, ['EDITEUR', 'ADMIN']);
+    if (auth.response) return auth.response;
 
     const body = await request.json();
     const { titre, contenu, type, mediaUrl, isPromoted } = body;
@@ -36,15 +35,28 @@ export async function POST(request) {
       return NextResponse.json({ error: "Champs obligatoires manquants" }, { status: 400 });
     }
 
-    const newPost = await prisma.post.create({
+    const newPost = await prisma.$transaction(async (tx) => {
+    const created = await tx.post.create({
       data: {
         titre,
         contenu,
         type, // 'PUB' ou 'ACTU'
         mediaUrl,
         isPromoted: isPromoted || false,
-        authorId: payload.id
+        authorId: auth.user.id
       }
+    });
+
+    await writeAuditLog({
+      actor: auth.user,
+      action: 'CREATE',
+      entity: 'Publication',
+      entityId: created.id,
+      summary: `a créé ${type === 'PUB' ? 'la publicité' : 'l’actualité'} « ${created.titre} »`,
+      metadata: { type, isPromoted: created.isPromoted },
+      client: tx,
+    });
+    return created;
     });
 
     return NextResponse.json(newPost, { status: 201 });
@@ -57,19 +69,28 @@ export async function POST(request) {
 // PUT : Modifier le statut (Promouvoir / Désactiver)
 export async function PUT(request) {
   try {
-    const token = request.cookies.get("token")?.value;
-    const payload = token ? await verifyJWT(token) : null;
-
-    if (!payload || (payload.role !== 'EDITEUR' && payload.role !== 'ADMIN')) {
-      return NextResponse.json({ error: "Non autorisé" }, { status: 401 });
-    }
+    const auth = await authorize(request, ['EDITEUR', 'ADMIN']);
+    if (auth.response) return auth.response;
 
     const body = await request.json();
     const { id, isPromoted } = body;
 
-    const updatedPost = await prisma.post.update({
+    const updatedPost = await prisma.$transaction(async (tx) => {
+    const updated = await tx.post.update({
       where: { id },
       data: { isPromoted }
+    });
+
+    await writeAuditLog({
+      actor: auth.user,
+      action: isPromoted ? 'PROMOTE' : 'UPDATE',
+      entity: 'Publication',
+      entityId: updated.id,
+      summary: isPromoted ? `a mis « ${updated.titre} » à la une` : `a retiré « ${updated.titre} » de la une`,
+      metadata: { isPromoted: Boolean(isPromoted) },
+      client: tx,
+    });
+    return updated;
     });
 
     return NextResponse.json(updatedPost);
@@ -80,12 +101,8 @@ export async function PUT(request) {
 
 // DELETE : Supprimer un post
 export async function DELETE(request) {
-  const token = request.cookies.get("token")?.value;
-  const payload = token ? await verifyJWT(token) : null;
-
-  if (!payload || (payload.role !== 'EDITEUR' && payload.role !== 'ADMIN')) {
-    return NextResponse.json({ error: "Non autorisé" }, { status: 401 });
-  }
+  const auth = await authorize(request, ['EDITEUR', 'ADMIN']);
+  if (auth.response) return auth.response;
 
   const { searchParams } = new URL(request.url);
   const id = searchParams.get('id');
@@ -93,7 +110,11 @@ export async function DELETE(request) {
   if (!id) return NextResponse.json({ error: "ID requis" }, { status: 400 });
 
   try {
-    await prisma.post.delete({ where: { id } });
+    await prisma.$transaction(async (tx) => {
+      const post = await tx.post.findUnique({ where: { id }, select: { id: true, titre: true, type: true } });
+      await tx.post.delete({ where: { id } });
+      if (post) await writeAuditLog({ actor: auth.user, action: 'DELETE', entity: 'Publication', entityId: id, summary: `a supprimé la publication « ${post.titre} »`, client: tx });
+    });
     return NextResponse.json({ success: true });
   } catch (error) {
     return NextResponse.json({ error: "Erreur suppression" }, { status: 500 });

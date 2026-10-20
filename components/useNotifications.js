@@ -1,97 +1,122 @@
 "use client";
-import { useEffect, useState } from "react";
-import { supabase } from "@/lib/supabaseClient";
+
+import { useCallback, useEffect, useRef, useState } from "react";
 import toast from "react-hot-toast";
 import { useAuth } from "@/lib/AuthContext";
+
+const POLL_INTERVAL_MS = 30_000;
 
 export const useNotifications = () => {
   const [notifs, setNotifs] = useState([]);
   const [nonluCount, setNonluCount] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
-  const { user } = useAuth();
+  const [error, setError] = useState("");
+  const { user, isAgent } = useAuth();
+  const hasLoadedNotifications = useRef(false);
+  const notificationsRef = useRef([]);
 
-  // 🔹 Récupération initiale des notifications de l’agent connecté
-  const fetchNotifications = async () => {
-    if (!user?.id) return;
+  const fetchNotifications = useCallback(async ({ notifyNew = false, signal } = {}) => {
+    if (!isAgent || !user?.id) return;
 
-    const { data, error } = await supabase
-      .from("Notif")
-      .select("*")
-      .eq("agent_id", user.id)
-      .order("created_at", { ascending: false });
+    try {
+      const response = await fetch("/api/notif", { cache: "no-store", signal });
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.error || "Impossible de charger les notifications.");
 
-    if (error) {
-      console.error("Erreur Supabase:", error);
-      setIsLoading(false);
-      return;
+      const nextNotifications = Array.isArray(result.notifications) ? result.notifications : [];
+      if (notifyNew && hasLoadedNotifications.current) {
+        const existingIds = new Set(notificationsRef.current.map((notification) => notification.id));
+        nextNotifications
+          .filter((notification) => !notification.isRead && !existingIds.has(notification.id))
+          .forEach((notification) => toast(notification.message, { icon: "✦" }));
+      }
+
+      setNotifs(nextNotifications);
+      notificationsRef.current = nextNotifications;
+      setNonluCount(Number(result.unreadCount) || 0);
+      setError("");
+      hasLoadedNotifications.current = true;
+    } catch (fetchError) {
+      if (fetchError.name !== "AbortError") {
+        console.error("Erreur de chargement des notifications:", fetchError.message);
+        setError(fetchError.message || "Impossible de charger les notifications.");
+      }
+    } finally {
+      if (signal?.aborted !== true) setIsLoading(false);
     }
+  }, [isAgent, user?.id]);
 
-    setNotifs(data);
-    setNonluCount(data.filter((n) => !n.isRead).length);
-    setIsLoading(false);
-  };
+  const updateNotifications = useCallback(async (body) => {
+    const response = await fetch("/api/notif", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    });
+    const result = await response.json();
+    if (!response.ok) throw new Error(result.error || "Impossible de mettre à jour les notifications.");
+    return result;
+  }, []);
 
-  // 🔹 Marquer une notification comme lue
-  const markAsRead = async (id) => {
-    const { error } = await supabase
-      .from("Notif")
-      .update({ isRead: true })
-      .eq("id", id);
-
-    if (error) {
-      console.error("Erreur Supabase:", error);
-      return;
+  const markAsRead = useCallback(async (id) => {
+    if (!isAgent || !user?.id) return;
+    const notification = notificationsRef.current.find((item) => item.id === id);
+    try {
+      await updateNotifications({ id });
+      notificationsRef.current = notificationsRef.current.map((item) => item.id === id ? { ...item, isRead: true } : item);
+      setNotifs(notificationsRef.current);
+      if (notification && !notification.isRead) setNonluCount((count) => Math.max(0, count - 1));
+      setError("");
+    } catch (updateError) {
+      console.error("Erreur de mise à jour des notifications:", updateError.message);
+      setError(updateError.message || "Impossible de mettre à jour la notification.");
     }
+  }, [isAgent, user?.id, notifs, updateNotifications]);
 
-    setNotifs((prev) =>
-      prev.map((n) => (n.id === id ? { ...n, isRead: true } : n))
-    );
-    setNonluCount((prev) => Math.max(0, prev - 1));
-  };
-
-  // 🔹 Marquer toutes les notifications comme lues
-  const markAllAsRead = async () => {
-    if (!user?.id) return;
-
-    const { error } = await supabase
-      .from("Notif")
-      .update({ isRead: true })
-      .eq("agent_id", user.id)
-      .eq("isRead", false);
-
-    if (error) {
-      console.error("Erreur Supabase:", error);
-      return;
+  const markAllAsRead = useCallback(async () => {
+    if (!isAgent || !user?.id) return;
+    try {
+      await updateNotifications({ markAllRead: true });
+      notificationsRef.current = notificationsRef.current.map((item) => ({ ...item, isRead: true }));
+      setNotifs(notificationsRef.current);
+      setNonluCount(0);
+      setError("");
+    } catch (updateError) {
+      console.error("Erreur de mise à jour des notifications:", updateError.message);
+      setError(updateError.message || "Impossible de mettre à jour les notifications.");
     }
+  }, [isAgent, user?.id, updateNotifications]);
 
-    setNotifs((prev) => prev.map((n) => ({ ...n, isRead: true })));
-    setNonluCount(0);
-  };
-
-  // 🔹 Abonnement temps réel
   useEffect(() => {
-    if (!user?.id) return;
+    if (!isAgent || !user?.id) {
+      setNotifs([]);
+      notificationsRef.current = [];
+      setNonluCount(0);
+      setError("");
+      setIsLoading(false);
+      hasLoadedNotifications.current = false;
+      return;
+    }
 
-    fetchNotifications();
+    const controller = new AbortController();
+    hasLoadedNotifications.current = false;
+    setIsLoading(true);
+    fetchNotifications({ signal: controller.signal });
 
-    const channel = supabase
-      .channel("realtime_notifs")
-      .on(
-        "postgres_changes",
-        { event: "INSERT", schema: "public", table: "Notif", filter: `agent_id=eq.${user.id}` },
-        (payload) => {
-          const newNotif = payload.new;
-          setNotifs((prev) => [newNotif, ...prev]);
-          setNonluCount((prev) => prev + 1);
-          toast(newNotif.message, { icon: "✦" });
-        }
-      )
-      .subscribe();
+    const interval = setInterval(() => {
+      if (document.visibilityState === "visible") fetchNotifications({ notifyNew: true, signal: controller.signal });
+    }, POLL_INTERVAL_MS);
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "visible") fetchNotifications({ notifyNew: true, signal: controller.signal });
+    };
+    document.addEventListener("visibilitychange", handleVisibilityChange);
 
     return () => {
-      if (channel) supabase.removeChannel(channel);
+      controller.abort();
+      clearInterval(interval);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
     };
-  }, [user?.id]);
+  }, [isAgent, user?.id, fetchNotifications]);
 
-  return { notifs, nonluCount, markAsRead, markAllAsRead, isLoading };
+  return { notifs, nonluCount, markAsRead, markAllAsRead, isLoading, error };
 };

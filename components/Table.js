@@ -27,11 +27,13 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { fetchEvents } from "@/utils/evenUtils";
+import { fetchEventPage } from "@/utils/evenUtils";
 import { getEventStatus } from "@/lib/evenHelper";
+import { EventOriginBadge } from "@/components/EventOrigin";
 
 export default function TableList() {
   const [events, setEvents] = useState([]);
+  const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
 
   // Pagination
@@ -39,16 +41,12 @@ export default function TableList() {
   const [rowsPerPage, setRowsPerPage] = useState(5);
 
   useEffect(() => {
-    fetchEvents(setEvents, setLoading);
-  }, []);
+    fetchEventPage({ page: currentPage, pageSize: rowsPerPage }, setEvents, setTotal, setLoading);
+  }, [currentPage, rowsPerPage]);
 
   // Calculs de pagination
-  const totalPages = Math.ceil(events.length / rowsPerPage);
-
-  const paginatedEvents = useMemo(() => {
-    const startIndex = (currentPage - 1) * rowsPerPage;
-    return events.slice(startIndex, startIndex + rowsPerPage);
-  }, [events, currentPage, rowsPerPage]);
+  const totalPages = Math.ceil(total / rowsPerPage);
+  const paginatedEvents = events;
 
   const getStatusBadge = (status) => {
     switch (status) {
@@ -105,7 +103,10 @@ export default function TableList() {
 
                     {/* Client */}
                     <TableCell className="font-medium text-gray-700">
-                      {event.nom_client || "Anonyme"}
+                      <div className="flex flex-col items-start gap-1">
+                        <span>{event.nom_client || "Anonyme"}</span>
+                        <EventOriginBadge event={event} className="text-[10px]" />
+                      </div>
                     </TableCell>
 
                     {/* Date */}
@@ -163,7 +164,7 @@ export default function TableList() {
       </div>
 
       {/* --- Pagination --- */}
-      {events.length > 0 && (
+      {total > 0 && (
         <div className="flex flex-col sm:flex-row items-center justify-between gap-4 px-2">
           <div className="flex items-center gap-2 text-sm text-gray-500">
             <span>Afficher</span>

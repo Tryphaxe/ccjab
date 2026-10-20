@@ -108,7 +108,7 @@ const CategoryBreakdown = ({ events }) => {
         <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6">
             <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
                 <Tag className="w-5 h-5 text-purple-500" />
-                Revenus par Catégorie
+                Montants contractuels par catégorie
             </h3>
             <div className="space-y-4">
                 {catStats.map((cat, index) => (
@@ -184,12 +184,13 @@ export default function FinancePage() {
                 return day;
             });
             filtered = last7.map((day) => {
-                const total = events
-                    .filter((e) => {
-                        const d = new Date(e.date_debut);
+                const total = events.flatMap((event) => event.payments || [])
+                    .filter((payment) => {
+                        if (payment.isLegacyEstimate) return false;
+                        const d = new Date(payment.paidAt);
                         return d.getDate() === day.getDate() && d.getMonth() === day.getMonth() && d.getFullYear() === day.getFullYear();
                     })
-                    .reduce((acc, e) => acc + (e.montant || 0), 0);
+                    .reduce((acc, payment) => acc + payment.amount, 0);
                 return { month: day.toLocaleDateString("fr-FR", { weekday: "short" }), desktop: total };
             });
         } else if (periode === "mois") {
@@ -197,23 +198,25 @@ export default function FinancePage() {
             const currentYear = now.getFullYear();
             const weeks = [1, 2, 3, 4, 5];
             filtered = weeks.map((week) => {
-                const total = events
-                    .filter((e) => {
-                        const d = new Date(e.date_debut);
+                const total = events.flatMap((event) => event.payments || [])
+                    .filter((payment) => {
+                        if (payment.isLegacyEstimate) return false;
+                        const d = new Date(payment.paidAt);
                         const weekOfMonth = Math.ceil(d.getDate() / 7);
                         return d.getMonth() === currentMonth && d.getFullYear() === currentYear && weekOfMonth === week;
                     })
-                    .reduce((acc, e) => acc + (e.montant || 0), 0);
+                    .reduce((acc, payment) => acc + payment.amount, 0);
                 return { month: "S" + week, desktop: total };
             });
         } else if (periode === "annee") {
             filtered = Array.from({ length: 12 }).map((_, i) => {
-                const total = events
-                    .filter((e) => {
-                        const d = new Date(e.date_debut);
+                const total = events.flatMap((event) => event.payments || [])
+                    .filter((payment) => {
+                        if (payment.isLegacyEstimate) return false;
+                        const d = new Date(payment.paidAt);
                         return d.getMonth() === i && d.getFullYear() === now.getFullYear();
                     })
-                    .reduce((acc, e) => acc + (e.montant || 0), 0);
+                    .reduce((acc, payment) => acc + payment.amount, 0);
                 return { month: new Date(0, i).toLocaleString("fr-FR", { month: "short" }), desktop: total };
             });
         }
@@ -259,15 +262,22 @@ export default function FinancePage() {
 
         // Taux d'annulation
         const totalEventsCount = currentEvents.length;
+        const collectedInPeriod = events.flatMap((event) => event.payments || [])
+            .filter((payment) => {
+                if (payment.isLegacyEstimate) return false;
+                const paidAt = new Date(payment.paidAt);
+                return paidAt >= startCurrent && paidAt <= endCurrent;
+            })
+            .reduce((sum, payment) => sum + payment.amount, 0);
 
         return [
             {
-                title: "Chiffre d'Affaires",
+                title: "Montants contractuels",
                 value: currRev.toLocaleString("fr-FR") + " F",
                 icon: HandCoins,
                 color: "text-emerald-600",
                 bg: "bg-emerald-50",
-                trendValue: "Total Facturé", // Simplifié
+                trendValue: "Selon la date des événements",
                 trendStyle: "text-emerald-700 bg-emerald-50 border-emerald-200",
                 TrendIcon: TrendingUp
             },
@@ -277,9 +287,19 @@ export default function FinancePage() {
                 icon: Wallet,
                 color: "text-amber-600",
                 bg: "bg-amber-50",
-                trendValue: "Trésorerie latente",
+                trendValue: "Solde restant sur les événements",
                 trendStyle: "text-amber-700 bg-amber-50 border-amber-200",
                 TrendIcon: AlertCircle
+            },
+            {
+                title: "Encaissé sur la période",
+                value: collectedInPeriod.toLocaleString("fr-FR") + " F",
+                icon: Wallet,
+                color: "text-blue-600",
+                bg: "bg-blue-50",
+                trendValue: "Selon la date de paiement",
+                trendStyle: "text-blue-700 bg-blue-50 border-blue-200",
+                TrendIcon: TrendingUp
             },
             {
                 title: "Nombre d'Évènements",
@@ -327,13 +347,13 @@ export default function FinancePage() {
                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
                     <div>
                         <h1 className="text-2xl font-bold tracking-tight text-gray-900">Aperçu Financier</h1>
-                        <p className="text-sm text-gray-500 mt-1">Suivez vos revenus, créances et performances commerciales.</p>
+                        <p className="text-sm text-gray-500 mt-1">Suivez les montants contractuels et les soldes associés aux événements.</p>
                     </div>
                     <PeriodSelector activePeriod={periode} onChange={setPeriode} />
                 </div>
 
                 {/* KPI Cards */}
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
                     {stats.map((stat, index) => {
                         const Icon = stat.icon;
                         const TrendIcon = stat.TrendIcon;

@@ -2,13 +2,12 @@
 //   SCHEMA DE BASE DE DONNÉES
 // ==========================
 generator client {
-  provider = "prisma-client-js"
+  provider = "prisma-client"
+  output   = "../generated/prisma"
 }
 
 datasource db {
-  provider  = "postgresql"
-  url       = env("DATABASE_URL")
-  directUrl = env("DIRECT_URL")
+  provider = "postgresql"
 }
 
 //
@@ -27,6 +26,8 @@ model User {
   notifs Notif[]
   events Even[]  @relation("UserEvents")
   posts  Post[]
+  auditLogs AuditLog[]
+  recordedPayments EvenPayment[] @relation("PaymentRecorder")
 }
 
 enum Role {
@@ -34,6 +35,7 @@ enum Role {
   AGENT
   FINANCIER
   EDITEUR
+  ASSISTANT
 }
 
 model Post {
@@ -94,6 +96,7 @@ model Even {
   contact_client String?
   type           String?
   visible        Boolean  @default(false)
+  organise_par_ccjab Boolean @default(false)
   fiche          String?
   image          String?
   createdAt      DateTime @default(now())
@@ -104,6 +107,125 @@ model Even {
 
   agent_id String?
   agent    User?   @relation("UserEvents", fields: [agent_id], references: [id])
+  payments EvenPayment[]
+  ticketTypes TicketType[]
+  ticketOrders TicketOrder[]
+  @@index([date_debut])
+  @@index([agent_id, date_debut])
+}
+
+model EvenPayment {
+  id               String   @id @default(uuid())
+  eventId          String
+  amount           Float
+  paidAt           DateTime
+  method           String?
+  reference        String?
+  note             String?
+  isInitialAdvance Boolean  @default(false)
+  isLegacyEstimate Boolean  @default(false)
+  createdAt        DateTime @default(now())
+  createdById      String?
+
+  event     Even  @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  createdBy User? @relation("PaymentRecorder", fields: [createdById], references: [id], onDelete: SetNull)
+
+  @@index([eventId, paidAt])
+  @@index([paidAt])
+}
+
+// ==========================
+//       BILLETTERIE
+// ==========================
+model TicketType {
+  id          String   @id @default(uuid())
+  eventId     String
+  name        String
+  description String?
+  price       Int
+  capacity    Int
+  salesStart  DateTime?
+  salesEnd    DateTime?
+  isActive    Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  event Even @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  items TicketOrderItem[]
+
+  @@unique([eventId, name])
+  @@index([eventId, isActive])
+}
+
+model TicketOrder {
+  id                  String            @id @default(uuid())
+  reference           String            @unique @default(uuid())
+  eventId             String
+  customerName        String
+  customerEmail       String
+  customerPhone       String?
+  status              TicketOrderStatus @default(PENDING)
+  paymentProvider     TicketPaymentProvider @default(NONE)
+  totalAmount         Int
+  currency            String            @default("XOF")
+  expiresAt           DateTime
+  paidAt              DateTime?
+  waveCheckoutSessionId String?          @unique
+  waveTransactionId   String?            @unique
+  createdAt           DateTime           @default(now())
+  updatedAt           DateTime           @updatedAt
+
+  event Even @relation(fields: [eventId], references: [id], onDelete: Restrict)
+  items TicketOrderItem[]
+
+  @@index([eventId, status, expiresAt])
+  @@index([customerEmail, createdAt])
+}
+
+model TicketOrderItem {
+  id           String @id @default(uuid())
+  orderId      String
+  ticketTypeId String
+  quantity     Int
+  unitPrice    Int
+
+  order      TicketOrder @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  ticketType TicketType  @relation(fields: [ticketTypeId], references: [id], onDelete: Restrict)
+  tickets    Ticket[]
+
+  @@index([ticketTypeId])
+}
+
+model Ticket {
+  id          String       @id @default(uuid())
+  orderItemId String
+  code        String       @unique @default(uuid())
+  status      TicketStatus @default(VALID)
+  scannedAt   DateTime?
+  createdAt   DateTime     @default(now())
+
+  orderItem TicketOrderItem @relation(fields: [orderItemId], references: [id], onDelete: Cascade)
+
+  @@index([orderItemId, status])
+}
+
+enum TicketOrderStatus {
+  PENDING
+  PAID
+  CANCELLED
+  EXPIRED
+  REFUNDED
+}
+
+enum TicketPaymentProvider {
+  NONE
+  WAVE
+}
+
+enum TicketStatus {
+  VALID
+  SCANNED
+  VOID
 }
 
 // ==========================
@@ -117,4 +239,27 @@ model Notif {
 
   agent_id String
   agent    User   @relation(fields: [agent_id], references: [id])
+}
+
+// ==========================
+//       JOURNAL D'AUDIT
+// ==========================
+model AuditLog {
+  id         String   @id @default(uuid())
+  actorId    String?
+  actorName  String
+  actorEmail String
+  actorRole  Role
+  action     String
+  entity     String
+  entityId   String?
+  summary    String
+  metadata   Json?
+  createdAt  DateTime @default(now())
+
+  actor User? @relation(fields: [actorId], references: [id], onDelete: SetNull)
+
+  @@index([createdAt])
+  @@index([actorId, createdAt])
+  @@index([entity, createdAt])
 }

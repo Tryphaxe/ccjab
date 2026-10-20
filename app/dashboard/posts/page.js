@@ -44,6 +44,9 @@ export default function PostsPage() {
   };
 
   useEffect(() => { fetchPosts(); }, []);
+  useEffect(() => () => {
+    if (previewUrl?.startsWith('blob:')) URL.revokeObjectURL(previewUrl);
+  }, [previewUrl]);
 
   // --- GESTION DU FORMULAIRE ---
   const resetForm = () => {
@@ -96,6 +99,10 @@ export default function PostsPage() {
   };
 
   const handleFile = (file) => {
+    if (!file.type.startsWith('image/') && !file.type.startsWith('video/')) {
+      toast.error('Choisissez une image ou une vidéo valide.');
+      return;
+    }
     if (file.size > 50 * 1024 * 1024) {
       toast.error("Fichier trop volumineux (Max 50Mo)");
       return;
@@ -239,7 +246,7 @@ export default function PostsPage() {
   const PostsList = ({ type }) => {
     const filtered = posts.filter(p => p.type === type);
     if (filtered.length === 0) return (
-      <div className="flex flex-col items-center justify-center py-20 text-gray-400 bg-white rounded-xl border border-dashed border-gray-200">
+      <div className="flex flex-col items-center justify-center py-20 text-gray-400 bg-white rounded-xl border border-dashed border-[#eee8eb]">
         <div className="bg-gray-50 p-4 rounded-full mb-3"><ImageIcon size={32} /></div>
         <p>Aucun contenu dans cette catégorie.</p>
       </div>
@@ -248,7 +255,7 @@ export default function PostsPage() {
     return (
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
         {filtered.map((post) => (
-          <Card key={post.id} className="group overflow-hidden flex flex-col hover:shadow-lg transition-all border-gray-200">
+          <Card key={post.id} className="group overflow-hidden flex flex-col hover:shadow-lg transition-all border-[#eee8eb]">
             <div className="relative h-48 w-full bg-gray-100 overflow-hidden">
               {post.mediaUrl ? (
                 post.mediaUrl.match(/\.(mp4|webm|ogg|mov)$/i) ? (
@@ -272,7 +279,7 @@ export default function PostsPage() {
               <h3 className="font-bold text-lg mb-2 line-clamp-1 group-hover:text-emerald-700 transition-colors">{post.titre}</h3>
               <p className="text-sm text-gray-500 line-clamp-3 leading-relaxed">{post.contenu || "Pas de description"}</p>
             </CardContent>
-            <CardFooter className="p-4 bg-gray-50/50 border-t flex justify-between items-center">
+            <CardFooter className="p-4 bg-[#fcf8fb] border-t flex justify-between items-center">
               <div className="flex items-center gap-2">
                 <Switch
                   id={`promote-${post.id}`}
@@ -299,165 +306,168 @@ export default function PostsPage() {
   };
 
   return (
-    <div className="space-y-8 min-h-screen bg-gray-50/50 p-4 lg:p-8">
-      <Dash />
+    <main className="min-h-screen bg-[#fcf8fb] text-[#1b1b1d]">
+      <div className="space-y-8">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+          <div>
+            <p className="mb-2 text-[10px] font-bold uppercase tracking-[0.15em] text-[#a93105]">Magazine · Vie culturelle</p>
+            <h2 className="font-[Georgia] text-3xl font-semibold tracking-tight text-[#1b1b1d]">Gestion des Contenus</h2>
+            <p className="text-gray-500 mt-1">Gérez les actualités et les publicités du site web.</p>
+          </div>
 
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <div>
-          <h2 className="text-3xl font-bold tracking-tight text-gray-900">Gestion des Contenus</h2>
-          <p className="text-gray-500 mt-1">Gérez les actualités et les publicités du site web.</p>
-        </div>
+          <Dialog open={isDialogOpen} onOpenChange={(open) => {
+            setIsDialogOpen(open);
+            if (!open) resetForm();
+          }}>
+            <DialogTrigger asChild>
+              <Button className="bg-[#a93105] hover:bg-[#862300] text-white shadow-sm" onClick={resetForm}>
+                <Plus className="mr-2 h-4 w-4" /> Créer un contenu
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="bg-white sm:max-w-[600px] overflow-hidden">
+              <DialogHeader className="px-6 pt-6 pb-2">
+                <DialogTitle className="text-xl">{editingId ? "Modifier le contenu" : "Nouveau contenu"}</DialogTitle>
+              </DialogHeader>
 
-        <Dialog open={isDialogOpen} onOpenChange={(open) => {
-          setIsDialogOpen(open);
-          if (!open) resetForm();
-        }}>
-          <DialogTrigger asChild>
-            <Button className="bg-emerald-600 hover:bg-emerald-700 text-white shadow-lg shadow-emerald-200" onClick={resetForm}>
-              <Plus className="mr-2 h-4 w-4" /> Créer un contenu
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="bg-white sm:max-w-[600px] overflow-hidden">
-            <DialogHeader className="px-6 pt-6 pb-2">
-              <DialogTitle className="text-xl">{editingId ? "Modifier le contenu" : "Nouveau contenu"}</DialogTitle>
-            </DialogHeader>
+              <form onSubmit={handleSubmit} className="space-y-5 px-6 pb-6 max-h-[75vh] overflow-y-auto custom-scrollbar">
 
-            <form onSubmit={handleSubmit} className="space-y-5 px-6 pb-6 max-h-[75vh] overflow-y-auto custom-scrollbar">
-
-              {/* Type Selection */}
-              <div className="grid gap-2">
-                <Label className="text-sm font-semibold text-gray-700">Type de contenu</Label>
-                <Select
-                  onValueChange={(val) => setFormData({ ...formData, type: val })}
-                  value={formData.type}
-                >
-                  <SelectTrigger className="w-full"><SelectValue /></SelectTrigger>
-                  <SelectContent className="bg-white">
-                    <SelectItem value="ACTU">Actualité (Article, Évènement)</SelectItem>
-                    <SelectItem value="PUB">Publicité (Vidéo/Image promotionnelle)</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              {/* Titre */}
-              <div className="grid gap-2">
-                <Label className="text-sm font-semibold text-gray-700">Titre</Label>
-                <Input
-                  placeholder="Ex: Festival des Arts 2024..."
-                  className="focus-visible:ring-emerald-500"
-                  value={formData.titre}
-                  onChange={(e) => setFormData({ ...formData, titre: e.target.value })}
-                  required
-                />
-              </div>
-
-              {/* Upload Zone (Drag & Drop) */}
-              <div className="grid gap-2">
-                <Label className="text-sm font-semibold text-gray-700">Média (Image ou Vidéo)</Label>
-
-                <div
-                  className={`relative w-full border-2 border-dashed rounded-xl p-4 flex flex-col items-center justify-center text-center transition-all cursor-pointer
-                    ${dragActive ? "border-emerald-500 bg-emerald-50" : "border-gray-200 bg-gray-50 hover:bg-gray-100"}`}
-                  onDragEnter={handleDrag}
-                  onDragLeave={handleDrag}
-                  onDragOver={handleDrag}
-                  onDrop={handleDrop}
-                >
-                  <input
-                    id="file-upload"
-                    type="file"
-                    accept="image/*,video/*"
-                    onChange={handleFileChange}
-                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                  />
-
-                  {previewUrl ? (
-                    <div className="relative w-full h-48 rounded-lg overflow-hidden bg-black/5">
-                      {previewUrl.match(/\.(mp4|webm|ogg|mov)$/i) || (selectedFile?.type.startsWith('video')) ? (
-                        <video src={previewUrl} className="w-full h-full object-contain" controls />
-                      ) : (
-                        <img src={previewUrl} alt="Aperçu" className="w-full h-full object-contain" />
-                      )}
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.preventDefault(); // Empêche le click sur l'input
-                          setSelectedFile(null);
-                          setPreviewUrl("");
-                        }}
-                        className="absolute top-2 right-2 bg-white text-red-500 rounded-full p-1.5 shadow-md hover:bg-red-50 z-10"
-                      >
-                        <Trash2 size={16} />
-                      </button>
-                    </div>
-                  ) : (
-                    <div className="py-6 pointer-events-none">
-                      <div className="bg-white p-3 rounded-full shadow-sm w-fit mx-auto mb-3">
-                        <UploadCloud className="h-6 w-6 text-emerald-600" />
-                      </div>
-                      <p className="text-sm font-medium text-gray-900">Cliquez ou glissez un fichier ici</p>
-                      <p className="text-xs text-gray-500 mt-1">PNG, JPG, MP4 jusqu'à 50Mo</p>
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              {/* Contenu (Textarea amélioré) */}
-              {formData.type === 'ACTU' && (
+                {/* Type Selection */}
                 <div className="grid gap-2">
-                  <Label className="text-sm font-semibold text-gray-700">Contenu de l'article</Label>
-                  <Textarea
-                    className="min-h-[150px] focus-visible:ring-emerald-500"
-                    placeholder="Écrivez votre article ici..."
-                    value={formData.contenu}
-                    onChange={(e) => setFormData({ ...formData, contenu: e.target.value })}
+                  <Label className="text-sm font-semibold text-gray-700">Type de contenu</Label>
+                  <Select
+                    onValueChange={(val) => setFormData({ ...formData, type: val })}
+                    value={formData.type}
+                  >
+                    <SelectTrigger className="w-full"><SelectValue /></SelectTrigger>
+                    <SelectContent className="bg-white">
+                      <SelectItem value="ACTU">Actualité (Article, Évènement)</SelectItem>
+                      <SelectItem value="PUB">Publicité (Vidéo/Image promotionnelle)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* Titre */}
+                <div className="grid gap-2">
+                  <Label className="text-sm font-semibold text-gray-700">Titre</Label>
+                  <Input
+                    placeholder="Ex: Festival des Arts 2024..."
+                    className="focus-visible:ring-emerald-500"
+                    value={formData.titre}
+                    onChange={(e) => setFormData({ ...formData, titre: e.target.value })}
+                    required
                   />
                 </div>
-              )}
 
-              {/* Options */}
-              <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-100">
-                <div className="space-y-0.5">
-                  <Label className="text-base">Mettre à la une</Label>
-                  <p className="text-xs text-gray-500">Apparaîtra en grand sur la page d'accueil.</p>
+                {/* Upload Zone (Drag & Drop) */}
+                <div className="grid gap-2">
+                  <Label className="text-sm font-semibold text-gray-700">Média (Image ou Vidéo)</Label>
+
+                  <div
+                    className={`relative w-full border-2 border-dashed rounded-xl p-4 flex flex-col items-center justify-center text-center transition-all cursor-pointer
+                    ${dragActive ? "border-emerald-500 bg-emerald-50" : "border-[#eee8eb] bg-gray-50 hover:bg-gray-100"}`}
+                    onDragEnter={handleDrag}
+                    onDragLeave={handleDrag}
+                    onDragOver={handleDrag}
+                    onDrop={handleDrop}
+                  >
+                    <input
+                      id="file-upload"
+                      type="file"
+                      accept="image/*,video/*"
+                      onChange={handleFileChange}
+                      className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                    />
+
+                    {previewUrl ? (
+                      <div className="relative w-full h-48 rounded-lg overflow-hidden bg-black/5">
+                        {previewUrl.match(/\.(mp4|webm|ogg|mov)$/i) || (selectedFile?.type.startsWith('video')) ? (
+                          <video src={previewUrl} className="w-full h-full object-contain" controls />
+                        ) : (
+                          <img src={previewUrl} alt="Aperçu" className="w-full h-full object-contain" />
+                        )}
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.preventDefault(); // Empêche le click sur l'input
+                            setSelectedFile(null);
+                            setPreviewUrl("");
+                          }}
+                          className="absolute top-2 right-2 bg-white text-red-500 rounded-full p-1.5 shadow-md hover:bg-red-50 z-10"
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="py-6 pointer-events-none">
+                        <div className="bg-white p-3 rounded-full shadow-sm w-fit mx-auto mb-3">
+                          <UploadCloud className="h-6 w-6 text-emerald-600" />
+                        </div>
+                        <p className="text-sm font-medium text-[#1b1b1d]">Cliquez ou glissez un fichier ici</p>
+                        <p className="text-xs text-gray-500 mt-1">PNG, JPG, MP4 jusqu'à 50Mo</p>
+                      </div>
+                    )}
+                  </div>
                 </div>
-                <Switch
-                  checked={formData.isPromoted}
-                  onCheckedChange={(c) => setFormData({ ...formData, isPromoted: c })}
-                  className="data-[state=checked]:bg-emerald-600"
-                />
-              </div>
 
-              <DialogFooter className="pt-2">
-                <Button variant="outline" type="button" onClick={() => setIsDialogOpen(false)}>Annuler</Button>
-                <Button type="submit" disabled={submitLoading} className="bg-emerald-600 hover:bg-emerald-700 text-white min-w-[120px]">
-                  {submitLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-                  {editingId ? "Mettre à jour" : "Publier"}
-                </Button>
-              </DialogFooter>
-            </form>
-          </DialogContent>
-        </Dialog>
-      </div>
+                {/* Contenu (Textarea amélioré) */}
+                {formData.type === 'ACTU' && (
+                  <div className="grid gap-2">
+                    <Label className="text-sm font-semibold text-gray-700">Contenu de l'article</Label>
+                    <Textarea
+                      className="min-h-[150px] focus-visible:ring-emerald-500"
+                      placeholder="Écrivez votre article ici..."
+                      value={formData.contenu}
+                      onChange={(e) => setFormData({ ...formData, contenu: e.target.value })}
+                    />
+                  </div>
+                )}
 
-      <Tabs defaultValue="ACTU" className="w-full">
-        <TabsList className="bg-white p-1 rounded-xl border">
-          <TabsTrigger value="ACTU" className="rounded-lg data-[state=active]:bg-emerald-50 data-[state=active]:text-emerald-700">Actualités</TabsTrigger>
-          <TabsTrigger value="PUB" className="rounded-lg data-[state=active]:bg-purple-50 data-[state=active]:text-purple-700">Publicités</TabsTrigger>
-        </TabsList>
-        <div className="mt-6">
-          {loading ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-              {[1, 2, 3].map(i => <div key={i} className="h-64 bg-gray-100 animate-pulse rounded-xl"></div>)}
-            </div>
-          ) : (
-            <>
-              <TabsContent value="ACTU"><PostsList type="ACTU" /></TabsContent>
-              <TabsContent value="PUB"><PostsList type="PUB" /></TabsContent>
-            </>
-          )}
+                {/* Options */}
+                <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-100">
+                  <div className="space-y-0.5">
+                    <Label className="text-base">Mettre à la une</Label>
+                    <p className="text-xs text-gray-500">Apparaîtra en grand sur la page d'accueil.</p>
+                  </div>
+                  <Switch
+                    checked={formData.isPromoted}
+                    onCheckedChange={(c) => setFormData({ ...formData, isPromoted: c })}
+                    className="data-[state=checked]:bg-emerald-600"
+                  />
+                </div>
+
+                <DialogFooter className="pt-2">
+                  <Button variant="outline" type="button" onClick={() => setIsDialogOpen(false)}>Annuler</Button>
+                  <Button type="submit" disabled={submitLoading} className="bg-emerald-600 hover:bg-emerald-700 text-white min-w-[120px]">
+                    {submitLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                    {editingId ? "Mettre à jour" : "Publier"}
+                  </Button>
+                </DialogFooter>
+              </form>
+            </DialogContent>
+          </Dialog>
         </div>
-      </Tabs>
-    </div>
+
+        <Dash />
+
+        <Tabs defaultValue="ACTU" className="w-full">
+          <TabsList className="h-auto rounded-xl border border-[#eee8eb] bg-white p-1 shadow-sm">
+            <TabsTrigger value="ACTU" className="rounded-lg data-[state=active]:bg-emerald-50 data-[state=active]:text-emerald-700">Actualités</TabsTrigger>
+            <TabsTrigger value="PUB" className="rounded-lg data-[state=active]:bg-purple-50 data-[state=active]:text-purple-700">Publicités</TabsTrigger>
+          </TabsList>
+          <div className="mt-6">
+            {loading ? (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                {[1, 2, 3].map(i => <div key={i} className="h-64 bg-gray-100 animate-pulse rounded-xl"></div>)}
+              </div>
+            ) : (
+              <>
+                <TabsContent value="ACTU"><PostsList type="ACTU" /></TabsContent>
+                <TabsContent value="PUB"><PostsList type="PUB" /></TabsContent>
+              </>
+            )}
+          </div>
+        </Tabs>
+      </div>
+    </main>
   );
 }

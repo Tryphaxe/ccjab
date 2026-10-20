@@ -1,14 +1,20 @@
 import prisma from "@/lib/prisma";
 import { NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
+import { authorize } from "@/lib/apiAuth";
+import { writeAuditLog } from '@/lib/auditLog';
 
 // Supprimer un département
 export async function DELETE(request, { params }) {
+  const auth = await authorize(request, ["ADMIN"]);
+  if (auth.response) return auth.response;
   const { id } = await params;
 
   try {
-    await prisma.user.delete({
-      where: { id },
+    await prisma.$transaction(async (tx) => {
+      const target = await tx.user.findUnique({ where: { id }, select: { id: true, name: true, role: true } });
+      await tx.user.delete({ where: { id } });
+      if (target) await writeAuditLog({ actor: auth.user, actorId: auth.user.id === id ? null : auth.user.id, action: 'DELETE', entity: 'Utilisateur', entityId: id, summary: `a supprimé le compte de ${target.name}`, metadata: { role: target.role }, client: tx });
     });
 
     return NextResponse.json({ message: "Delete success" }, { status: 200 });
@@ -22,8 +28,10 @@ export async function DELETE(request, { params }) {
 }
 
 export async function PATCH(req, { params }) {
+  const auth = await authorize(req, ["ADMIN"]);
+  if (auth.response) return auth.response;
   try {
-    const { id } = params;
+    const { id } = await params;
     const dataToUpdate = await req.json();
 
     // Supprime l'id s'il est présent dans le body
@@ -66,12 +74,22 @@ export async function PATCH(req, { params }) {
     }
 
     // ✅ Mise à jour de l'utilisateur
-    const updated = await prisma.user.update({
-      where: { id },
-      data: dataToUpdate,
+    const updated = await prisma.$transaction(async (tx) => {
+      const user = await tx.user.update({ where: { id }, data: dataToUpdate });
+      await writeAuditLog({
+        actor: auth.user,
+        action: 'UPDATE',
+        entity: 'Utilisateur',
+        entityId: id,
+        summary: `a modifié le compte de ${user.name}`,
+        metadata: { changedFields: Object.keys(dataToUpdate).filter((field) => field !== 'password') },
+        client: tx,
+      });
+      return user;
     });
 
-    return NextResponse.json(updated, { status: 200 });
+    const { password: _password, ...safeUser } = updated;
+    return NextResponse.json(safeUser, { status: 200 });
   } catch (error) {
     console.error("Erreur update user :", error);
 

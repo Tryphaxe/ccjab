@@ -1,15 +1,18 @@
 import Header from "@/components/Header";
 import { AuthProvider } from "@/lib/AuthContext";
 import ProtectedRoute from "@/lib/ProtectedRoute";
+import { internalFont } from '@/lib/fonts';
 
 export default function DashboardLayout({ children }) {
   return (
     <AuthProvider>
-      <Header />
-      <div className="w-full p-4 sm:p-6 bg-gray-50">
-        <ProtectedRoute allowedRoles={['ADMIN']}>
-          {children}
-        </ProtectedRoute>
+      <div className={internalFont.className}>
+        <Header />
+        <div className="w-full bg-[#fcf8fb] mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-4">
+          <ProtectedRoute allowedRoles={['ADMIN', 'ASSISTANT']}>
+            {children}
+          </ProtectedRoute>
+        </div>
       </div>
     </AuthProvider>
   );

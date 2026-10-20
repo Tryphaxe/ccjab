@@ -1,7 +1,10 @@
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
+import { authorize } from '@/lib/apiAuth';
 
-export async function GET() {
+export async function GET(request) {
+  const auth = await authorize(request, ['ADMIN', 'FINANCIER']);
+  if (auth.response) return auth.response;
   try {
     const events = await prisma.even.findMany({
       select: {

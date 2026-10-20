@@ -1,304 +1,140 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
-import {
-    Calendar,
-    Search,
-    User,
-    Clock,
-    Mail,
-    ArrowRight,
-    Facebook,
-    Instagram,
-    Twitter,
-    Loader2,
-    Megaphone,
-    Youtube
-} from 'lucide-react';
-import { Skeleton } from '@/components/ui/skeleton';
-import { useRouter } from 'next/navigation';
+import { useEffect, useMemo, useState } from 'react';
+import Link from 'next/link';
+import { ArrowRight, CalendarDays, ChevronLeft, ChevronRight, Clock3, Megaphone, Search } from 'lucide-react';
 
-// --- CONFIGURATION ---
-const DEFAULT_IMAGE = "/images/default-salle.png"; // Image par défaut si pas de média
+const PAGE_SIZE = 6;
+const DEFAULT_IMAGE = '/images/default-salle.png';
+const isVideo = (url = '') => /\.(mp4|webm|ogg|mov)(\?.*)?$/i.test(url);
+const formatDate = (date) => new Intl.DateTimeFormat('fr-FR', { day: '2-digit', month: 'long', year: 'numeric' }).format(new Date(date));
+const readingTime = (content = '') => Math.max(1, Math.ceil(content.trim().split(/\s+/).filter(Boolean).length / 220));
+const excerpt = (content = '') => content.replace(/\s+/g, ' ').trim();
 
-// Fonction utilitaire pour détecter les vidéos
-const isVideo = (url) => {
-    return url && url.match(/\.(mp4|webm|ogg|mov)($|\?)/i);
-};
+function Media({ post, className = '' }) {
+  if (post.mediaUrl && isVideo(post.mediaUrl)) {
+    return <video src={post.mediaUrl} className={className} muted playsInline preload="metadata" />;
+  }
+  return <img src={post.mediaUrl || DEFAULT_IMAGE} alt={post.titre || 'Actualité du CCJAB'} className={className} />;
+}
 
 export default function ActualitePage() {
-    const [posts, setPosts] = useState([]);
-    const [isLoading, setIsLoading] = useState(true);
-    const [searchTerm, setSearchTerm] = useState('');
-    const router = useRouter();
+  const [posts, setPosts] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [featuredOnly, setFeaturedOnly] = useState(false);
+  const [page, setPage] = useState(0);
 
-    // --- CHARGEMENT DES DONNÉES RÉELLES ---
-    useEffect(() => {
-        fetch('/api/web/post?type=ACTU')
-            .then(res => res.json())
-            .then(data => {
-                // On s'assure que data est un tableau
-                if (Array.isArray(data)) {
-                    setPosts(data);
-                } else {
-                    setPosts([]);
-                }
-            })
-            .catch(err => console.error("Erreur chargement actualités:", err))
-            .finally(() => setIsLoading(false));
-    }, []);
+  useEffect(() => {
+    fetch('/api/web/post?type=ACTU')
+      .then((response) => {
+        if (!response.ok) throw new Error('Chargement impossible');
+        return response.json();
+      })
+      .then((data) => setPosts(Array.isArray(data) ? data : []))
+      .catch((err) => { console.error('Erreur chargement actualités:', err); setError(true); })
+      .finally(() => setIsLoading(false));
+  }, []);
 
-    // --- LOGIQUE DE FILTRAGE ---
-    const filteredPosts = posts.filter(post => {
-        const searchLower = searchTerm.toLowerCase();
-        const titleMatch = post.titre.toLowerCase().includes(searchLower);
-        const contentMatch = post.contenu && post.contenu.toLowerCase().includes(searchLower);
-        return titleMatch || contentMatch;
+  const filteredPosts = useMemo(() => {
+    const term = searchTerm.trim().toLocaleLowerCase('fr');
+    return posts.filter((post) => {
+      const matchesSearch = !term || `${post.titre || ''} ${post.contenu || ''}`.toLocaleLowerCase('fr').includes(term);
+      return matchesSearch && (!featuredOnly || post.isPromoted);
     });
+  }, [posts, searchTerm, featuredOnly]);
+  const featuredPost = filteredPosts.find((post) => post.isPromoted) || filteredPosts[0];
+  const archivePosts = filteredPosts.filter((post) => post.id !== featuredPost?.id);
+  const pageCount = Math.ceil(archivePosts.length / PAGE_SIZE);
+  const visiblePosts = archivePosts.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE);
 
-    // --- LOGIQUE "À LA UNE" (FEATURED) ---
-    // On prend le premier article marqué "isPromoted", sinon le tout premier de la liste
-    const featuredPost = filteredPosts.find(p => p.isPromoted) || filteredPosts[0];
+  const updateSearch = (value) => { setSearchTerm(value); setPage(0); };
+  const updateFeatured = (value) => { setFeaturedOnly(value); setPage(0); };
 
-    // La liste principale exclut l'article à la une pour ne pas le montrer deux fois
-    const listPosts = featuredPost
-        ? filteredPosts.filter(p => p.id !== featuredPost.id)
-        : [];
-
-    return (
-        <div className="min-h-screen bg-gray-50 text-gray-900">
-
-            {/* ================= EN-TÊTE (HERO) ================= */}
-            <section className="bg-emerald-900 text-white pt-32 pb-20 relative overflow-hidden">
-                <div className="absolute inset-0 bg-emerald-800 opacity-20 pattern-grid-lg"></div>
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 text-center">
-                    <h1 className="text-4xl md:text-5xl font-extrabold mb-4 tracking-tight">Le Journal du Centre</h1>
-                    <p className="text-emerald-200 text-lg max-w-2xl mx-auto">
-                        L'actualité culturelle de Bouaké en temps réel. Découvrez nos reportages, interviews et annonces exclusives.
-                    </p>
-                </div>
-            </section>
-
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-                <div className="flex flex-col lg:flex-row gap-12">
-
-                    {/* ================= COLONNE PRINCIPALE ================= */}
-                    <div className="lg:w-2/3">
-
-                        {/* Barre de recherche mobile */}
-                        <div className="lg:hidden mb-8 relative">
-                            <input
-                                type="text"
-                                placeholder="Rechercher un article..."
-                                className="w-full pl-10 pr-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-emerald-500 outline-none"
-                                value={searchTerm}
-                                onChange={(e) => setSearchTerm(e.target.value)}
-                            />
-                            <Search className="absolute left-3 top-3.5 text-gray-400" size={20} />
-                        </div>
-
-                        {/* CHARGEMENT */}
-                        {isLoading && (
-                            <div className="space-y-8">
-                                <Skeleton className="h-96 w-full rounded-2xl" />
-                                <div className="grid md:grid-cols-2 gap-8">
-                                    <Skeleton className="h-80 w-full rounded-2xl" />
-                                    <Skeleton className="h-80 w-full rounded-2xl" />
-                                </div>
-                            </div>
-                        )}
-
-                        {/* VIDE */}
-                        {!isLoading && filteredPosts.length === 0 && (
-                            <div className="text-center py-20 bg-white rounded-2xl border border-dashed border-gray-200">
-                                <Megaphone className="w-12 h-12 text-gray-300 mx-auto mb-4" />
-                                <h3 className="text-lg font-semibold text-gray-900">Aucune actualité trouvée</h3>
-                                <p className="text-gray-500">Essayez un autre mot-clé.</p>
-                            </div>
-                        )}
-
-                        {/* CONTENU RÉEL */}
-                        {!isLoading && filteredPosts.length > 0 && (
-                            <>
-                                {/* --- ARTICLE À LA UNE --- */}
-                                {featuredPost && (
-                                    <div
-                                        className="mb-12 group cursor-pointer relative"
-                                        onClick={() => router.push(`/web/actualites/${featuredPost.id}`)}
-                                    >
-                                        <div className="relative h-80 md:h-[450px] rounded-2xl overflow-hidden shadow-lg bg-gray-900">
-                                            {featuredPost.mediaUrl ? (
-                                                isVideo(featuredPost.mediaUrl) ? (
-                                                    <video src={featuredPost.mediaUrl} className="w-full h-full object-cover" autoPlay muted loop playsInline />
-                                                ) : (
-                                                    <img src={featuredPost.mediaUrl} alt={featuredPost.titre} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 opacity-90" />
-                                                )
-                                            ) : (
-                                                <div className="w-full h-full flex items-center justify-center bg-emerald-800 text-emerald-200">
-                                                    <Megaphone size={64} opacity={0.5} />
-                                                </div>
-                                            )}
-
-                                            <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent"></div>
-
-                                            <div className="absolute bottom-0 left-0 p-6 md:p-8 text-white w-full">
-                                                <div className="flex justify-between items-end">
-                                                    <div>
-                                                        <span className="bg-emerald-600 text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wide mb-3 inline-block">
-                                                            À la une
-                                                        </span>
-                                                        <h2 className="text-2xl md:text-4xl font-bold mb-3 leading-tight group-hover:text-emerald-400 transition-colors line-clamp-2">
-                                                            {featuredPost.titre}
-                                                        </h2>
-                                                        <div className="flex items-center gap-4 text-sm text-gray-300">
-                                                            <span className="flex items-center gap-1"><User size={14} /> Administration</span>
-                                                            <span className="flex items-center gap-1"><Calendar size={14} /> {new Date(featuredPost.createdAt).toLocaleDateString('fr-FR')}</span>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                )}
-
-                                {/* --- LISTE DES ARTICLES STANDARDS --- */}
-                                <div className="grid md:grid-cols-2 gap-8">
-                                    {listPosts.map((post) => (
-                                        <article key={post.id} className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-xl hover:-translate-y-1 transition-all duration-300 flex flex-col h-full group">
-
-                                            {/* Media */}
-                                            <div className="h-48 overflow-hidden relative bg-gray-100">
-                                                {post.mediaUrl ? (
-                                                    isVideo(post.mediaUrl) ? (
-                                                        <video src={post.mediaUrl} className="w-full h-full object-cover" />
-                                                    ) : (
-                                                        <img src={post.mediaUrl} alt={post.titre} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
-                                                    )
-                                                ) : (
-                                                    <img src={DEFAULT_IMAGE} alt="Défaut" className="w-full h-full object-cover opacity-50" />
-                                                )}
-                                                <div className="absolute top-4 right-4 bg-white/90 backdrop-blur text-emerald-800 text-xs font-bold px-3 py-1 rounded-md shadow-sm">
-                                                    Actualité
-                                                </div>
-                                            </div>
-
-                                            {/* Contenu Textuel */}
-                                            <div className="p-6 flex flex-col flex-grow">
-                                                <div className="flex items-center gap-2 text-xs text-gray-500 mb-3">
-                                                    <Calendar size={12} className="text-emerald-600" /> {new Date(post.createdAt).toLocaleDateString('fr-FR')}
-                                                    {post.contenu && (
-                                                        <>
-                                                            <span className="w-1 h-1 bg-gray-300 rounded-full"></span>
-                                                            <Clock size={12} className="text-emerald-600" />
-                                                            {Math.max(1, Math.round(post.contenu.length / 500))} min
-                                                        </>
-                                                    )}
-                                                </div>
-
-                                                <h3 className="text-xl font-bold text-gray-900 mb-3 group-hover:text-emerald-700 transition-colors line-clamp-2">
-                                                    {post.titre}
-                                                </h3>
-
-                                                <p className="text-gray-600 text-sm line-clamp-3 mb-4 flex-grow">
-                                                    {post.contenu || "Aucun contenu disponible pour cet article."}
-                                                </p>
-
-                                                {/* Note: Pour l'instant le lien est inactif car nous n'avons pas de page détail */}
-                                                <div className="mt-auto pt-4 border-t border-gray-50">
-                                                    <button
-                                                        onClick={() => router.push(`/web/actualites/${post.id}`)}
-                                                        className="inline-flex items-center text-emerald-600 font-semibold text-sm cursor-pointer hover:underline bg-transparent border-none p-0"
-                                                    >
-                                                        Lire l'article <ArrowRight size={16} className="ml-1" />
-                                                    </button>
-                                                </div>
-                                            </div>
-                                        </article>
-                                    ))}
-                                </div>
-                            </>
-                        )}
-
-                    </div>
-
-                    {/* ================= SIDEBAR (Barre Latérale) ================= */}
-                    <aside className="lg:w-1/3 space-y-8">
-
-                        {/* Widget Recherche (Desktop) */}
-                        <div className="hidden lg:block bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
-                            <h3 className="text-lg font-bold text-gray-900 mb-4">Rechercher</h3>
-                            <div className="relative">
-                                <input
-                                    type="text"
-                                    placeholder="Mots-clés..."
-                                    className="w-full pl-10 pr-4 py-3 rounded-xl bg-gray-50 border border-gray-200 focus:bg-white focus:ring-2 focus:ring-emerald-500 outline-none transition-all"
-                                    value={searchTerm}
-                                    onChange={(e) => setSearchTerm(e.target.value)}
-                                />
-                                <Search className="absolute left-3 top-3.5 text-gray-400" size={18} />
-                            </div>
-                        </div>
-
-                        {/* Widget Catégories (Statique pour l'instant) */}
-                        <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
-                            <h3 className="text-lg font-bold text-gray-900 mb-4 border-l-4 border-emerald-500 pl-3">Rubriques</h3>
-                            <ul className="space-y-2">
-                                <li className="text-sm flex justify-between items-center p-2 rounded-lg bg-emerald-50 text-emerald-700 font-medium">
-                                    <span>Actualités</span>
-                                    <span className="bg-emerald-200 text-emerald-800 text-xs py-0.5 px-2 rounded-full">{posts.length}</span>
-                                </li>
-                                <li className="text-sm flex justify-between items-center p-2 rounded-lg text-gray-500 cursor-not-allowed opacity-50">
-                                    <span>Concerts (Bientôt)</span>
-                                </li>
-                                <li className="text-sm flex justify-between items-center p-2 rounded-lg text-gray-500 cursor-not-allowed opacity-50">
-                                    <span>Théâtre (Bientôt)</span>
-                                </li>
-                            </ul>
-                        </div>
-
-                        {/* Widget Réseaux Sociaux */}
-                        <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 text-center">
-                            <h3 className="text-sm font-bold text-gray-500 uppercase tracking-wider mb-4">Suivez-nous</h3>
-                            <div className="flex gap-3 pt-2 items-center justify-center">
-                                {/* Facebook */}
-                                <a
-                                    href="https://www.facebook.com/share/p/1BDVJJtsMz/"
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="w-9 h-9 flex items-center justify-center bg-[#1877F2] text-white rounded-full hover:opacity-80 transition-all shadow-sm"
-                                    title="Suivre sur Facebook"
-                                >
-                                    <Facebook size={18} />
-                                </a>
-
-                                {/* YouTube */}
-                                <a
-                                    href="https://youtube.com/@ccjab-tv?si=_qS64Dbhr7z1fFAJ"
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="w-9 h-9 flex items-center justify-center bg-[#FF0000] text-white rounded-full hover:opacity-80 transition-all shadow-sm"
-                                    title="S'abonner sur YouTube"
-                                >
-                                    <Youtube size={18} />
-                                </a>
-
-                                {/* TikTok */}
-                                <a
-                                    href="https://vm.tiktok.com/ZS9eP6EAxfCF8-zbKMl/"
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="w-9 h-9 flex items-center justify-center bg-black text-white rounded-full hover:bg-gray-800 transition-all shadow-sm"
-                                    title="Suivre sur TikTok"
-                                >
-                                    {/* Utilisation de l'icône FontAwesome ou Music si Lucide n'a pas TikTok */}
-                                    <i className="fa-brands fa-tiktok text-[16px]"></i>
-                                </a>
-                            </div>
-                        </div>
-
-                    </aside>
-                </div>
+  return (
+    <main className="min-h-screen bg-[#fbf8f7] pt-[72px] text-[#211b19]">
+      <section className="border-b border-[#eee5e2] bg-[#fbf8f7]">
+        <div className="mx-auto max-w-7xl px-5 pb-8 pt-10 md:px-8 md:pb-10 md:pt-14">
+          <p className="mb-3 text-[10px] font-bold uppercase tracking-[0.18em] text-[#b43a1a]">Chroniques &amp; vie culturelle · Bouaké</p>
+          <div className="flex flex-col justify-between gap-6 lg:flex-row lg:items-end">
+            <div className="max-w-3xl">
+              <h1 className="font-serif text-4xl leading-tight tracking-tight md:text-6xl">Le Magazine du CCJAB</h1>
+              <p className="mt-3 max-w-2xl text-sm leading-6 text-[#746b67] md:text-base">Rencontres, coulisses et récits de la vie culturelle au Centre Culturel Jacques Aka et dans la région du Gbêkê.</p>
             </div>
+            <p className="shrink-0 text-xs text-[#746b67]">{posts.length} publication{posts.length > 1 ? 's' : ''}</p>
+          </div>
+          <div className="mt-7 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+            <div className="flex flex-wrap gap-2" aria-label="Filtrer les actualités">
+              <button onClick={() => updateFeatured(false)} className={`rounded-full px-4 py-2 text-[10px] font-bold uppercase tracking-wide transition ${!featuredOnly ? 'bg-[#b43a1a] text-white' : 'bg-[#f0eae8] text-[#756c68] hover:bg-[#e8ddda]'}`}>Toutes ({posts.length})</button>
+              <button onClick={() => updateFeatured(true)} className={`rounded-full px-4 py-2 text-[10px] font-bold uppercase tracking-wide transition ${featuredOnly ? 'bg-[#b43a1a] text-white' : 'bg-[#f0eae8] text-[#756c68] hover:bg-[#e8ddda]'}`}>À la une</button>
+            </div>
+            <label className="relative block w-full md:max-w-sm">
+              <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#8f8580]" />
+              <input value={searchTerm} onChange={(event) => updateSearch(event.target.value)} placeholder="Chercher un article, un mot-clé…" className="w-full rounded-lg border border-[#eee5e2] bg-white py-3 pl-10 pr-4 text-sm outline-none transition placeholder:text-[#a19894] focus:border-[#b43a1a]" />
+            </label>
+          </div>
         </div>
-    );
+      </section>
+
+      <div className="mx-auto max-w-7xl px-5 py-8 md:px-8 md:py-12">
+        {isLoading ? (
+          <div className="animate-pulse space-y-8"><div className="h-[360px] rounded-xl bg-[#eee8e5]" /><div className="grid gap-5 md:grid-cols-3">{[1, 2, 3].map((item) => <div key={item} className="h-80 rounded-xl bg-[#eee8e5]" />)}</div></div>
+        ) : error ? (
+          <div className="rounded-xl border border-[#eadbd6] bg-white p-10 text-center text-sm text-[#746b67]">Les actualités ne sont pas disponibles pour le moment. Réessayez dans quelques instants.</div>
+        ) : filteredPosts.length === 0 ? (
+          <div className="rounded-xl border border-dashed border-[#d9cbc6] bg-white px-6 py-16 text-center">
+            <Megaphone className="mx-auto mb-4 text-[#b43a1a]" />
+            <h2 className="font-serif text-2xl">Aucune publication trouvée</h2>
+            <p className="mt-2 text-sm text-[#746b67]">Modifiez votre recherche ou affichez toutes les publications.</p>
+          </div>
+        ) : (
+          <>
+            {featuredPost && (
+              <Link href={`/web/actualites/${featuredPost.id}`} className="group mb-12 grid overflow-hidden rounded-xl bg-white shadow-[0_3px_12px_rgba(40,24,18,0.08)] ring-1 ring-black/[0.04] md:grid-cols-[1.25fr_0.85fr]">
+                <div className="relative min-h-[260px] overflow-hidden bg-[#211b19] md:min-h-[430px]">
+                  <Media post={featuredPost} className="absolute inset-0 h-full w-full object-cover transition duration-700 group-hover:scale-[1.03]" />
+                  <div className="absolute left-4 top-4 rounded bg-[#b43a1a] px-3 py-1 text-[9px] font-bold uppercase tracking-wide text-white">À la une · CCJAB</div>
+                </div>
+                <div className="flex flex-col justify-center p-6 md:p-9 lg:p-12">
+                  <div className="mb-4 flex flex-wrap items-center gap-x-4 gap-y-2 text-[10px] font-semibold uppercase tracking-wide text-[#8b7770]"><span>{formatDate(featuredPost.createdAt)}</span><span className="flex items-center gap-1"><Clock3 size={12} /> {readingTime(featuredPost.contenu)} min de lecture</span></div>
+                  <h2 className="font-serif text-3xl leading-tight tracking-tight md:text-4xl lg:text-[2.7rem]">{featuredPost.titre}</h2>
+                  <p className="mt-4 line-clamp-4 text-sm leading-6 text-[#766d69]">{excerpt(featuredPost.contenu)}</p>
+                  <div className="mt-7 flex items-center justify-between gap-3 border-t border-[#eee5e2] pt-5">
+                    <span className="text-xs text-[#746b67]">{featuredPost.author?.name || 'Rédaction du CCJAB'}</span>
+                    <span className="inline-flex items-center gap-2 rounded bg-[#b43a1a] px-4 py-3 text-xs font-bold text-white transition group-hover:bg-[#922c13]">Lire l’article <ArrowRight size={15} /></span>
+                  </div>
+                </div>
+              </Link>
+            )}
+
+            <section aria-labelledby="recent-publications">
+              <div className="mb-5 flex flex-col justify-between gap-2 sm:flex-row sm:items-end">
+                <div><p className="text-[9px] font-bold uppercase tracking-[0.18em] text-[#52715f]">Archives récentes &amp; dépêches</p><h2 id="recent-publications" className="mt-1 font-serif text-3xl">Les dernières publications</h2></div>
+                <p className="text-xs text-[#8a807c]">{archivePosts.length} article{archivePosts.length > 1 ? 's' : ''}</p>
+              </div>
+              {visiblePosts.length ? <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+                {visiblePosts.map((post) => (
+                  <Link key={post.id} href={`/web/actualites/${post.id}`} className="group flex min-w-0 flex-col overflow-hidden rounded-lg bg-white shadow-sm ring-1 ring-black/[0.045] transition hover:-translate-y-1 hover:shadow-lg">
+                    <div className="relative h-52 overflow-hidden bg-[#211b19]"><Media post={post} className="h-full w-full object-cover transition duration-500 group-hover:scale-105" /><span className="absolute left-3 top-3 rounded bg-[#315b43] px-2.5 py-1 text-[9px] font-bold uppercase tracking-wide text-white">Actualité</span>{post.contenu && <span className="absolute bottom-2 right-2 rounded bg-white/95 px-2 py-1 text-[9px] text-[#554a46]">{readingTime(post.contenu)} min</span>}</div>
+                    <div className="flex flex-1 flex-col p-4">
+                      <p className="text-[9px] font-semibold uppercase tracking-wide text-[#8a7770]">{formatDate(post.createdAt)}{post.author?.name ? ` · ${post.author.name}` : ''}</p>
+                      <h3 className="mt-2 line-clamp-2 font-serif text-xl leading-snug group-hover:text-[#b43a1a]">{post.titre}</h3>
+                      <p className="mt-2 line-clamp-3 flex-1 text-xs leading-5 text-[#766d69]">{excerpt(post.contenu)}</p>
+                      <span className="mt-5 inline-flex items-center gap-1 border-t border-[#f0eae8] pt-3 text-xs font-semibold text-[#b43a1a]">Lire la suite <ArrowRight size={14} /></span>
+                    </div>
+                  </Link>
+                ))}
+              </div> : <p className="rounded-lg bg-white p-6 text-sm text-[#746b67]">Aucune autre publication à afficher.</p>}
+              {pageCount > 1 && <div className="mt-8 flex items-center justify-between border-t border-[#eee5e2] pt-5 text-xs text-[#746b67]">
+                <span>Page {page + 1} sur {pageCount}</span><div className="flex gap-2"><button aria-label="Page précédente" disabled={page === 0} onClick={() => setPage((current) => Math.max(0, current - 1))} className="rounded border border-[#e8ddda] bg-white p-2 disabled:opacity-40"><ChevronLeft size={16} /></button><button aria-label="Page suivante" disabled={page + 1 >= pageCount} onClick={() => setPage((current) => Math.min(pageCount - 1, current + 1))} className="rounded border border-[#e8ddda] bg-white p-2 disabled:opacity-40"><ChevronRight size={16} /></button></div>
+              </div>}
+            </section>
+          </>
+        )}
+      </div>
+
+      <section className="px-5 pb-14 md:px-8 md:pb-20"><div className="mx-auto flex max-w-7xl flex-col justify-between gap-6 rounded-xl bg-[#315b43] px-6 py-8 text-white shadow-md md:flex-row md:items-center md:px-10 md:py-10"><div className="max-w-2xl"><p className="text-[9px] font-bold uppercase tracking-[0.18em] text-white/70">La vie culturelle à Bouaké</p><h2 className="mt-2 font-serif text-3xl leading-tight md:text-4xl">Suivez les actualités du CCJAB</h2><p className="mt-3 max-w-xl text-sm leading-6 text-white/75">Retrouvez les annonces, rencontres et récits qui font vivre le Centre Culturel Jacques Aka.</p></div><Link href="/web/contact" className="inline-flex shrink-0 items-center justify-center gap-2 rounded bg-white px-5 py-3 text-xs font-bold text-[#315b43] transition hover:bg-[#f3ebe8]">Contacter le CCJAB <ArrowRight size={15} /></Link></div></section>
+    </main>
+  );
 }

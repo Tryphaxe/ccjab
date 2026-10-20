@@ -49,8 +49,8 @@ const AgentLeaderboard = ({ events }) => {
     const maxVal = agentStats[0]?.total || 1;
 
     return (
-        <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+        <div className="bg-white rounded-xl border border-[#eee8eb] shadow-sm p-6">
+            <h3 className="text-lg font-semibold text-[#1b1b1d] mb-4 flex items-center gap-2">
                 <Trophy className="w-5 h-5 text-yellow-500" />
                 Top Agents
             </h3>
@@ -64,7 +64,7 @@ const AgentLeaderboard = ({ events }) => {
                                 </div>
                                 {agent.name}
                             </span>
-                            <span className="font-bold text-gray-900">{agent.total.toLocaleString()} F</span>
+                            <span className="font-bold text-[#1b1b1d]">{agent.total.toLocaleString()} F</span>
                         </div>
                         <div className="h-2 w-full bg-gray-100 rounded-full overflow-hidden">
                             <div 
@@ -105,10 +105,10 @@ const CategoryBreakdown = ({ events }) => {
     const colors = ["bg-emerald-500", "bg-blue-500", "bg-purple-500", "bg-orange-500", "bg-gray-500"];
 
     return (
-        <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+        <div className="bg-white rounded-xl border border-[#eee8eb] shadow-sm p-6">
+            <h3 className="text-lg font-semibold text-[#1b1b1d] mb-4 flex items-center gap-2">
                 <Tag className="w-5 h-5 text-purple-500" />
-                Revenus par Catégorie
+                Montants contractuels par catégorie
             </h3>
             <div className="space-y-4">
                 {catStats.map((cat, index) => (
@@ -118,7 +118,7 @@ const CategoryBreakdown = ({ events }) => {
                             <span className="text-sm font-medium text-gray-700">{cat.name}</span>
                         </div>
                         <div className="text-right">
-                            <p className="text-sm font-bold text-gray-900">{cat.value.toLocaleString()} F</p>
+                            <p className="text-sm font-bold text-[#1b1b1d]">{cat.value.toLocaleString()} F</p>
                             <p className="text-xs text-gray-500">{cat.percent.toFixed(1)}%</p>
                         </div>
                     </div>
@@ -137,7 +137,7 @@ const PeriodSelector = ({ activePeriod, onChange }) => {
     ];
 
     return (
-        <div className="flex items-center p-1 bg-white rounded-lg border border-gray-200 shadow-sm">
+        <div className="flex items-center p-1 bg-white rounded-lg border border-[#eee8eb] shadow-sm">
             {periods.map((p) => {
                 const Icon = p.icon;
                 const isActive = activePeriod === p.id;
@@ -148,8 +148,8 @@ const PeriodSelector = ({ activePeriod, onChange }) => {
                         className={`
                             flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-md transition-all duration-200
                             ${isActive
-                                ? 'bg-gray-900 text-white shadow-md'
-                                : 'text-gray-500 hover:text-gray-900 hover:bg-gray-100'
+                                ? 'bg-[#a93105] text-white shadow-sm'
+                                : 'text-gray-500 hover:text-[#1b1b1d] hover:bg-gray-100'
                             }
                         `}
                     >
@@ -184,12 +184,13 @@ export default function FinancePage() {
                 return day;
             });
             filtered = last7.map((day) => {
-                const total = events
-                    .filter((e) => {
-                        const d = new Date(e.date_debut);
+                const total = events.flatMap((event) => event.payments || [])
+                    .filter((payment) => {
+                        if (payment.isLegacyEstimate) return false;
+                        const d = new Date(payment.paidAt);
                         return d.getDate() === day.getDate() && d.getMonth() === day.getMonth() && d.getFullYear() === day.getFullYear();
                     })
-                    .reduce((acc, e) => acc + (e.montant || 0), 0);
+                    .reduce((acc, payment) => acc + payment.amount, 0);
                 return { month: day.toLocaleDateString("fr-FR", { weekday: "short" }), desktop: total };
             });
         } else if (periode === "mois") {
@@ -197,23 +198,25 @@ export default function FinancePage() {
             const currentYear = now.getFullYear();
             const weeks = [1, 2, 3, 4, 5];
             filtered = weeks.map((week) => {
-                const total = events
-                    .filter((e) => {
-                        const d = new Date(e.date_debut);
+                const total = events.flatMap((event) => event.payments || [])
+                    .filter((payment) => {
+                        if (payment.isLegacyEstimate) return false;
+                        const d = new Date(payment.paidAt);
                         const weekOfMonth = Math.ceil(d.getDate() / 7);
                         return d.getMonth() === currentMonth && d.getFullYear() === currentYear && weekOfMonth === week;
                     })
-                    .reduce((acc, e) => acc + (e.montant || 0), 0);
+                    .reduce((acc, payment) => acc + payment.amount, 0);
                 return { month: "S" + week, desktop: total };
             });
         } else if (periode === "annee") {
             filtered = Array.from({ length: 12 }).map((_, i) => {
-                const total = events
-                    .filter((e) => {
-                        const d = new Date(e.date_debut);
+                const total = events.flatMap((event) => event.payments || [])
+                    .filter((payment) => {
+                        if (payment.isLegacyEstimate) return false;
+                        const d = new Date(payment.paidAt);
                         return d.getMonth() === i && d.getFullYear() === now.getFullYear();
                     })
-                    .reduce((acc, e) => acc + (e.montant || 0), 0);
+                    .reduce((acc, payment) => acc + payment.amount, 0);
                 return { month: new Date(0, i).toLocaleString("fr-FR", { month: "short" }), desktop: total };
             });
         }
@@ -259,15 +262,22 @@ export default function FinancePage() {
 
         // Taux d'annulation
         const totalEventsCount = currentEvents.length;
+        const collectedInPeriod = events.flatMap((event) => event.payments || [])
+            .filter((payment) => {
+                if (payment.isLegacyEstimate) return false;
+                const paidAt = new Date(payment.paidAt);
+                return paidAt >= startCurrent && paidAt <= endCurrent;
+            })
+            .reduce((sum, payment) => sum + payment.amount, 0);
 
         return [
             {
-                title: "Chiffre d'Affaires",
+                title: "Montants contractuels",
                 value: currRev.toLocaleString("fr-FR") + " F",
                 icon: HandCoins,
                 color: "text-emerald-600",
                 bg: "bg-emerald-50",
-                trendValue: "Total Facturé", // Simplifié
+                trendValue: "Selon la date des événements",
                 trendStyle: "text-emerald-700 bg-emerald-50 border-emerald-200",
                 TrendIcon: TrendingUp
             },
@@ -277,9 +287,19 @@ export default function FinancePage() {
                 icon: Wallet,
                 color: "text-amber-600",
                 bg: "bg-amber-50",
-                trendValue: "Trésorerie latente",
+                trendValue: "Solde restant sur les événements",
                 trendStyle: "text-amber-700 bg-amber-50 border-amber-200",
                 TrendIcon: AlertCircle
+            },
+            {
+                title: "Encaissé sur la période",
+                value: collectedInPeriod.toLocaleString("fr-FR") + " F",
+                icon: Wallet,
+                color: "text-blue-600",
+                bg: "bg-blue-50",
+                trendValue: "Selon la date de paiement",
+                trendStyle: "text-blue-700 bg-blue-50 border-blue-200",
+                TrendIcon: TrendingUp
             },
             {
                 title: "Nombre d'Évènements",
@@ -312,7 +332,7 @@ export default function FinancePage() {
 
     if (loading) {
         return (
-            <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50/50">
+            <div className="min-h-screen flex flex-col items-center justify-center bg-[#fcf8fb]">
                 <Loader className='animate-spin w-6 h-6 mb-3 text-green-600' />
                 <span className="font-medium text-gray-500">Chargement des données financières...</span>
             </div>
@@ -320,25 +340,27 @@ export default function FinancePage() {
     }
 
     return (
-        <div className="min-h-screen bg-gray-50/50 p-4 text-gray-900 pb-24">
-            <div className="max-w-7xl mx-auto space-y-8">
+        <main className="min-h-screen bg-[#fcf8fb] text-[#1b1b1d]">
+            <div className="w-full space-y-8">
 
                 {/* Header */}
                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
-                    <div>
-                        <h1 className="text-2xl font-bold tracking-tight text-gray-900">Aperçu Financier</h1>
-                        <p className="text-sm text-gray-500 mt-1">Suivez vos revenus, créances et performances commerciales.</p>
+                    <div className="max-w-2xl">
+                        <p className="mb-2 text-[10px] font-bold uppercase tracking-[0.15em] text-[#a93105]">Suivi · Régie financière</p>
+                        <h1 className="font-[Georgia] text-3xl font-semibold tracking-tight text-[#1b1b1d]">Aperçu Financier</h1>
+                        <p className="text-sm text-gray-500 mt-1">Suivez les montants contractuels et les soldes associés aux événements.</p>
+                        <p className="mt-2 inline-flex items-center gap-2 rounded-lg bg-[#f0edef] px-3 py-2 text-xs text-[#765f58]"><AlertCircle size={14} className="shrink-0 text-[#a93105]" />Les montants contractuels et les encaissements sont calculés sur des périodes distinctes.</p>
                     </div>
                     <PeriodSelector activePeriod={periode} onChange={setPeriode} />
                 </div>
 
                 {/* KPI Cards */}
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
                     {stats.map((stat, index) => {
                         const Icon = stat.icon;
                         const TrendIcon = stat.TrendIcon;
                         return (
-                            <div key={index} className="bg-white rounded-xl p-6 border border-gray-200 shadow-sm hover:shadow-md transition-shadow">
+                            <div key={index} className="bg-white rounded-xl p-6 border border-[#eee8eb] shadow-sm hover:shadow-md transition-shadow">
                                 <div className="flex justify-between items-start mb-4">
                                     <div className={`p-3 rounded-xl ${stat.bg}`}>
                                         <Icon className={`w-6 h-6 ${stat.color}`} />
@@ -350,7 +372,7 @@ export default function FinancePage() {
                                 </div>
                                 <div>
                                     <h3 className="text-sm font-medium text-gray-500 mb-1">{stat.title}</h3>
-                                    <p className="text-2xl font-bold text-gray-900 tracking-tight">{stat.value}</p>
+                                    <p className="text-2xl font-bold text-[#1b1b1d] tracking-tight">{stat.value}</p>
                                 </div>
                             </div>
                         );
@@ -377,11 +399,11 @@ export default function FinancePage() {
 
                 {/* Tableau */}
                 <div className="space-y-4">
-                    <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+                    <h2 className="text-lg font-semibold text-[#1b1b1d] flex items-center gap-2">
                         <CalendarDays className="w-5 h-5 text-gray-500" />
                         Dernières réservations
                     </h2>
-                    <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden p-1">
+                    <div className="bg-white rounded-xl border border-[#eee8eb] shadow-sm overflow-hidden p-1">
                         <TableList />
                     </div>
                 </div>
@@ -389,16 +411,16 @@ export default function FinancePage() {
                 {/* Bouton Filtre Flottant */}
                 <Button
                     onClick={() => setOpen(true)}
-                    className="fixed bottom-8 right-8 h-10 w-10 cursor-pointer rounded-full bg-gray-900 hover:bg-gray-800 text-white shadow-xl hover:shadow-2xl transition-all duration-300 z-50 flex items-center justify-center group"
+                    className="group fixed bottom-8 right-8 z-50 inline-flex h-12 items-center justify-center gap-2 rounded-full bg-[#a93105] px-5 text-white shadow-lg transition-all duration-300 hover:bg-[#862300]"
                 >
-                    <Filter className="w-6 h-6 group-hover:scale-110 transition-transform" />
-                    <span className="sr-only">Filtrer</span>
+                    <Filter className="h-4 w-4 transition-transform group-hover:scale-110" />
+                    <span className="text-sm font-semibold">Filtres avancés</span>
                 </Button>
 
                 {/* Dialog Filtres */}
                 <Dialog open={open} onOpenChange={setOpen}>
                     <DialogContent className="sm:max-w-4xl max-h-[80vh] flex flex-col p-0 overflow-hidden">
-                        <DialogHeader className="p-6 pb-2 border-b border-gray-100 bg-gray-50/50">
+                        <DialogHeader className="p-6 pb-2 border-b border-gray-100 bg-[#fcf8fb]">
                             <DialogTitle className="flex items-center gap-2">
                                 <Filter className="w-5 h-5" />
                                 Filtres avancés
@@ -411,6 +433,6 @@ export default function FinancePage() {
                 </Dialog>
 
             </div>
-        </div>
+        </main>
     )
 }

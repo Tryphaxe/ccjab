@@ -31,6 +31,7 @@ import {
 } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import CalendarView from '@/components/CalendarView';
+import { EventOriginBadge, EventOriginLegend, getEventOriginColor } from '@/components/EventOrigin';
 import { eventCategories, eventTypesByCategory } from '@/lib/list';
 import { fetchEventsAgent } from '@/utils/evenAgentUtils';
 import { fetchSalles } from '@/utils/salleUtils';
@@ -64,6 +65,8 @@ export default function AgentDashboard() {
     const formattedEvents = useMemo(() => events.map((e) => ({
         id: e.id,
         nom_evenement: e.nom_evenement,
+        nom_client: e.nom_client,
+        organise_par_ccjab: e.organise_par_ccjab,
         nom_salle: e.salles?.length > 0 ? e.salles.map(s => s.nom_salle).join(" + ") : "Aucune salle",
         agent: { nom: e.agent?.name },
         type_evenement: e.type,
@@ -141,6 +144,7 @@ export default function AgentDashboard() {
 
                 {/* Section Liste & Filtres */}
                 <div className="space-y-4">
+                    <EventOriginLegend className="px-1" />
                     <div className="flex items-center justify-between">
                         <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
                             <ListFilter className="w-5 h-5 text-gray-500" />
@@ -231,7 +235,8 @@ export default function AgentDashboard() {
                                         return (
                                             <div
                                                 key={event.id}
-                                                className="group p-4 border-b border-gray-100 last:border-b-0 hover:bg-gray-50 transition-colors duration-200 flex flex-col md:flex-row md:items-center justify-between gap-4"
+                                                style={{ borderLeftColor: getEventOriginColor(event) }}
+                                                className="group p-4 border-l-4 border-b border-gray-100 last:border-b-0 hover:bg-gray-50 transition-colors duration-200 flex flex-col md:flex-row md:items-center justify-between gap-4"
                                             >
                                                 {/* Colonne 1 : Infos Principales */}
                                                 <div className="flex-1 min-w-0">
@@ -239,6 +244,7 @@ export default function AgentDashboard() {
                                                         <span className="text-base font-bold text-gray-900 truncate">
                                                             {event.nom_evenement || event.description || "Évènement sans nom"}
                                                         </span>
+                                                        <EventOriginBadge event={event} className="text-[10px]" />
                                                         <span className="text-base font-bold text-gray-900 truncate" title={event.salles?.map(s => s.nom_salle).join(" + ")}>
                                                             {event.salles?.length > 0 ? event.salles.map(s => s.nom_salle).join(" + ") : "Aucune salle"}
                                                         </span>

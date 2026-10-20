@@ -1,7 +1,11 @@
 import prisma from "@/lib/prisma";
 import { NextResponse } from "next/server";
+import { authorize } from "@/lib/apiAuth";
+import { writeAuditLog } from '@/lib/auditLog';
 
 export async function PATCH(request, { params }) {
+  const auth = await authorize(request, ["ADMIN"]);
+  if (auth.response) return auth.response;
   try {
     const { id } = await params; // await params est requis sur les dernières versions de Next.js
     const body = await request.json();
@@ -25,12 +29,10 @@ export async function PATCH(request, { params }) {
     // CAS 2 : MODIFICATION DES INFOS (Formulaire)
     // =========================================================
     // 1. Nom
-    if (body.nom_salle !== undefined) updateData.nom_salle = body.nom;
-    else if (body.nom_salle !== undefined) updateData.nom_salle = body.nom_salle;
+    if (body.nom_salle !== undefined) updateData.nom_salle = body.nom_salle;
 
     // 2. Capacité
     if (body.nombre_place !== undefined) updateData.nombre_place = parseInt(body.nombre_place);
-    else if (body.nombre_place !== undefined) updateData.nombre_place = parseInt(body.nombre_place);
 
     // 3. Image
     if (body.image !== undefined) updateData.image = body.image;
@@ -54,7 +56,8 @@ export async function PATCH(request, { params }) {
       return NextResponse.json({ message: "Aucune donnée à mettre à jour" });
     }
 
-    const updatedSalle = await prisma.salle.update({
+    const updatedSalle = await prisma.$transaction(async (tx) => {
+      const updated = await tx.salle.update({
       where: { id: id },
       data: updateData,
       // Optionnel : Inclure les commodités dans la réponse pour mise à jour immédiate du front
@@ -63,6 +66,18 @@ export async function PATCH(request, { params }) {
           include: { commodite: true }
         }
       }
+      });
+
+    await writeAuditLog({
+      actor: auth.user,
+      action: 'UPDATE',
+      entity: 'Salle',
+      entityId: id,
+      summary: `a modifié la salle « ${updated.nom_salle} »`,
+      metadata: { changedFields: Object.keys(body) },
+      client: tx,
+    });
+    return updated;
     });
 
     return NextResponse.json(updatedSalle);
@@ -78,11 +93,15 @@ export async function PATCH(request, { params }) {
 
 // Supprimer une salle
 export async function DELETE(request, { params }) {
+  const auth = await authorize(request, ["ADMIN"]);
+  if (auth.response) return auth.response;
   const { id } = await params;
 
   try {
-    await prisma.salle.delete({
-      where: { id },
+    await prisma.$transaction(async (tx) => {
+      const salle = await tx.salle.findUnique({ where: { id }, select: { id: true, nom_salle: true } });
+      await tx.salle.delete({ where: { id } });
+      if (salle) await writeAuditLog({ actor: auth.user, action: 'DELETE', entity: 'Salle', entityId: id, summary: `a supprimé la salle « ${salle.nom_salle} »`, client: tx });
     });
 
     return NextResponse.json({ message: "Delete success" }, { status: 200 });

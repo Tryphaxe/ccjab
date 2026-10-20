@@ -3,6 +3,7 @@ import prisma from '@/lib/prisma';
 import PDFDocument from 'pdfkit-table';
 import fs from 'fs';
 import path from 'path';
+import { authorize } from '@/lib/apiAuth';
 
 async function generatePdfBuffer(events, monthLabel) {
   return new Promise(async (resolve, reject) => {
@@ -111,6 +112,8 @@ async function generatePdfBuffer(events, monthLabel) {
 }
 
 export async function GET(request) {
+  const auth = await authorize(request, ['ADMIN', 'FINANCIER', 'ASSISTANT']);
+  if (auth.response) return auth.response;
   try {
     const { searchParams } = new URL(request.url);
     const month = searchParams.get('month');

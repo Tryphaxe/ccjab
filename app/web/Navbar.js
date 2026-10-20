@@ -1,185 +1,98 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Menu, X, Phone, ChevronDown } from 'lucide-react'; // Ajout de ChevronDown
 import Image from 'next/image';
+import { Menu, X, ArrowUpRight, LockKeyhole, ChevronDown, BookOpen, Puzzle } from 'lucide-react';
+
+const links = [
+  { name: 'Accueil', href: '/web/home' },
+  { name: 'Agenda', href: '/web/agenda' },
+  { name: 'Le CCJAB', href: '/web/historique' },
+  { name: 'Espaces & location', href: '/web/espaces' },
+  { name: 'Activités', href: '#activities', dropdown: true },
+  { name: 'Actualités', href: '/web/actualites' },
+  { name: 'Contact', href: '/web/contact' },
+];
 
 export default function Navbar() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [scrolled, setScrolled] = useState(false);
+  const [isActivitiesOpen, setIsActivitiesOpen] = useState(false);
   const pathname = usePathname();
-
-  // Effet pour changer le style au scroll
-  useEffect(() => {
-    const handleScroll = () => setScrolled(window.scrollY > 20);
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
-
-  // Fonction utilitaire pour savoir si un lien est actif
-  const isActive = (path) => pathname === path;
-
-  // Configuration des liens avec sous-menus
-  const navLinks = [
-    { name: 'Accueil', href: '/web/home' },
-    { name: 'Agenda', href: '/web/agenda' },
-    { name: 'Nos Espaces', href: '/web/espaces' },
-    { name: 'Actualités', href: '/web/actualites' }, // J'ai conservé Actualités si vous l'aviez ajouté précédemment
-    { name: 'Contact', href: '/web/contact' },
-    {
-      name: 'À propos',
-      href: '#', // Lien parent non cliquable ou redirigeant vers une page générale
-      subLinks: [
-        { name: 'Historique', href: '/web/historique' },
-        { name: 'Médiathèque', href: '/web/mediatheque' },
-        { name: 'Ludothèque', href: '/web/ludotheque' },
-      ]
-    },
+  const active = (href) => pathname === href || (href !== '/web/home' && pathname.startsWith(`${href}/`));
+  const activitiesActive = pathname.startsWith('/web/mediatheque') || pathname.startsWith('/web/ludotheque');
+  const activityLinks = [
+    { name: 'Médiathèque', href: '/web/mediatheque', Icon: BookOpen },
+    { name: 'Ludothèque', href: '/web/ludotheque', Icon: Puzzle },
   ];
 
   return (
-    <nav className={`fixed top-0 w-full z-50 transition-all duration-300 ${scrolled ? 'bg-white/90 backdrop-blur-md shadow-sm border-b border-gray-100 py-2' : 'bg-transparent py-4'
-      }`}>
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between items-center h-16">
-
-          {/* LOGO */}
-          <Link href="/" className="flex-shrink-0 flex items-center gap-2 group">
-            <Image
-              alt="Logo CCJAB"
-              src="/images/favicon.png"
-              width={32}
-              height={32}
-              className="h-8 w-8 object-contain"
-              priority
-            />
-            <div className="flex flex-col leading-none">
-              <span className={`font-bold text-xl tracking-tight ${scrolled ? 'text-gray-900' : 'text-white mix-blend-difference'}`}>
-                CENTRE<span className="text-emerald-500">CULTUREL</span>
-              </span>
-              <span className={`text-[10px] font-medium tracking-widest uppercase ${scrolled ? 'text-gray-500' : 'text-gray-300 mix-blend-difference'}`}>
-                JACQUES AKA
-              </span>
-            </div>
+    <>
+      <nav className="fixed inset-x-0 top-0 z-50 border-b border-[#eee7e3] bg-[#fffdfc]/95 shadow-[0_2px_12px_rgba(55,30,20,.04)] backdrop-blur-md">
+        <div className="mx-auto flex h-[72px] max-w-7xl items-center justify-between gap-4 px-4 sm:px-6 lg:px-10">
+          <Link href="/web/home" className="flex shrink-0 items-center gap-2.5" aria-label="CCJAB, accueil">
+            <Image src="/images/favicon.png" alt="" width={34} height={34} className="h-[34px] w-[34px] object-contain" priority />
+            <span className="flex flex-col leading-[1.05]">
+              <span className="font-serif text-[16px] font-bold tracking-tight text-[#33241f]">CCJAB</span>
+              <span className="mt-1 text-[7px] font-semibold uppercase tracking-[.19em] text-[#8a7770]">Bouaké · Côte d’Ivoire</span>
+            </span>
           </Link>
 
-          {/* MENU DESKTOP */}
-          <div className="hidden md:flex items-center space-x-8">
-            {navLinks.map((link) => (
-              <div key={link.name} className="relative group">
-                {/* Si le lien a des sous-liens */}
-                {link.subLinks ? (
-                  <button
-                    className={`flex items-center gap-1 text-sm font-medium transition-colors hover:text-emerald-500 py-2 ${scrolled ? 'text-gray-600' : 'text-white/90 hover:text-white mix-blend-difference'
-                      }`}
-                  >
-                    {link.name}
-                    <ChevronDown size={14} className="group-hover:rotate-180 transition-transform duration-200" />
+          <div className="hidden items-center gap-3 lg:flex xl:gap-5">
+            {links.map((link) => (
+              link.dropdown ? <div key={link.name} className="group relative" onMouseEnter={() => setIsActivitiesOpen(true)} onMouseLeave={() => setIsActivitiesOpen(false)}>
+                <button type="button" onClick={() => setIsActivitiesOpen((open) => !open)} onFocus={() => setIsActivitiesOpen(true)} aria-expanded={isActivitiesOpen} aria-haspopup="true" className={`relative inline-flex items-center gap-1 whitespace-nowrap py-2 text-[11px] font-medium transition-colors ${activitiesActive ? 'text-[#ac3214]' : 'text-[#574a44] hover:text-[#ac3214]'}`}>
+                  Activités <ChevronDown size={12} className={`transition-transform ${isActivitiesOpen ? 'rotate-180' : ''}`} />
+                  {activitiesActive && <span className="absolute -bottom-[1px] left-0 h-0.5 w-full bg-[#b93313]" />}
+                </button>
+                {isActivitiesOpen && <div className="absolute left-1/2 top-full z-50 w-52 -translate-x-1/2 pt-2"><div className="rounded-md border border-[#eee7e3] bg-white p-1.5 shadow-xl">
+                  {activityLinks.map(({ name, href, Icon }) => <Link key={href} href={href} onClick={() => setIsActivitiesOpen(false)} className={`flex items-center gap-2 rounded px-3 py-2.5 text-xs transition ${active(href) ? 'bg-[#f8eeeb] font-semibold text-[#ac3214]' : 'text-[#574a44] hover:bg-[#f8f4f2] hover:text-[#ac3214]'}`}><Icon size={14} />{name}</Link>)}
+                </div></div>}
+              </div> :
+              <Link key={link.href} href={link.href} className={`relative whitespace-nowrap py-2 text-[11px] font-medium transition-colors ${active(link.href) ? 'text-[#ac3214]' : 'text-[#574a44] hover:text-[#ac3214]'}`}>
+                {link.name}
+                {active(link.href) && <span className="absolute -bottom-[1px] left-0 h-0.5 w-full bg-[#b93313]" />}
+              </Link>
+            ))}
+          </div>
+
+          <div className="hidden shrink-0 items-center gap-2 lg:flex">
+            <Link href="/web/contact" className="inline-flex items-center gap-1 rounded-sm bg-[#b93313] px-3 py-2.5 text-[10px] font-bold text-white transition hover:bg-[#96270e] xl:px-4">
+              Réserver un espace <ArrowUpRight size={13} />
+            </Link>
+            {/* <Link href="/auth/login" aria-label="Accès équipe" title="Accès équipe" className="flex h-9 w-8 items-center justify-center rounded-sm bg-[#f1e9e5] text-[#a83113] transition hover:bg-[#e8d8d1]">
+              <LockKeyhole size={14} />
+            </Link> */}
+          </div>
+
+          <button type="button" onClick={() => setIsMenuOpen((open) => !open)} aria-label={isMenuOpen ? 'Fermer le menu' : 'Ouvrir le menu'} aria-expanded={isMenuOpen} className="rounded-sm p-2 text-[#33241f] hover:bg-[#f5efec] lg:hidden">
+            {isMenuOpen ? <X size={21} /> : <Menu size={21} />}
+          </button>
+        </div>
+
+        {isMenuOpen && (
+          <div className="border-t border-[#eee7e3] bg-[#fffdfc] px-4 pb-5 pt-2 shadow-lg lg:hidden">
+            <div className="mx-auto max-w-7xl">
+              {links.map((link) => (
+                link.dropdown ? <div key={link.name} className="border-b border-[#f0e9e5]">
+                  <button type="button" onClick={() => setIsActivitiesOpen((open) => !open)} aria-expanded={isActivitiesOpen} className={`flex w-full items-center justify-between px-2 py-3 text-left text-sm ${activitiesActive ? 'font-semibold text-[#ac3214]' : 'text-[#574a44]'}`}>
+                    Activités <ChevronDown size={15} className={`transition-transform ${isActivitiesOpen ? 'rotate-180' : ''}`} />
                   </button>
-                ) : (
-                  /* Lien standard */
-                  <Link
-                    href={link.href}
-                    className={`text-sm font-medium transition-colors relative hover:text-emerald-500 ${isActive(link.href)
-                      ? 'text-emerald-600 font-bold'
-                      : scrolled ? 'text-gray-600' : 'text-white/90 hover:text-white mix-blend-difference'
-                      }`}
-                  >
-                    {link.name}
-                    {isActive(link.href) && (
-                      <span className="absolute -bottom-1 left-0 w-full h-0.5 bg-emerald-600 rounded-full"></span>
-                    )}
-                  </Link>
-                )}
-
-                {/* Dropdown (Menu déroulant) */}
-                {link.subLinks && (
-                  <div className="absolute left-1/2 -translate-x-1/2 top-full pt-2 w-48 hidden group-hover:block hover:block">
-                    <div className="bg-white rounded-xl shadow-xl border border-gray-100 overflow-hidden py-1 animate-in fade-in zoom-in-95 duration-200">
-                      {link.subLinks.map((subLink) => (
-                        <Link
-                          key={subLink.name}
-                          href={subLink.href}
-                          className="block px-4 py-2 text-sm text-gray-700 hover:bg-emerald-50 hover:text-emerald-600 transition-colors"
-                        >
-                          {subLink.name}
-                        </Link>
-                      ))}
-                    </div>
-                  </div>
-                )}
+                  {isActivitiesOpen && <div className="mb-2 ml-2 border-l border-[#e8d8d1] pl-3">{activityLinks.map(({ name, href, Icon }) => <Link key={href} href={href} onClick={() => { setIsMenuOpen(false); setIsActivitiesOpen(false); }} className={`flex items-center gap-2 px-2 py-2.5 text-xs ${active(href) ? 'font-semibold text-[#ac3214]' : 'text-[#756963]'}`}><Icon size={14} />{name}</Link>)}</div>}
+                </div> :
+                <Link key={link.href} href={link.href} onClick={() => setIsMenuOpen(false)} className={`block border-b border-[#f0e9e5] px-2 py-3 text-sm ${active(link.href) ? 'font-semibold text-[#ac3214]' : 'text-[#574a44]'}`}>
+                  {link.name}
+                </Link>
+              ))}
+              <div className="mt-4 flex gap-2">
+                <Link href="/web/contact" onClick={() => setIsMenuOpen(false)} className="flex flex-1 items-center justify-center gap-2 rounded-sm bg-[#b93313] px-3 py-3 text-xs font-bold text-white">Réserver un espace <ArrowUpRight size={14} /></Link>
+                {/* <Link href="/auth/login" onClick={() => setIsMenuOpen(false)} aria-label="Accès équipe" className="flex w-12 items-center justify-center rounded-sm bg-[#f1e9e5] text-[#a83113]"><LockKeyhole size={16} /></Link> */}
               </div>
-            ))}
-
-            <a
-              href="tel:+2250150985220"
-              className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-2.5 rounded-full text-sm font-semibold transition-all shadow-lg shadow-emerald-600/30 hover:-translate-y-0.5"
-            >
-              <Phone size={14} /> Appelez-nous
-            </a>
+            </div>
           </div>
-
-          {/* BOUTON MOBILE */}
-          <div className="md:hidden">
-            <button
-              onClick={() => setIsMenuOpen(!isMenuOpen)}
-              className={`p-2 rounded-lg transition-colors ${scrolled ? 'text-gray-900 hover:bg-gray-100' : 'text-white hover:bg-white/10'}`}
-            >
-              {isMenuOpen ? <X size={24} /> : <Menu size={24} />}
-            </button>
-          </div>
-        </div>
-      </div>
-
-      {/* MENU MOBILE */}
-      {isMenuOpen && (
-        <div className="md:hidden absolute top-full left-0 w-full bg-white border-t border-gray-100 shadow-xl animate-in slide-in-from-top-5 max-h-[80vh] overflow-y-auto">
-          <div className="px-4 py-6 space-y-2">
-            {navLinks.map((link) => (
-              <div key={link.name}>
-                {link.subLinks ? (
-                  /* Section avec sous-liens pour mobile */
-                  <div className="space-y-1">
-                    <div className="px-4 py-2 text-base font-bold text-gray-900">
-                      {link.name}
-                    </div>
-                    <div className="pl-4 border-l-2 border-gray-100 ml-4 space-y-1">
-                      {link.subLinks.map((subLink) => (
-                        <Link
-                          key={subLink.name}
-                          href={subLink.href}
-                          onClick={() => setIsMenuOpen(false)}
-                          className={`block px-4 py-2 text-sm font-medium rounded-lg transition-colors ${isActive(subLink.href) ? 'text-emerald-600 bg-emerald-50' : 'text-gray-500 hover:text-gray-900'
-                            }`}
-                        >
-                          {subLink.name}
-                        </Link>
-                      ))}
-                    </div>
-                  </div>
-                ) : (
-                  /* Lien standard mobile */
-                  <Link
-                    href={link.href}
-                    onClick={() => setIsMenuOpen(false)}
-                    className={`block px-4 py-3 text-base font-medium rounded-xl transition-colors ${isActive(link.href)
-                      ? 'bg-emerald-50 text-emerald-700'
-                      : 'text-gray-600 hover:bg-gray-50'
-                      }`}
-                  >
-                    {link.name}
-                  </Link>
-                )}
-              </div>
-            ))}
-            <button className="w-full mt-4 bg-emerald-600 text-white px-5 py-3.5 rounded-xl font-bold shadow-lg shadow-emerald-600/20">
-              Accéder à la billetterie
-            </button>
-          </div>
-        </div>
-      )}
-    </nav>
+        )}
+      </nav>
+    </>
   );
 }

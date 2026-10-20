@@ -1,150 +1,47 @@
 'use client';
 
-import React from 'react';
-import { Gamepad2, Puzzle, Users, Brain, Smile, Trophy, Star, Heart } from 'lucide-react';
+import Image from 'next/image';
+import Link from 'next/link';
+import { ArrowRight, Brain, Heart, Puzzle, Smile, Sparkles, Users } from 'lucide-react';
+
+const BENEFITS = [
+  { title: 'Réfléchir & apprendre', text: 'Les jeux invitent à exercer la mémoire, la logique et la concentration en s’amusant.', Icon: Brain, tone: 'bg-[#f7efdf] text-[#8b5d22]' },
+  { title: 'Imaginer & créer', text: 'Puzzles, constructions et jeux symboliques ouvrent un terrain d’exploration et d’invention.', Icon: Puzzle, tone: 'bg-[#f8e9e4] text-[#b43a1a]' },
+  { title: 'Jouer ensemble', text: 'Le jeu encourage l’écoute, le partage et les rencontres entre générations.', Icon: Users, tone: 'bg-[#e7f0ea] text-[#315b43]' },
+];
+
+const GAME_TYPES = ['Jeux de société', 'Jeux de construction', 'Puzzles & casse-têtes', 'Jeux symboliques'];
 
 export default function LudothequePage() {
   return (
-    <div className="min-h-screen bg-white text-gray-900 selection:bg-emerald-100 selection:text-emerald-900">
-      
-      {/* ================= HERO SECTION ================= */}
-      <section className="relative pt-32 pb-20 bg-emerald-600 text-white overflow-hidden">
-        {/* Motifs ludiques en arrière-plan */}
-        <div className="absolute top-10 left-10 text-emerald-500/30 animate-pulse"><Puzzle size={120} /></div>
-        <div className="absolute bottom-10 right-10 text-emerald-500/30 animate-bounce delay-700"><Gamepad2 size={100} /></div>
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-emerald-500/20 rounded-full blur-3xl"></div>
-
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 text-center">
-          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/20 border border-white/30 text-white text-sm font-bold mb-6 backdrop-blur-md shadow-lg">
-            <Smile size={18} />
-            <span>Éveil & Divertissement</span>
-          </div>
-          <h1 className="text-4xl md:text-6xl font-extrabold tracking-tight mb-6 drop-shadow-md">
-            La Ludothèque
-          </h1>
-          <p className="text-xl text-emerald-50 max-w-3xl mx-auto leading-relaxed font-medium">
-            Un espace de jeu pour grandir, créer et partager. Découvrez notre collection de jeux éducatifs et récréatifs pour tous les âges.
-          </p>
+    <main className="min-h-screen bg-[#fbf8f7] pt-[72px] text-[#211b19]">
+      <section className="mx-auto grid max-w-7xl gap-8 px-5 pb-12 pt-9 md:px-8 md:pb-16 md:pt-14 lg:grid-cols-[0.95fr_1.05fr] lg:items-center lg:gap-14">
+        <div className="relative order-2 min-h-[300px] overflow-hidden rounded-lg bg-[#211b19] shadow-lg lg:order-1 md:min-h-[430px]">
+          <Image src="/images/ludo.jpeg" alt="Espace de jeux de la ludothèque du CCJAB" fill priority sizes="(max-width: 1024px) 100vw, 50vw" className="object-cover" />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/65 via-transparent to-transparent" />
+          <div className="absolute bottom-5 left-5 text-white"><p className="text-[8px] font-bold uppercase tracking-[0.16em] text-white/75">Jeu · Partage · Éveil</p><p className="mt-1 font-serif text-2xl md:text-3xl">Grandir en jouant.</p></div>
+        </div>
+        <div className="order-1 lg:order-2">
+          <p className="mb-3 inline-flex items-center gap-2 text-[9px] font-bold uppercase tracking-[0.17em] text-[#b43a1a]"><span className="h-1.5 w-1.5 rounded-full bg-[#b43a1a]" /> Éveil &amp; divertissement · Bouaké</p>
+          <h1 className="font-serif text-4xl leading-[1.08] tracking-tight md:text-6xl">La Ludothèque</h1>
+          <p className="mt-4 max-w-xl text-sm leading-6 text-[#746b67] md:text-base">Un espace pour jouer, apprendre et partager. La ludothèque du CCJAB invite enfants, jeunes et adultes à découvrir des jeux éducatifs et récréatifs dans un cadre convivial.</p>
+          <div className="mt-6 flex flex-wrap gap-2"><span className="rounded-full bg-[#f8e9e4] px-3 py-2 text-[9px] font-semibold text-[#9d351c]">Enfants</span><span className="rounded-full bg-[#e7f0ea] px-3 py-2 text-[9px] font-semibold text-[#315b43]">Jeunes</span><span className="rounded-full bg-[#f7efdf] px-3 py-2 text-[9px] font-semibold text-[#805b2d]">Adultes &amp; familles</span></div>
+          <Link href="/web/contact" className="mt-7 inline-flex items-center gap-2 rounded bg-[#b43a1a] px-4 py-3 text-xs font-bold text-white transition hover:bg-[#922c13]">Informations &amp; accès <ArrowRight size={15} /></Link>
         </div>
       </section>
 
-      {/* ================= PRÉSENTATION ================= */}
-      <section className="py-20 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="grid md:grid-cols-2 gap-12 items-center">
-          <div className="relative">
-            <div className="absolute -inset-4 bg-emerald-100 rounded-full blur-2xl opacity-50"></div>
-            <img 
-              src="/images/ludo.jpeg" 
-              alt="Enfants jouant à des jeux de société" 
-              className="relative rounded-3xl shadow-2xl rotate-2 hover:rotate-0 transition-all duration-500 border-4 border-white"
-            />
-            {/* Badge flottant */}
-            <div className="absolute -bottom-6 -right-6 bg-white p-4 rounded-2xl shadow-xl flex items-center gap-3 animate-in slide-in-from-bottom-5">
-              <div className="bg-yellow-100 p-2 rounded-full text-yellow-600"><Trophy size={24} /></div>
-              <div>
-                <p className="font-bold text-gray-900">Pour tous</p>
-                <p className="text-xs text-gray-500">Enfants, Jeunes & Adultes</p>
-              </div>
-            </div>
-          </div>
-
-          <div className="space-y-6">
-            <h2 className="text-3xl font-bold text-gray-900">
-              Bien plus que du simple jeu
-            </h2>
-            <p className="text-gray-600 text-lg leading-relaxed">
-              La ludothèque propose un cadre d’éveil et de divertissement unique. À travers une large sélection de jeux éducatifs et récréatifs, nous offrons un terrain d'exploration pour l'imaginaire.
-            </p>
-            <p className="text-gray-600 leading-relaxed">
-              C'est un lieu de rencontre intergénérationnel où le plaisir de jouer se mêle à l'apprentissage. Que ce soit pour une partie d'échecs stratégique, un jeu de construction ou un jeu de société en famille, chacun y trouve sa place.
-            </p>
-            
-            <div className="grid grid-cols-2 gap-4 pt-4">
-               <div className="flex items-center gap-2 text-emerald-700 font-medium">
-                  <div className="w-2 h-2 bg-emerald-500 rounded-full"></div> Jeux de société
-               </div>
-               <div className="flex items-center gap-2 text-emerald-700 font-medium">
-                  <div className="w-2 h-2 bg-emerald-500 rounded-full"></div> Jeux de construction
-               </div>
-               <div className="flex items-center gap-2 text-emerald-700 font-medium">
-                  <div className="w-2 h-2 bg-emerald-500 rounded-full"></div> Puzzles & Casse-têtes
-               </div>
-               <div className="flex items-center gap-2 text-emerald-700 font-medium">
-                  <div className="w-2 h-2 bg-emerald-500 rounded-full"></div> Jeux symboliques
-               </div>
-            </div>
-          </div>
+      <section className="border-y border-[#eee5e2] bg-white py-12 md:py-16">
+        <div className="mx-auto max-w-7xl px-5 md:px-8"><div className="mb-7 max-w-2xl"><p className="text-[8px] font-bold uppercase tracking-[0.17em] text-[#52715f]">Le jeu comme expérience</p><h2 className="mt-1 font-serif text-3xl md:text-4xl">Bien plus qu’un moment de détente</h2><p className="mt-2 text-xs leading-5 text-[#786e69]">Jouer permet d’explorer, de créer et de partager. La ludothèque encourage ces expériences au fil des parties et des rencontres.</p></div>
+          <div className="grid gap-4 md:grid-cols-3">{BENEFITS.map(({ title, text, Icon, tone }) => <article key={title} className="rounded-lg border border-[#eee5e2] bg-[#fbf8f7] p-5 md:p-6"><span className={`flex h-10 w-10 items-center justify-center rounded ${tone}`}><Icon size={18} /></span><h3 className="mt-4 font-serif text-xl">{title}</h3><p className="mt-2 text-xs leading-5 text-[#786e69]">{text}</p></article>)}</div>
         </div>
       </section>
 
-      {/* ================= OBJECTIFS (Bénéfices) ================= */}
-      <section className="py-20 bg-gray-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center max-w-3xl mx-auto mb-16">
-            <h2 className="text-3xl font-bold text-gray-900 mb-4">Nos Objectifs Pédagogiques</h2>
-            <p className="text-gray-600">
-              Le jeu est un outil puissant pour le développement personnel et social. Voici ce que nous encourageons au quotidien :
-            </p>
-          </div>
-
-          <div className="grid md:grid-cols-3 gap-8">
-            {/* Carte 1 : Cognitif */}
-            <div className="bg-white p-8 rounded-2xl shadow-sm hover:shadow-xl hover:-translate-y-2 transition-all duration-300 border-b-4 border-blue-500">
-              <div className="w-16 h-16 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center mb-6 mx-auto">
-                <Brain size={32} />
-              </div>
-              <h3 className="text-xl font-bold text-gray-900 mb-3 text-center">Développement Cognitif</h3>
-              <p className="text-gray-600 text-center text-sm">
-                Stimuler la mémoire, la logique et la concentration à travers des défis adaptés à chaque âge. Apprendre à résoudre des problèmes en s'amusant.
-              </p>
-            </div>
-
-            {/* Carte 2 : Créativité */}
-            <div className="bg-white p-8 rounded-2xl shadow-sm hover:shadow-xl hover:-translate-y-2 transition-all duration-300 border-b-4 border-purple-500">
-              <div className="w-16 h-16 bg-purple-50 text-purple-600 rounded-2xl flex items-center justify-center mb-6 mx-auto">
-                <Puzzle size={32} />
-              </div>
-              <h3 className="text-xl font-bold text-gray-900 mb-3 text-center">Créativité & Imaginaire</h3>
-              <p className="text-gray-600 text-center text-sm">
-                Offrir un espace de liberté où l'enfant peut inventer des histoires, construire des mondes et exprimer sa personnalité sans contrainte.
-              </p>
-            </div>
-
-            {/* Carte 3 : Vivre-ensemble */}
-            <div className="bg-white p-8 rounded-2xl shadow-sm hover:shadow-xl hover:-translate-y-2 transition-all duration-300 border-b-4 border-emerald-500">
-              <div className="w-16 h-16 bg-emerald-50 text-emerald-600 rounded-2xl flex items-center justify-center mb-6 mx-auto">
-                <Users size={32} />
-              </div>
-              <h3 className="text-xl font-bold text-gray-900 mb-3 text-center">Vivre-ensemble</h3>
-              <p className="text-gray-600 text-center text-sm">
-                Favoriser la cohésion sociale, le respect des règles et l'écoute de l'autre. Le jeu rassemble les enfants, les jeunes et les adultes.
-              </p>
-            </div>
-          </div>
-        </div>
+      <section className="mx-auto grid max-w-7xl gap-8 px-5 py-12 md:px-8 md:py-16 lg:grid-cols-[1fr_0.9fr] lg:items-center">
+        <div><p className="text-[8px] font-bold uppercase tracking-[0.17em] text-[#b43a1a]">À découvrir</p><h2 className="mt-1 font-serif text-3xl md:text-4xl">Des jeux pour tous les imaginaires</h2><p className="mt-3 max-w-xl text-sm leading-6 text-[#746b67]">La collection rassemble différents types de jeux pour varier les expériences, résoudre des énigmes, construire et inventer des histoires.</p><div className="mt-5 grid gap-2 sm:grid-cols-2">{GAME_TYPES.map((type) => <div key={type} className="flex items-center gap-2 rounded bg-white px-3 py-3 text-xs font-medium text-[#554a45]"><span className="h-1.5 w-1.5 rounded-full bg-[#b43a1a]" />{type}</div>)}</div></div>
+        <div className="relative min-h-[280px] overflow-hidden rounded-lg bg-[#211b19] md:min-h-[350px]"><Image src="/images/ludoth.jpeg" alt="Activités et jeux à la ludothèque" fill sizes="(max-width: 1024px) 100vw, 45vw" className="object-cover" /><div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" /><div className="absolute bottom-4 left-4 flex items-center gap-2 rounded bg-white/95 px-3 py-2 text-[10px] font-semibold text-[#403631]"><Sparkles size={14} className="text-[#b43a1a]" />Un espace d’éveil et de partage</div></div>
       </section>
 
-      {/* ================= PUBLIC CIBLE & APPEL À L'ACTION ================= */}
-      <section className="py-20 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="bg-emerald-900 rounded-3xl overflow-hidden relative text-white p-12 text-center">
-            {/* Background Decor */}
-            <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/stardust.png')] opacity-10"></div>
-            
-            <div className="relative z-10 max-w-2xl mx-auto space-y-8">
-                <div className="flex justify-center mb-4">
-                    <Heart className="text-pink-500 fill-pink-500 animate-pulse" size={48} />
-                </div>
-                <h2 className="text-3xl md:text-4xl font-bold">Un espace ouvert à tous</h2>
-                <p className="text-emerald-100 text-lg">
-                    Que vous soyez un enfant curieux, un jeune en quête de défis ou un adulte souhaitant retrouver son âme d'enfant, la ludothèque du Centre Culturel Jacques Aka vous ouvre ses portes.
-                </p>
-                {/* <button className="bg-white text-emerald-900 px-8 py-4 rounded-full font-bold hover:bg-emerald-50 transition-colors shadow-lg hover:scale-105 transform duration-200">
-                    Venir jouer maintenant
-                </button> */}
-            </div>
-        </div>
-      </section>
-
-    </div>
+      <section className="px-5 pb-14 md:px-8 md:pb-20"><div className="mx-auto flex max-w-7xl flex-col justify-between gap-5 rounded-lg bg-[#315b43] p-6 text-white md:flex-row md:items-center md:px-9 md:py-8"><div className="flex items-start gap-4"><span className="mt-1 flex h-10 w-10 shrink-0 items-center justify-center rounded bg-white/10"><Heart size={18} /></span><div><p className="text-[8px] font-bold uppercase tracking-[0.16em] text-white/70">Ludothèque du CCJAB</p><h2 className="mt-1 font-serif text-2xl md:text-3xl">Un espace ouvert à tous</h2><p className="mt-2 max-w-2xl text-xs leading-5 text-white/75">Contactez l’accueil pour connaître les informations pratiques et préparer votre visite.</p></div></div><Link href="/web/contact" className="inline-flex shrink-0 items-center gap-2 rounded bg-white px-4 py-3 text-xs font-bold text-[#315b43] hover:bg-[#f2ecea]"><Smile size={14} /> Nous contacter <ArrowRight size={14} /></Link></div></section>
+    </main>
   );
 }

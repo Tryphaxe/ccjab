@@ -1,22 +1,20 @@
 import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
-import { verifyJWT } from "@/lib/jwt";
+import { authorize } from "@/lib/apiAuth";
+import { writeAuditLog } from '@/lib/auditLog';
 
 export async function PUT(request) {
     try {
-    const token = request.cookies.get("token")?.value;
-    const payload = token ? await verifyJWT(token) : null;
-
-    if (!payload || (payload.role !== 'EDITEUR' && payload.role !== 'ADMIN')) {
-      return NextResponse.json({ error: "Non autorisé" }, { status: 401 });
-    }
+    const auth = await authorize(request, ['EDITEUR', 'ADMIN']);
+    if (auth.response) return auth.response;
 
         const body = await request.json();
         const { id, titre, contenu, type, mediaUrl, isPromoted } = body;
 
         if (!id) return NextResponse.json({ error: "ID manquant" }, { status: 400 });
 
-        const updatedPost = await prisma.post.update({
+        const updatedPost = await prisma.$transaction(async (tx) => {
+        const updated = await tx.post.update({
             where: { id },
             data: {
                 titre,
@@ -25,6 +23,18 @@ export async function PUT(request) {
                 mediaUrl, // Mettra à jour l'image si une nouvelle URL est envoyée
                 isPromoted
             }
+        });
+
+        await writeAuditLog({
+            actor: auth.user,
+            action: 'UPDATE',
+            entity: 'Publication',
+            entityId: updated.id,
+            summary: `a modifié la publication « ${updated.titre} »`,
+            metadata: { changedFields: ['titre', 'contenu', 'type', 'mediaUrl', 'isPromoted'].filter((field) => body[field] !== undefined) },
+            client: tx,
+        });
+        return updated;
         });
     
         return NextResponse.json(updatedPost);

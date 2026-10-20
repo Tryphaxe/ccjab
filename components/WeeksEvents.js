@@ -1,193 +1,121 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
-import { startOfWeek, endOfWeek, addWeeks, format, parseISO } from "date-fns";
+import { useEffect, useMemo, useState } from "react";
+import { addDays, addWeeks, eachDayOfInterval, endOfWeek, format, isSameDay, isToday, startOfWeek, subWeeks } from "date-fns";
 import { fr } from "date-fns/locale";
-import { 
-    ChevronLeft, 
-    ChevronRight, 
-    CalendarRange, 
-    MapPin, 
-    User, 
-    Banknote, 
-    Clock, 
-    Loader2 
-} from "lucide-react";
-import { Badge } from "@/components/ui/badge";
+import { CalendarRange, ChevronLeft, ChevronRight, Clock3, Loader2, RotateCcw, TriangleAlert } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Separator } from "@/components/ui/separator";
+import { EventOriginLegend, getEventOriginColor } from "@/components/EventOrigin";
+import CalendarEventDialog from "@/components/CalendarEventDialog";
+import { getMultiDayWeekLayout, getSingleDayEvents } from "@/components/calendarLayout";
+
+function occursOn(event, day) {
+    const start = new Date(event.date_debut);
+    const end = new Date(event.date_fin || event.date_debut);
+    return Number.isFinite(start.getTime()) && Number.isFinite(end.getTime()) && start < addDays(day, 1) && end >= day;
+}
 
 export default function WeeksEvents() {
     const [currentWeek, setCurrentWeek] = useState(new Date());
     const [events, setEvents] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
-
-    const loadEvents = async (date) => {
-        setIsLoading(true);
-        const start = startOfWeek(date, { weekStartsOn: 1 });
-        const end = endOfWeek(date, { weekStartsOn: 1 });
-
-        try {
-            const res = await fetch(
-                `/api/even/weeks?start=${start.toISOString()}&end=${end.toISOString()}`
-            );
-            const data = await res.json();
-            setEvents(data);
-        } catch (error) {
-            console.error("Erreur chargement events:", error);
-        } finally {
-            setIsLoading(false);
-        }
-    };
-
-    useEffect(() => {
-        loadEvents(currentWeek);
-    }, [currentWeek]);
-
-    const nextWeek = () => setCurrentWeek(addWeeks(currentWeek, 1));
-    const previousWeek = () => setCurrentWeek(addWeeks(currentWeek, -1));
+    const [error, setError] = useState("");
+    const [selectedEvent, setSelectedEvent] = useState(null);
+    const [retryCount, setRetryCount] = useState(0);
 
     const start = startOfWeek(currentWeek, { weekStartsOn: 1 });
     const end = endOfWeek(currentWeek, { weekStartsOn: 1 });
+    const days = useMemo(() => eachDayOfInterval({ start, end }), [start.getTime(), end.getTime()]);
+
+    useEffect(() => {
+        const controller = new AbortController();
+        const loadEvents = async () => {
+            setIsLoading(true);
+            setError("");
+            try {
+                const params = new URLSearchParams({ start: start.toISOString(), end: end.toISOString() });
+                const response = await fetch(`/api/even/weeks?${params.toString()}`, { signal: controller.signal });
+                const data = await response.json();
+                if (!response.ok) throw new Error(data.error || "Impossible de charger les événements de la semaine.");
+                if (!Array.isArray(data)) throw new Error("Le calendrier a reçu des données inattendues.");
+                setEvents(data);
+            } catch (loadError) {
+                if (loadError.name !== "AbortError") {
+                    setError(loadError.message || "Impossible de charger les événements.");
+                    setEvents([]);
+                }
+            } finally {
+                if (!controller.signal.aborted) setIsLoading(false);
+            }
+        };
+        loadEvents();
+        return () => controller.abort();
+    }, [start.getTime(), end.getTime(), retryCount]);
+
+    const goToToday = () => setCurrentWeek(new Date());
+    const totalEvents = events.length;
+    const { segments, laneCount } = useMemo(() => getMultiDayWeekLayout(events, days), [events, days]);
 
     return (
-        <div className="flex flex-col h-full">
-            {/* --- En-tête de navigation --- */}
-            <div className="flex items-center justify-between mb-6 bg-white p-2 rounded-xl border border-gray-200 shadow-sm">
-                <Button 
-                    variant="ghost" 
-                    size="icon" 
-                    onClick={previousWeek}
-                    className="hover:bg-gray-100 text-gray-600"
-                >
-                    <ChevronLeft className="w-5 h-5" />
-                </Button>
-
-                <div className="flex items-center gap-2">
-                    <div className="bg-orange-50 p-2 rounded-lg">
-                        <CalendarRange className="w-5 h-5 text-orange-600" />
-                    </div>
-                    <div className="text-center">
-                        <p className="text-sm text-gray-500 font-medium uppercase tracking-wide">Semaine du</p>
-                        <h2 className="text-sm sm:text-base font-bold text-gray-900">
-                            {format(start, "d MMM", { locale: fr })} - {format(end, "d MMM yyyy", { locale: fr })}
-                        </h2>
+        <section aria-label="Calendrier hebdomadaire" className="min-w-0 space-y-4">
+            <header className="flex flex-col justify-between gap-3 sm:flex-row sm:items-center">
+                <div className="flex min-w-0 items-center gap-3">
+                    <span className="rounded-xl bg-[#fae9e3] p-3 text-[#a93105]"><CalendarRange size={20} /></span>
+                    <div className="min-w-0"><h3 className="font-[Georgia] text-xl font-semibold text-[#1b1b1d]">Semaine du {format(start, "d MMMM", { locale: fr })}</h3><p className="mt-0.5 text-xs text-[#765f58]">{format(start, "d MMM", { locale: fr })} – {format(end, "d MMMM yyyy", { locale: fr })} · {totalEvents} événement{totalEvents === 1 ? "" : "s"}</p></div>
+                </div>
+                <div className="flex items-center gap-2 self-start sm:self-auto">
+                    <Button variant="outline" size="sm" onClick={goToToday} disabled={isSameDay(start, startOfWeek(new Date(), { weekStartsOn: 1 }))} className="h-9 gap-2 border-[#eee8eb] bg-white text-[#59413a] hover:bg-[#f6f3f5]"><RotateCcw size={14} />Cette semaine</Button>
+                    <div className="inline-flex items-center rounded-xl border border-[#eee8eb] bg-white p-1 shadow-sm">
+                        <Button aria-label="Semaine précédente" variant="ghost" size="icon" onClick={() => setCurrentWeek((week) => subWeeks(week, 1))} className="h-8 w-8 text-[#765f58] hover:bg-[#f6f3f5] hover:text-[#a93105]"><ChevronLeft size={17} /></Button>
+                        <span className="mx-1 h-5 w-px bg-[#eee8eb]" />
+                        <Button aria-label="Semaine suivante" variant="ghost" size="icon" onClick={() => setCurrentWeek((week) => addWeeks(week, 1))} className="h-8 w-8 text-[#765f58] hover:bg-[#f6f3f5] hover:text-[#a93105]"><ChevronRight size={17} /></Button>
                     </div>
                 </div>
+            </header>
 
-                <Button 
-                    variant="ghost" 
-                    size="icon" 
-                    onClick={nextWeek}
-                    className="hover:bg-gray-100 text-gray-600"
-                >
-                    <ChevronRight className="w-5 h-5" />
-                </Button>
-            </div>
+            <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-[#eee8eb] bg-[#f6f3f5] px-3 py-2.5"><EventOriginLegend /><p className="inline-flex items-center gap-1.5 text-[11px] text-[#765f58]"><Clock3 size={13} />Sélectionnez un événement pour son détail</p></div>
 
-            {/* --- Liste des événements --- */}
-            <div className="space-y-4">
-                {isLoading ? (
-                    <div className="flex flex-col items-center justify-center py-12 text-gray-400">
-                        <Loader2 className='animate-spin w-8 h-8 mb-2 text-orange-600' />
-                        <span className="text-sm">Chargement du planning...</span>
+            {isLoading ? <div className="flex min-h-[380px] items-center justify-center gap-3 rounded-2xl border border-[#eee8eb] bg-white text-sm text-[#765f58]"><Loader2 className="h-5 w-5 animate-spin text-[#a93105]" />Chargement de la semaine…</div> : error ? <div role="alert" className="flex min-h-[300px] flex-col items-center justify-center rounded-2xl border border-[#f0d5cf] bg-white px-5 text-center"><TriangleAlert className="mb-3 h-7 w-7 text-[#a93105]" /><p className="font-semibold text-[#1b1b1d]">Le planning n’a pas pu être chargé</p><p className="mt-1 max-w-md text-sm text-[#765f58]">{error}</p><Button variant="outline" onClick={() => setRetryCount((count) => count + 1)} className="mt-4 border-[#eee8eb]">Réessayer</Button></div> : (
+                <div className="overflow-x-auto rounded-2xl border border-[#eee8eb] bg-white shadow-[0_2px_12px_rgba(42,24,30,0.035)]">
+                    <div className="grid min-w-[1050px] grid-cols-7 divide-x divide-[#eee8eb]" style={{ gridTemplateRows: `auto repeat(${laneCount}, 34px) minmax(320px, 1fr)` }}>
+                        {days.map((day, index) => {
+                            const dayEvents = events.filter((event) => occursOn(event, day)).sort((a, b) => new Date(a.date_debut) - new Date(b.date_debut));
+                            return <header key={day.toISOString()} aria-label={format(day, "EEEE d MMMM", { locale: fr })} style={{ gridColumn: index + 1, gridRow: 1 }} className={`border-b border-[#eee8eb] px-3 py-3 ${isToday(day) ? "bg-[#fff5f1]" : "bg-[#f6f3f5]"}`}>
+                                <p className="text-[9px] font-bold uppercase tracking-[0.13em] text-[#8d7169]">{format(day, "EEEE", { locale: fr })}</p>
+                                <div className="mt-1 flex items-center justify-between"><span className={`flex h-8 min-w-8 items-center justify-center rounded-lg px-2 text-sm font-bold ${isToday(day) ? "bg-[#a93105] text-white" : "text-[#1b1b1d]"}`}>{format(day, "d")}</span><span className="rounded-full bg-white px-2 py-0.5 text-[9px] font-bold text-[#765f58]">{dayEvents.length}</span></div>
+                            </header>;
+                        })}
+                        {segments.map(({ event, startColumn, endColumn, lane, continuesBefore, continuesAfter, startsInWeek, endsInWeek }) => {
+                            const startTime = new Date(event.date_debut);
+                            const endTime = new Date(event.date_fin || event.date_debut);
+                            const title = event.nom_evenement || event.description || event.type || "Événement sans titre";
+                            const time = startsInWeek && endsInWeek ? `${format(startTime, "HH:mm")}–${format(endTime, "HH:mm")}` : startsInWeek ? `Dès ${format(startTime, "HH:mm")} →` : endsInWeek ? `→ ${format(endTime, "HH:mm")}` : "En cours";
+                            return <button key={`${event.id}-${start.toISOString()}`} type="button" onClick={() => setSelectedEvent(event)} title={title} style={{ gridColumn: `${startColumn + 1} / ${endColumn + 2}`, gridRow: lane + 2, borderLeftColor: getEventOriginColor(event) }} className="mx-1 my-0.5 flex min-w-0 items-center gap-2 overflow-hidden rounded-md border border-[#eee8eb] border-l-4 bg-white px-2.5 text-left shadow-sm hover:bg-[#fcf8fb] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#a93105]">
+                                <span className="truncate text-[10px] font-bold text-[#1b1b1d]">{continuesBefore && "← "}{title}{continuesAfter && " →"}</span><span className="shrink-0 text-[9px] text-[#765f58]">{time}</span>
+                            </button>;
+                        })}
+                        {days.map((day, index) => {
+                            const dayEvents = getSingleDayEvents(events, day);
+                            const hasMultiDayEvent = segments.some(({ startColumn, endColumn }) => index >= startColumn && index <= endColumn);
+                            return <section key={`events-${day.toISOString()}`} aria-label={`Événements du ${format(day, "EEEE d MMMM", { locale: fr })}`} style={{ gridColumn: index + 1, gridRow: laneCount + 2 }} className="min-h-[320px] space-y-2 bg-white p-2.5">
+                                {dayEvents.map((event) => {
+                                    const startTime = new Date(event.date_debut);
+                                    const endTime = new Date(event.date_fin || event.date_debut);
+                                    const title = event.nom_evenement || event.description || event.type || "Événement sans titre";
+                                    return <button key={event.id} type="button" onClick={() => setSelectedEvent(event)} style={{ borderLeftColor: getEventOriginColor(event) }} className="w-full rounded-lg border border-[#eee8eb] border-l-4 bg-white p-2.5 text-left transition hover:-translate-y-0.5 hover:bg-[#fcf8fb] hover:shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#a93105]">
+                                        <span className="block text-[9px] font-bold uppercase tracking-wide text-[#a93105]">{Number.isFinite(startTime.getTime()) ? format(startTime, "HH:mm") : "Horaire à confirmer"}{event.date_fin && Number.isFinite(endTime.getTime()) ? ` – ${format(endTime, "HH:mm")}` : ""}</span>
+                                        <span className="mt-1 block break-words text-xs font-bold leading-4 text-[#1b1b1d]">{title}</span>
+                                        <span className="mt-1.5 block truncate text-[10px] text-[#765f58]">{event.salles?.map((room) => room.nom_salle).join(" · ") || "Lieu à confirmer"}</span>
+                                        {event.categorie && <span className="mt-2 inline-block max-w-full truncate rounded bg-[#f0edef] px-1.5 py-0.5 text-[9px] font-semibold text-[#59413a]">{event.categorie}</span>}
+                                    </button>;
+                                })}
+                                {!dayEvents.length && !hasMultiDayEvent && <p className="pt-3 text-center text-[10px] text-[#b09f9c]">Aucun événement</p>}
+                            </section>;
+                        })}
                     </div>
-                ) : events.length === 0 ? (
-                    <div className="flex flex-col items-center justify-center py-12 bg-gray-50 border border-dashed border-gray-200 rounded-xl">
-                        <div className="bg-white p-3 rounded-full mb-3 shadow-sm">
-                            <CalendarRange className="w-6 h-6 text-gray-400" />
-                        </div>
-                        <p className="text-gray-500 font-medium">Aucun évènement prévu cette semaine</p>
-                    </div>
-                ) : (
-                    events.map((even) => (
-                        <div
-                            key={even.id}
-                            className="group bg-white rounded-xl border border-gray-200 p-4 sm:p-5 shadow-sm hover:shadow-md transition-all duration-200 hover:border-orange-200 relative overflow-hidden"
-                        >
-                            {/* Bandeau latéral de couleur selon statut (optionnel, ici bleu par défaut) */}
-                            <div className="absolute left-0 top-0 bottom-0 w-1 bg-orange-500 group-hover:bg-orange-600 transition-colors"></div>
-
-                            <div className="flex flex-col sm:flex-row gap-4 sm:items-start justify-between pl-3">
-                                
-                                {/* Colonne Gauche : Date & Titre */}
-                                <div className="space-y-3 flex-1">
-                                    <div className="flex flex-wrap items-center gap-2">
-                                        <Badge variant="outline" className="bg-orange-50 text-orange-700 border-orange-100">
-                                            {even.categorie}
-                                        </Badge>
-                                        <Badge variant="secondary" className="text-gray-600 bg-gray-100">
-                                            {even.type}
-                                        </Badge>
-                                    </div>
-                                    
-                                    <div>
-                                        <h3 className="text-lg font-bold text-gray-900 group-hover:text-orange-700 transition-colors">
-                                            {even.nom_evenement || even.description || "Évènement sans nom"}
-                                        </h3>
-                                        <h6 className="text-lg font-bold text-gray-900 group-hover:text-orange-700 transition-colors">
-                                            {(even.salles?.length > 0 ? even.salles.map(s => s.nom_salle).join(" + ") : "Aucune salle")}
-                                        </h6>
-                                        <div className="flex items-center gap-2 text-sm text-gray-500 mt-1">
-                                            <Clock className="w-4 h-4" />
-                                            <span className="capitalize">
-                                                {format(new Date(even.date_debut), "EEEE d MMMM", { locale: fr })} 
-                                                <span className="mx-1">•</span> 
-                                                {format(new Date(even.date_debut), "HH:mm")} - {format(new Date(even.date_fin), "HH:mm")}
-                                            </span>
-                                        </div>
-                                    </div>
-
-                                    {/* Infos Client & Agent */}
-                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
-                                        <div className="flex items-start gap-2 text-sm">
-                                            <User className="w-4 h-4 text-gray-400 mt-0.5" />
-                                            <div>
-                                                <p className="text-gray-500 text-xs uppercase font-semibold">Client</p>
-                                                <p className="text-gray-900 font-medium">{even.nom_client || "—"}</p>
-                                                <p className="text-gray-500 text-xs">{even.contact_client}</p>
-                                            </div>
-                                        </div>
-                                        <div className="flex items-start gap-2 text-sm">
-                                            <div className="w-4 h-4 rounded-full bg-gray-100 flex items-center justify-center mt-0.5">
-                                                <span className="text-[10px] font-bold text-gray-600">A</span>
-                                            </div>
-                                            <div>
-                                                <p className="text-gray-500 text-xs uppercase font-semibold">Agent</p>
-                                                <p className="text-gray-900 font-medium">{even.agent?.name || "—"}</p>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                {/* Colonne Droite : Finances */}
-                                <div className="sm:text-right flex flex-row sm:flex-col justify-between sm:justify-start items-center sm:items-end gap-1 sm:border-l sm:border-gray-100 sm:pl-5 sm:min-w-[140px]">
-                                    <div className="flex flex-col items-start sm:items-end">
-                                        <span className="text-xs text-gray-500 font-medium mb-0.5 flex items-center gap-1">
-                                            <Banknote className="w-3 h-3" /> Total
-                                        </span>
-                                        <span className="text-lg font-bold text-gray-900">
-                                            {(even.montant ?? 0).toLocaleString('fr-FR')} <span className="text-xs font-normal text-gray-500">FCFA</span>
-                                        </span>
-                                    </div>
-
-                                    <Separator className="hidden sm:block my-2 w-full" />
-                                    
-                                    {/* Séparateur mobile */}
-                                    <div className="h-8 w-px bg-gray-200 sm:hidden mx-2"></div>
-
-                                    <div className="flex flex-col items-start sm:items-end">
-                                        <span className="text-xs text-gray-500 font-medium mb-0.5">Avance</span>
-                                        <span className={`text-sm font-bold ${(even.avance ?? 0) > 0 ? "text-emerald-600" : "text-gray-400"}`}>
-                                            {(even.avance ?? 0).toLocaleString('fr-FR')} FCFA
-                                        </span>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    ))
-                )}
-            </div>
-        </div>
+                </div>
+            )}
+            <CalendarEventDialog event={selectedEvent} open={!!selectedEvent} onOpenChange={(open) => !open && setSelectedEvent(null)} />
+        </section>
     );
 }

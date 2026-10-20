@@ -13,7 +13,10 @@ import {
     Phone,
     Shield,
     Lock,
-    UserCog
+    UserCog,
+    UsersRound,
+    ShieldCheck,
+    UserRoundCheck,
 } from 'lucide-react';
 import {
     Dialog,
@@ -64,6 +67,7 @@ const UserFormFields = React.memo(({ form, handleChange, handleSelectChange, sel
                         <SelectItem value="AGENT">Agent</SelectItem>
                         <SelectItem value="FINANCIER">Financier</SelectItem>
                         <SelectItem value="EDITEUR">Éditeur</SelectItem>
+                        <SelectItem value="ASSISTANT">Assistant</SelectItem>
                     </SelectContent>
                 </Select>
             </div>
@@ -174,25 +178,28 @@ export default function UsersPage() {
                 return <Badge className="bg-blue-100 text-blue-700 hover:bg-blue-200 border-blue-200 shadow-none">Agent</Badge>;
             case "EDITEUR":
                 return <Badge className="bg-yellow-100 text-yellow-700 hover:bg-yellow-200 border-yellow-200 shadow-none">Éditeur</Badge>;
+            case "ASSISTANT":
+                return <Badge className="bg-orange-100 text-orange-700 hover:bg-orange-200 border-orange-200 shadow-none">Assistant</Badge>;
             default:
                 return <Badge variant="outline" className="text-gray-500">{role}</Badge>;
         }
     };
 
     return (
-        <div className="min-h-screen bg-gray-50/50 p-4 text-gray-900">
-            <div className="max-w-7xl mx-auto space-y-6">
+        <main className="min-h-screen bg-[#fcf8fb] text-[#1b1b1d]">
+            <div className="w-full space-y-6">
 
                 {/* Header */}
                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                     <div>
-                        <h1 className="text-2xl font-bold tracking-tight text-gray-900">Équipe & Utilisateurs</h1>
+                        <p className="mb-2 text-[10px] font-bold uppercase tracking-[0.15em] text-[#a93105]">Administration · Accès</p>
+                        <h1 className="font-[Georgia] text-3xl font-semibold tracking-tight text-[#1b1b1d]">Équipe & Utilisateurs</h1>
                         <p className="text-sm text-gray-500 mt-1">Gérez les accès et les rôles de vos collaborateurs.</p>
                     </div>
 
                     <Dialog open={isAddOpen} onOpenChange={setIsAddOpen}>
                         <DialogTrigger asChild>
-                            <Button className="bg-gray-900 hover:bg-gray-800 shadow-lg shadow-gray-900/20">
+                            <Button className="bg-[#a93105] hover:bg-[#862300] shadow-sm">
                                 <Plus className="w-4 h-4 mr-2" /> Ajouter un membre
                             </Button>
                         </DialogTrigger>
@@ -221,8 +228,20 @@ export default function UsersPage() {
                     </Dialog>
                 </div>
 
+                <section aria-label="Résumé des accès" className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
+                    {[
+                        { label: 'Comptes au total', role: null, icon: UsersRound, tone: 'bg-[#fae9e3] text-[#a93105]' },
+                        { label: 'Administrateurs', role: 'ADMIN', icon: ShieldCheck, tone: 'bg-[#ffeed1] text-[#7b5500]' },
+                        { label: 'Agents', role: 'AGENT', icon: UserRoundCheck, tone: 'bg-[#e2f1e8] text-[#446554]' },
+                        { label: 'Assistants', role: 'ASSISTANT', icon: User, tone: 'bg-[#f0edef] text-[#59413a]' },
+                    ].map(({ label, role, icon: Icon, tone }) => {
+                        const count = role ? users.filter((user) => user.role === role).length : users.length;
+                        return <article key={label} className="flex items-center gap-4 rounded-2xl border border-[#eee8eb] bg-white p-4 shadow-[0_2px_12px_rgba(42,24,30,0.035)]"><span className={`rounded-xl p-3 ${tone}`}><Icon size={18} /></span><div><p className="text-xs font-semibold text-[#765f58]">{label}</p><p className="mt-1 text-2xl font-bold tracking-tight text-[#1b1b1d]">{count}</p></div></article>;
+                    })}
+                </section>
+
                 {/* Content */}
-                <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+                <div className="overflow-hidden rounded-2xl border border-[#eee8eb] bg-white shadow-[0_2px_12px_rgba(42,24,30,0.035)]">
                     {isloading ? (
                         <div className="flex flex-col items-center justify-center py-20 text-gray-400">
                             <Loader className='animate-spin w-6 h-6 mb-3 text-green-600' />
@@ -233,14 +252,14 @@ export default function UsersPage() {
                             <div className="bg-gray-50 p-4 rounded-full mb-4">
                                 <UserCog className='w-8 h-8 text-gray-400' />
                             </div>
-                            <h3 className="text-lg font-semibold text-gray-900">Aucun utilisateur</h3>
+                            <h3 className="text-lg font-semibold text-[#1b1b1d]">Aucun utilisateur</h3>
                             <p className="text-gray-500 max-w-sm text-center mt-1">
                                 Il n'y a pas encore d'utilisateurs enregistrés dans le système.
                             </p>
                         </div>
                     ) : (
                         <Table>
-                            <TableHeader className="bg-gray-50/50">
+                            <TableHeader className="bg-[#fcf8fb]">
                                 <TableRow>
                                     <TableHead className="w-[80px] text-center">Avatar</TableHead>
                                     <TableHead>Identité</TableHead>
@@ -251,15 +270,15 @@ export default function UsersPage() {
                             </TableHeader>
                             <TableBody>
                                 {users.map((user) => (
-                                    <TableRow key={user.id} className="hover:bg-gray-50/50 transition-colors">
+                                    <TableRow key={user.id} className="hover:bg-[#fcf8fb] transition-colors">
                                         <TableCell className="text-center">
-                                            <div className="mx-auto w-10 h-10 rounded-full bg-gradient-to-br from-gray-100 to-gray-200 border border-gray-200 flex items-center justify-center text-sm font-bold text-gray-600 uppercase shadow-sm">
+                                            <div className="mx-auto w-10 h-10 rounded-full bg-gradient-to-br from-gray-100 to-gray-200 border border-[#eee8eb] flex items-center justify-center text-sm font-bold text-gray-600 uppercase shadow-sm">
                                                 {user.name?.split(' ').map(n => n[0]).slice(0, 2).join('')}
                                             </div>
                                         </TableCell>
                                         <TableCell>
                                             <div className="flex flex-col">
-                                                <span className="font-semibold text-gray-900">{user.name}</span>
+                                                <span className="font-semibold text-[#1b1b1d]">{user.name}</span>
                                                 <span className="text-xs text-gray-500">{user.email}</span>
                                             </div>
                                         </TableCell>
@@ -363,6 +382,6 @@ export default function UsersPage() {
                 </Dialog>
 
             </div>
-        </div>
+        </main>
     )
 }

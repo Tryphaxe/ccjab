@@ -1,165 +1,46 @@
 'use client';
 
-import React from 'react';
-import { BookOpen, Search, Monitor, Library, Coffee, GraduationCap, ArrowRight, CheckCircle2 } from 'lucide-react';
+import Image from 'next/image';
+import Link from 'next/link';
+import { ArrowRight, BookOpen, GraduationCap, Library, Monitor, Newspaper, Search, Users } from 'lucide-react';
+
+const COLLECTIONS = [
+  { title: 'Romans & littérature', text: 'Des œuvres pour découvrir des voix, des histoires et des horizons nouveaux.', Icon: BookOpen, tone: 'bg-[#f8e9e4] text-[#b43a1a]' },
+  { title: 'Ressources éducatives', text: 'Des ouvrages et supports pour accompagner les apprentissages et les recherches.', Icon: GraduationCap, tone: 'bg-[#e7f0ea] text-[#315b43]' },
+  { title: 'Presse & culture générale', text: 'Revues, journaux et magazines pour suivre les idées et l’actualité.', Icon: Newspaper, tone: 'bg-[#f7efdf] text-[#8b5d22]' },
+];
 
 export default function MediathequePage() {
   return (
-    <div className="min-h-screen bg-white text-gray-900 selection:bg-emerald-100 selection:text-emerald-900">
-
-      {/* ================= HERO SECTION ================= */}
-      <section className="relative pt-32 pb-20 bg-emerald-950 text-white overflow-hidden">
-        {/* Motif de fond subtil */}
-        <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/black-scales.png')] opacity-20"></div>
-        <div className="absolute inset-0 bg-gradient-to-tr from-emerald-900/90 to-black/60"></div>
-
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 text-center">
-          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-emerald-800/50 border border-emerald-700 text-emerald-300 text-sm font-medium mb-6 backdrop-blur-sm">
-            <Library size={16} />
-            <span>Savoir & Culture</span>
-          </div>
-          <h1 className="text-4xl md:text-6xl font-extrabold tracking-tight mb-6">
-            La Médiathèque
-          </h1>
-          <p className="text-xl text-gray-300 max-w-3xl mx-auto leading-relaxed">
-            Un espace privilégié dédié à la lecture, à la recherche et à l'apprentissage autonome au cœur de Bouaké.
-          </p>
+    <main className="min-h-screen bg-[#fbf8f7] pt-[72px] text-[#211b19]">
+      <section className="mx-auto grid max-w-7xl gap-8 px-5 pb-12 pt-9 md:px-8 md:pb-16 md:pt-14 lg:grid-cols-[1fr_0.9fr] lg:items-center lg:gap-14">
+        <div>
+          <p className="mb-3 inline-flex items-center gap-2 text-[9px] font-bold uppercase tracking-[0.17em] text-[#b43a1a]"><span className="h-1.5 w-1.5 rounded-full bg-[#b43a1a]" /> Lecture · Recherche · Découverte</p>
+          <h1 className="font-serif text-4xl leading-[1.08] tracking-tight md:text-6xl">La Médiathèque</h1>
+          <p className="mt-4 max-w-xl text-sm leading-6 text-[#746b67] md:text-base">Un espace dédié à la lecture, à la recherche et à l’apprentissage au cœur de Bouaké. Prenez le temps de lire, d’étudier et de découvrir de nouvelles idées.</p>
+          <div className="mt-6 flex flex-wrap gap-2"><span className="rounded-full bg-[#e7f0ea] px-3 py-2 text-[9px] font-semibold text-[#315b43]">Un lieu de lecture</span><span className="rounded-full bg-[#f2ecea] px-3 py-2 text-[9px] font-semibold text-[#655852]">Pour tous les publics</span><span className="rounded-full bg-[#f7efdf] px-3 py-2 text-[9px] font-semibold text-[#805b2d]">Au CCJAB · Bouaké</span></div>
+          <Link href="/web/contact" className="mt-7 inline-flex items-center gap-2 rounded bg-[#b43a1a] px-4 py-3 text-xs font-bold text-white transition hover:bg-[#922c13]">Préparer votre visite <ArrowRight size={15} /></Link>
+        </div>
+        <div className="relative min-h-[300px] overflow-hidden rounded-lg bg-[#211b19] shadow-lg md:min-h-[420px]">
+          <Image src="/images/mediath.jpeg" alt="Espace de lecture de la médiathèque du CCJAB" fill priority sizes="(max-width: 1024px) 100vw, 45vw" className="object-cover" />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/5 to-transparent" />
+          <div className="absolute bottom-5 left-5 right-5 text-white"><p className="text-[8px] font-bold uppercase tracking-[0.16em] text-white/75">Un cadre propice à l’étude</p><p className="mt-1 font-serif text-2xl md:text-3xl">Lire, apprendre, s’inspirer.</p></div>
         </div>
       </section>
 
-      {/* ================= PRÉSENTATION & FONDS DOCUMENTAIRE ================= */}
-      <section className="py-20 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="grid lg:grid-cols-2 gap-16 items-center">
-
-          <div className="space-y-8">
-            <div>
-              <h2 className="text-3xl font-bold text-gray-900 mb-6 flex items-center gap-3">
-                <span className="w-12 h-1 bg-emerald-500 rounded-full block"></span>
-                Un fonds documentaire varié
-              </h2>
-              <p className="text-gray-600 leading-relaxed text-lg mb-6">
-                La médiathèque met à la disposition du public une collection riche et diversifiée. Que vous soyez étudiant, chercheur ou simplement passionné de lecture, vous y trouverez votre bonheur.
-              </p>
-
-              <ul className="space-y-4">
-                <li className="flex items-start gap-3">
-                  <div className="mt-1 bg-emerald-100 p-1 rounded-full text-emerald-600"><CheckCircle2 size={16} /></div>
-                  <span className="text-gray-700"><strong>Ouvrages variés :</strong> Romans, essais, documentaires et littérature jeunesse.</span>
-                </li>
-                <li className="flex items-start gap-3">
-                  <div className="mt-1 bg-emerald-100 p-1 rounded-full text-emerald-600"><CheckCircle2 size={16} /></div>
-                  <span className="text-gray-700"><strong>Ressources éducatives :</strong> Manuels scolaires et parascolaires pour accompagner les élèves.</span>
-                </li>
-                <li className="flex items-start gap-3">
-                  <div className="mt-1 bg-emerald-100 p-1 rounded-full text-emerald-600"><CheckCircle2 size={16} /></div>
-                  <span className="text-gray-700"><strong>Culture générale :</strong> Revues, journaux et magazines d'actualité.</span>
-                </li>
-              </ul>
-            </div>
-
-            {/* <div className="pt-4">
-              <button className="bg-gray-900 text-white px-6 py-3 rounded-full font-semibold hover:bg-gray-800 transition-colors flex items-center gap-2">
-                Consulter le catalogue <ArrowRight size={18} />
-              </button>
-            </div> */}
-          </div>
-
-          {/* Image Illustration */}
-          <div className="relative h-[450px] rounded-3xl overflow-hidden shadow-2xl group">
-            <img
-              src="/images/mediath.jpeg"
-              alt="Intérieur de la médiathèque"
-              className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
-            />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
-            <div className="absolute bottom-6 left-6 text-white">
-              <p className="font-bold text-lg">Un cadre propice à l'étude</p>
-            </div>
-          </div>
-
+      <section className="border-y border-[#eee5e2] bg-white py-12 md:py-16">
+        <div className="mx-auto max-w-7xl px-5 md:px-8">
+          <div className="mb-7 max-w-2xl"><p className="text-[8px] font-bold uppercase tracking-[0.17em] text-[#52715f]">Un fonds documentaire varié</p><h2 className="mt-1 font-serif text-3xl md:text-4xl">Des ressources pour chaque curiosité</h2><p className="mt-2 text-xs leading-5 text-[#786e69]">La médiathèque accueille les lecteurs, les élèves, les étudiants et toute personne désireuse de consulter des ressources dans un cadre calme.</p></div>
+          <div className="grid gap-4 md:grid-cols-3">{COLLECTIONS.map(({ title, text, Icon, tone }) => <article key={title} className="rounded-lg border border-[#eee5e2] bg-[#fbf8f7] p-5 md:p-6"><span className={`flex h-10 w-10 items-center justify-center rounded ${tone}`}><Icon size={18} /></span><h3 className="mt-4 font-serif text-xl">{title}</h3><p className="mt-2 text-xs leading-5 text-[#786e69]">{text}</p></article>)}</div>
         </div>
       </section>
 
-      {/* ================= RESSOURCES NUMÉRIQUES ================= */}
-      <section className="py-20 bg-emerald-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center max-w-3xl mx-auto mb-16">
-            <span className="text-emerald-600 font-bold tracking-wider uppercase text-sm">Innovation</span>
-            <h2 className="text-3xl font-bold text-gray-900 mt-2 mb-4">Bibliothèque Numérique 2.0</h2>
-            <p className="text-gray-600">
-              Le Centre Culturel Jacques Aka s'adapte à l'ère du numérique en offrant l'accès à des plateformes de recherche de renommée internationale.
-            </p>
-          </div>
-
-          <div className="grid md:grid-cols-2 gap-8">
-            {/* Carte Youscribe */}
-            <div className="bg-white p-8 rounded-2xl shadow-sm border border-emerald-100 hover:shadow-xl hover:-translate-y-1 transition-all duration-300 relative overflow-hidden">
-              <div className="absolute top-0 right-0 p-6 opacity-5"><Monitor size={100} /></div>
-              <div className="w-16 h-16 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center mb-6">
-                <BookOpen size={32} />
-              </div>
-              <h3 className="text-2xl font-bold text-gray-900 mb-3">YouScribe</h3>
-              <p className="text-gray-600 mb-6">
-                Accédez à des milliers d'ebooks, livres audio, documents de presse et partitions musicales en illimité. Une bibliothèque géante dans votre poche.
-              </p>
-              <div className="flex flex-wrap gap-2">
-                <span className="bg-gray-100 text-gray-600 text-xs px-3 py-1 rounded-full font-medium">Lecture streaming</span>
-                <span className="bg-gray-100 text-gray-600 text-xs px-3 py-1 rounded-full font-medium">Presse</span>
-              </div>
-            </div>
-
-            {/* Carte Cairn.info */}
-            <div className="bg-white p-8 rounded-2xl shadow-sm border border-emerald-100 hover:shadow-xl hover:-translate-y-1 transition-all duration-300 relative overflow-hidden">
-              <div className="absolute top-0 right-0 p-6 opacity-5"><Search size={100} /></div>
-              <div className="w-16 h-16 bg-red-50 text-red-600 rounded-2xl flex items-center justify-center mb-6">
-                <GraduationCap size={32} />
-              </div>
-              <h3 className="text-2xl font-bold text-gray-900 mb-3">Cairn.info</h3>
-              <p className="text-gray-600 mb-6">
-                La référence pour les sciences humaines et sociales. Consultez des revues académiques, des ouvrages de recherche et des articles encyclopédiques de pointe.
-              </p>
-              <div className="flex flex-wrap gap-2">
-                <span className="bg-gray-100 text-gray-600 text-xs px-3 py-1 rounded-full font-medium">Recherche</span>
-                <span className="bg-gray-100 text-gray-600 text-xs px-3 py-1 rounded-full font-medium">Universitaire</span>
-              </div>
-            </div>
-          </div>
-        </div>
+      <section className="mx-auto grid max-w-7xl gap-8 px-5 py-12 md:px-8 md:py-16 lg:grid-cols-[0.9fr_1.1fr] lg:items-center">
+        <div className="relative min-h-[280px] overflow-hidden rounded-lg bg-[#211b19] md:min-h-[350px]"><Image src="/images/mediath2.jpeg" alt="Espace de travail et de consultation à la médiathèque" fill sizes="(max-width: 1024px) 100vw, 45vw" className="object-cover" /></div>
+        <div><p className="text-[8px] font-bold uppercase tracking-[0.17em] text-[#b43a1a]">Lire &amp; travailler</p><h2 className="mt-1 font-serif text-3xl md:text-4xl">Un espace pour apprendre à votre rythme</h2><p className="mt-3 text-sm leading-6 text-[#746b67]">Installez-vous pour avancer dans vos lectures, préparer un travail ou consulter des documents. La médiathèque offre un environnement dédié à la concentration et à la découverte.</p><div className="mt-5 grid gap-3 sm:grid-cols-2"><div className="flex gap-3 rounded bg-white p-4"><span className="flex h-8 w-8 shrink-0 items-center justify-center rounded bg-[#e7f0ea] text-[#315b43]"><Monitor size={15} /></span><div><h3 className="text-xs font-semibold">Recherche &amp; consultation</h3><p className="mt-1 text-[10px] leading-4 text-[#786e69]">Un espace pour étudier et consulter des ressources.</p></div></div><div className="flex gap-3 rounded bg-white p-4"><span className="flex h-8 w-8 shrink-0 items-center justify-center rounded bg-[#f7efdf] text-[#8b5d22]"><Users size={15} /></span><div><h3 className="text-xs font-semibold">Un lieu ouvert</h3><p className="mt-1 text-[10px] leading-4 text-[#786e69]">Lecteurs, apprenants et curieux y sont les bienvenus.</p></div></div></div></div>
       </section>
 
-      {/* ================= ESPACE DE TRAVAIL ================= */}
-      <section className="py-20 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="bg-gray-900 rounded-3xl overflow-hidden text-white relative">
-          <div className="absolute inset-0 bg-emerald-900/30"></div>
-
-          <div className="grid md:grid-cols-2">
-            <div className="p-10 md:p-16 flex flex-col justify-center relative z-10">
-              <h2 className="text-3xl font-bold mb-6">Un espace d'apprentissage autonome</h2>
-              <p className="text-gray-300 text-lg mb-8 leading-relaxed">
-                Au-delà des ressources, la médiathèque offre un cadre calme et studieux, idéal pour la concentration. C'est l'endroit parfait pour préparer un examen, rédiger un mémoire ou simplement s'évader à travers les pages d'un roman.
-              </p>
-              <div className="flex gap-6">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 bg-gray-800 rounded-lg text-emerald-400"><Coffee size={20} /></div>
-                  <span className="font-medium">Cadre Confortable</span>
-                </div>
-                <div className="flex items-center gap-3">
-                  <div className="p-2 bg-gray-800 rounded-lg text-emerald-400"><Monitor size={20} /></div>
-                  <span className="font-medium">Accès Internet</span>
-                </div>
-              </div>
-            </div>
-
-            <div
-              className="h-full min-h-[300px] bg-cover bg-center relative"
-              style={{ backgroundImage: "url('/images/mediath2.jpeg')" }} // Assurez-vous que l'image est dans public/votre-image.jpg
-            >
-              <div className="absolute inset-0 bg-gradient-to-l from-gray-900 via-transparent to-transparent"></div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-    </div>
+      <section className="px-5 pb-14 md:px-8 md:pb-20"><div className="mx-auto flex max-w-7xl flex-col justify-between gap-5 rounded-lg bg-[#315b43] p-6 text-white md:flex-row md:items-center md:px-9 md:py-8"><div><p className="text-[8px] font-bold uppercase tracking-[0.16em] text-white/70">Médiathèque du CCJAB</p><h2 className="mt-1 font-serif text-2xl md:text-3xl">Envie de découvrir le lieu ?</h2><p className="mt-2 max-w-2xl text-xs leading-5 text-white/75">Contactez l’accueil pour obtenir les informations pratiques avant votre venue.</p></div><Link href="/web/contact" className="inline-flex shrink-0 items-center gap-2 rounded bg-white px-4 py-3 text-xs font-bold text-[#315b43] hover:bg-[#f2ecea]">Informations &amp; accès <ArrowRight size={14} /></Link></div></section>
+    </main>
   );
 }

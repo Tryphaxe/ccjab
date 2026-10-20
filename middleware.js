@@ -31,11 +31,15 @@ export async function middleware(request) {
     if (payload.role === 'FINANCIER') return NextResponse.redirect(new URL("/financial/home", request.url));
     if (payload.role === 'EDITEUR') return NextResponse.redirect(new URL("/editor/home", request.url));
     if (payload.role === 'AGENT') return NextResponse.redirect(new URL("/agent/home", request.url));
+    if (payload.role === 'ASSISTANT') return NextResponse.redirect(new URL("/dashboard/home", request.url));
   }
 
   // C. Protection par Rôle (Exemple: un AGENT essaie d'aller sur /dashboard)
   if (isAuth) {
-    if (isAdminPath && payload.role !== "ADMIN") {
+    const assistantDashboardPages = ['/dashboard/home', '/dashboard/evenements'];
+    const normalizedPath = pathname.replace(/\/+$/, '') || '/';
+    const isAllowedAssistantDashboardPage = assistantDashboardPages.includes(normalizedPath);
+    if (isAdminPath && payload.role !== "ADMIN" && !(payload.role === 'ASSISTANT' && isAllowedAssistantDashboardPage)) {
         return NextResponse.redirect(new URL("/unauthorized", request.url));
     }
     if (isFinancePath && payload.role !== "FINANCIER" && payload.role !== "ADMIN") {

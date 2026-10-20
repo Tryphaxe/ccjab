@@ -1,9 +1,9 @@
-import { Afacad } from "next/font/google";
+import { Inter } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "react-hot-toast";
 
-const afacad = Afacad({
-	variable: "--font-afacad",
+const inter = Inter({
+	variable: "--font-inter",
 	subsets: ["latin"],
 });
 
@@ -23,7 +23,7 @@ export default function RootLayout({ children }) {
 				<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css" />
 			</head>
 			<body
-				className={`${afacad.className} antialiased  bg-gray-50`}
+				className={`${inter.className} antialiased bg-gray-50`}
 			>
 				{children}
 				<Toaster

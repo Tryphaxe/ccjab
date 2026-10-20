@@ -36,36 +36,27 @@ export default function Dash() {
     }, []);
 
     const statCards = [
-        { title: 'Total Publications', value: stats.total, icon: TrendingUp, color: 'text-blue-600', bg: 'bg-blue-50' },
-        { title: 'Actualités', value: stats.actus, icon: FileText, color: 'text-green-600', bg: 'bg-green-50' },
-        { title: 'Publicités', value: stats.pubs, icon: Megaphone, color: 'text-purple-600', bg: 'bg-purple-50' },
+        { title: 'Total Publications', value: stats.total, icon: TrendingUp, color: 'text-[#a93105]', bg: 'bg-[#fae9e3]' },
+        { title: 'Actualités', value: stats.actus, icon: FileText, color: 'text-[#446554]', bg: 'bg-[#e2f1e8]' },
+        { title: 'Publicités', value: stats.pubs, icon: Megaphone, color: 'text-[#7b5500]', bg: 'bg-[#ffeed1]' },
     ];
 
     if (loading) return <div className="flex h-[50vh] items-center justify-center"><Loader className="animate-spin" /></div>;
 
     return (
-        <div className="space-y-3">
-            <div className="flex justify-between items-center">
-                <div>
-                    <h1 className="text-2xl font-bold">Espace Éditeur</h1>
-                    <p className="text-gray-500">Gérez les contenus du site web.</p>
-                </div>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <section aria-label="Indicateurs des publications" className="grid grid-cols-1 gap-4 sm:grid-cols-3">
                 {statCards.map((stat, idx) => {
                     const Icon = stat.icon;
                     return (
-                        <div key={idx} className="bg-white p-5 rounded-xl border flex justify-between items-center">
+                        <div key={idx} className="flex items-center justify-between rounded-2xl border border-[#eee8eb] bg-white p-5 shadow-[0_2px_12px_rgba(42,24,30,0.035)]">
                             <div>
-                                <p className="text-sm text-gray-500">{stat.title}</p>
-                                <p className="text-2xl font-bold">{stat.value}</p>
+                                <p className="text-xs font-bold uppercase tracking-[0.1em] text-[#765f58]">{stat.title}</p>
+                                <p className="mt-2 font-[Georgia] text-3xl font-semibold text-[#1b1b1d]">{stat.value}</p>
                             </div>
                             <div className={`p-3 rounded-full ${stat.bg}`}><Icon className={`w-5 h-5 ${stat.color}`} /></div>
                         </div>
                     );
                 })}
-            </div>
-        </div>
+        </section>
     );
 }
