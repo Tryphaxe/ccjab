@@ -9,6 +9,12 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 
 const money = (value) => new Intl.NumberFormat('fr-FR').format(value) + ' FCFA';
+const estimateNetAfterPaymentFees = (amount) => {
+  const gross = Number(amount);
+  if (!Number.isSafeInteger(gross) || gross <= 0) return gross === 0 ? 0 : null;
+  const fees = Math.round(gross * 0.025 + 100);
+  return Math.max(0, gross - fees);
+};
 const toLocalDateTime = (value) => {
   if (!value) return '';
   const date = new Date(value);
@@ -210,7 +216,12 @@ export default function TicketTypeManager() {
           <div><h3 className="text-sm font-semibold text-gray-900">Créer un tarif</h3><p className="mt-1 text-xs text-gray-500">Le tarif sera créé en brouillon.</p></div>
           <label className="block text-xs font-medium text-gray-700">Nom de l’offre<input required maxLength="80" placeholder="Tarif normal, tarif réduit…" value={form.name} onChange={(event) => setForm({ ...form, name: event.target.value })} className={inputClass} /></label>
           <label className="block text-xs font-medium text-gray-700">Description (facultative)<input maxLength="500" value={form.description} onChange={(event) => setForm({ ...form, description: event.target.value })} className={inputClass} /></label>
-          <div className="grid grid-cols-2 gap-3"><label className="text-xs font-medium text-gray-700">Prix (FCFA)<input required type="number" min="0" step="1" value={form.price} onChange={(event) => setForm({ ...form, price: event.target.value })} className={inputClass} /></label><label className="text-xs font-medium text-gray-700">Quota<input required type="number" min="1" step="1" value={form.capacity} onChange={(event) => setForm({ ...form, capacity: event.target.value })} className={inputClass} /></label></div>
+          <div className="grid gap-3 sm:grid-cols-2">
+            <label className="block text-xs font-medium text-gray-700">Prix de vente<input required type="number" min="0" step="1" inputMode="numeric" placeholder="Ex. 5 000" value={form.price} onChange={(event) => setForm({ ...form, price: event.target.value })} className={inputClass} /><span className="mt-1 block text-[11px] text-gray-500">Montant payé par le client (FCFA)</span></label>
+            <label className="block text-xs font-medium text-gray-700">Montant estimé après frais<input type="text" readOnly aria-live="polite" value={form.price === '' || estimateNetAfterPaymentFees(form.price) === null ? '' : money(estimateNetAfterPaymentFees(form.price))} placeholder="Le calcul s’affichera ici" className={`${inputClass} cursor-not-allowed bg-gray-50 font-semibold text-gray-700`} /><span className="mt-1 block text-[11px] text-gray-500">Après déduction de 2,5 % + 100 FCFA</span></label>
+            <label className="block text-xs font-medium text-gray-700 sm:col-span-2">Quota<input required type="number" min="1" step="1" placeholder="Nombre de billets disponibles" value={form.capacity} onChange={(event) => setForm({ ...form, capacity: event.target.value })} className={inputClass} /></label>
+          </div>
+          <p className="flex gap-2 rounded-lg border border-blue-100 bg-blue-50 px-3 py-2 text-[11px] leading-5 text-blue-900 sm:col-span-2"><Info size={14} className="mt-0.5 shrink-0" />Estimation calculée pour une commande d’un billet. Les 100 FCFA fixes sont prélevés une fois par transaction; le montant net par billet peut donc varier si le client en achète plusieurs.</p>
           <details className="rounded-lg bg-white p-3"><summary className="flex cursor-pointer items-center gap-2 text-xs font-semibold text-gray-700"><CalendarDays size={14} />Période de vente (facultative)</summary><div className="mt-3 grid gap-3 sm:grid-cols-2"><label className="text-[10px] text-gray-600">Début<input type="datetime-local" value={form.salesStart} onChange={(event) => setForm({ ...form, salesStart: event.target.value })} className={inputClass} /></label><label className="text-[10px] text-gray-600">Fin<input type="datetime-local" value={form.salesEnd} onChange={(event) => setForm({ ...form, salesEnd: event.target.value })} className={inputClass} /></label></div></details>
           <button type="submit" disabled={!eventId || saving} className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-[#3e2315] px-4 py-3 text-sm font-semibold text-white hover:bg-[#57341f] disabled:opacity-60">{saving ? <Loader2 size={16} className="animate-spin" /> : <Plus size={16} />}Créer le tarif</button>
         </form>
