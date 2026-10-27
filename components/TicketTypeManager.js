@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import { CalendarDays, Loader2, Plus, Ticket, ToggleLeft, ToggleRight } from 'lucide-react';
+import SearchCombobox from '@/components/ui/search-combobox';
 
 const money = (value) => new Intl.NumberFormat('fr-FR').format(value) + ' FCFA';
 
@@ -96,6 +97,15 @@ export default function TicketTypeManager() {
 
   const inputClass = 'mt-1 w-full rounded-lg border border-gray-200 bg-white px-3 py-2.5 text-sm outline-none focus:border-[#a24701] focus:ring-2 focus:ring-[#a24701]/10';
   const selectedEvent = events.find((event) => event.id === eventId);
+  const eventOptions = events.map((event) => {
+    const date = new Date(event.date_debut).toLocaleDateString('fr-FR');
+    const organizer = event.organise_par_ccjab ? 'CCJAB' : (event.nom_client || 'Client');
+    return {
+      value: event.id,
+      label: `${event.nom_evenement || event.categorie} · ${organizer} · ${date}`,
+      searchText: `${event.nom_evenement || ''} ${event.categorie || ''} ${event.nom_client || ''} ${organizer} ${date}`,
+    };
+  });
 
   return (
     <section className="space-y-5 rounded-2xl border border-gray-200 bg-white p-5 shadow-sm sm:p-6" aria-labelledby="ticket-type-heading">
@@ -105,10 +115,17 @@ export default function TicketTypeManager() {
           <div><h2 id="ticket-type-heading" className="font-bold text-gray-950">Tarifs et quotas</h2><p className="mt-1 text-xs text-gray-500">Configurez les offres de billets pour les événements déjà enregistrés.</p></div>
         </div>
         <label className="min-w-0 text-xs font-semibold text-gray-600 sm:min-w-[280px]">Événement
-          <select value={eventId} onChange={(event) => { setEventId(event.target.value); setNotice(''); setError(''); }} className={inputClass}>
-            {events.length === 0 && <option value="">Aucun événement disponible</option>}
-            {events.map((event) => <option key={event.id} value={event.id}>{event.nom_evenement || event.categorie} · {event.organise_par_ccjab ? 'CCJAB' : (event.nom_client || 'Client')} · {new Date(event.date_debut).toLocaleDateString('fr-FR')}</option>)}
-          </select>
+          <div className="mt-1">
+            <SearchCombobox
+              value={eventId}
+              onValueChange={(value) => { setEventId(value); setNotice(''); setError(''); }}
+              options={eventOptions}
+              placeholder={events.length ? 'Rechercher ou choisir un événement…' : 'Aucun événement disponible'}
+              searchPlaceholder="Saisir le nom d’un événement…"
+              emptyMessage="Aucun événement ne correspond à cette recherche."
+              disabled={!events.length || loading}
+            />
+          </div>
         </label>
       </header>
 
@@ -141,7 +158,7 @@ export default function TicketTypeManager() {
           <button type="submit" disabled={!eventId || saving} className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-[#3e2315] px-4 py-3 text-sm font-semibold text-white hover:bg-[#57341f] disabled:opacity-60">{saving ? <Loader2 size={16} className="animate-spin" /> : <Plus size={16} />}Créer le tarif</button>
         </form>
       </div>}
-      <p className="border-t border-gray-100 pt-3 text-[11px] leading-5 text-gray-500">Tout événement doit être publié pour que ses tarifs soient visibles sur le site public. Le paiement en ligne reste désactivé tant que Wave n’est pas connecté.</p>
+      <p className="border-t border-gray-100 pt-3 text-[11px] leading-5 text-gray-500">Le tarif est associé à l’événement sélectionné. Il reste en brouillon jusqu’à son activation. Pour être visible au public, l’événement doit également être publié.</p>
     </section>
   );
 }

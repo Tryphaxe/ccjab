@@ -8,6 +8,7 @@ const money = (value) => new Intl.NumberFormat('fr-FR').format(value) + ' FCFA';
 export default function PublicTicketSales({ eventId, isPast = false }) {
   const [offers, setOffers] = useState([]);
   const [demoMode, setDemoMode] = useState(false);
+  const [onlinePaymentAvailable, setOnlinePaymentAvailable] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [form, setForm] = useState({ name: '', email: '', phone: '', quantity: 1 });
@@ -23,6 +24,7 @@ export default function PublicTicketSales({ eventId, isPast = false }) {
         if (!response.ok) throw new Error(data.error || 'Impossible de charger les tarifs.');
         setOffers(data.ticketTypes || []);
         setDemoMode(data.demoModeAvailable === true);
+        setOnlinePaymentAvailable(data.onlinePaymentAvailable === true);
         setSelectedOffer(data.ticketTypes?.[0]?.id || '');
       })
       .catch((loadError) => {
@@ -37,7 +39,7 @@ export default function PublicTicketSales({ eventId, isPast = false }) {
 
   async function createOrder(event) {
     event.preventDefault();
-    if (!offer || !demoMode) return;
+    if (!offer || (!demoMode && !onlinePaymentAvailable)) return;
     setError('');
     setSaving(true);
     try {
@@ -48,6 +50,10 @@ export default function PublicTicketSales({ eventId, isPast = false }) {
       });
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || 'Impossible de créer la commande.');
+      if (data.checkoutUrl) {
+        window.location.assign(data.checkoutUrl);
+        return;
+      }
       setOrder(data);
     } catch (requestError) {
       setError(requestError.message || 'Impossible de créer la commande.');
@@ -94,12 +100,12 @@ export default function PublicTicketSales({ eventId, isPast = false }) {
             <p className="text-[10px] text-[#81736e]">Référence {order.reference} · places réservées 15 minutes.</p>
             {demoMode && <button type="button" disabled={saving} onClick={simulatePayment} className="w-full rounded-sm bg-[#315b43] px-3 py-2.5 text-xs font-bold text-white disabled:opacity-60">{saving ? 'Traitement…' : 'Simuler le paiement (développement)'}</button>}
           </div> : <form onSubmit={createOrder} className="mt-3 space-y-2">
-            {!demoMode && <p className="text-[10px] leading-4 text-[#81736e]">Les tarifs sont consultables. La réservation en ligne sera activée après le raccordement du paiement sécurisé.</p>}
+            {!demoMode && !onlinePaymentAvailable && <p className="text-[10px] leading-4 text-[#81736e]">Les tarifs sont consultables. La réservation en ligne sera activée après le raccordement du paiement sécurisé.</p>}
             <label className="block text-[10px] font-semibold text-[#594a43]">Nom complet<input required maxLength={120} value={form.name} onChange={(event) => setForm({ ...form, name: event.target.value })} className="mt-1 w-full rounded-sm border border-[#e7ddd8] px-3 py-2 text-xs outline-none focus:border-[#b93313]" /></label>
             <label className="block text-[10px] font-semibold text-[#594a43]">Adresse e-mail<input type="email" required maxLength={254} value={form.email} onChange={(event) => setForm({ ...form, email: event.target.value })} className="mt-1 w-full rounded-sm border border-[#e7ddd8] px-3 py-2 text-xs outline-none focus:border-[#b93313]" /></label>
             <div className="grid grid-cols-[1fr_80px] gap-2"><label className="block text-[10px] font-semibold text-[#594a43]">Téléphone (facultatif)<input maxLength={40} value={form.phone} onChange={(event) => setForm({ ...form, phone: event.target.value })} className="mt-1 w-full rounded-sm border border-[#e7ddd8] px-3 py-2 text-xs outline-none focus:border-[#b93313]" /></label><label className="block text-[10px] font-semibold text-[#594a43]">Quantité<input type="number" min="1" max={available || 1} value={form.quantity} onChange={(event) => setForm({ ...form, quantity: event.target.value })} className="mt-1 w-full rounded-sm border border-[#e7ddd8] px-2 py-2 text-xs outline-none focus:border-[#b93313]" /></label></div>
             {error && <p role="alert" className="text-[10px] text-red-700">{error}</p>}
-            <button type="submit" disabled={!demoMode || !offer || available < 1 || isPast || saving} className="flex w-full items-center justify-center gap-2 rounded-sm bg-[#b93313] px-4 py-3 text-xs font-bold text-white transition hover:bg-[#96270e] disabled:cursor-not-allowed disabled:opacity-50">{saving && <Loader2 size={13} className="animate-spin" />}{demoMode ? 'Réserver et simuler le paiement' : 'Paiement en ligne bientôt disponible'}</button>
+            <button type="submit" disabled={(!demoMode && !onlinePaymentAvailable) || !offer || available < 1 || isPast || saving} className="flex w-full items-center justify-center gap-2 rounded-sm bg-[#b93313] px-4 py-3 text-xs font-bold text-white transition hover:bg-[#96270e] disabled:cursor-not-allowed disabled:opacity-50">{saving && <Loader2 size={13} className="animate-spin" />}{demoMode ? 'Réserver et simuler le paiement' : onlinePaymentAvailable ? 'Acheter mes billets via Wave' : 'Paiement en ligne bientôt disponible'}</button>
           </form>}
         </>
       )}

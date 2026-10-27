@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
+import { geniusPayConfigured } from '@/lib/geniusPay';
 
 export async function GET(_request, { params }) {
   const { id } = await params;
@@ -54,6 +55,7 @@ export async function GET(_request, { params }) {
         available: Math.max(0, type.capacity - (reservedByType.get(type.id) || 0)),
       })),
       demoModeAvailable: process.env.NODE_ENV !== 'production' && process.env.ENABLE_TICKET_PAYMENT_SIMULATION === 'true',
+      onlinePaymentAvailable: geniusPayConfigured(),
     });
   } catch (error) {
     console.error('Erreur de lecture des tarifs de billetterie:', error);

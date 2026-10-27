@@ -20,6 +20,21 @@ You can start editing the page by modifying `app/page.js`. The page auto-updates
 
 This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
 
+## Billetterie Genius Pay
+
+Les clés Genius Pay sont réservées au serveur et doivent être configurées dans l’environnement de déploiement, jamais dans le navigateur :
+
+```env
+GENIUSPAY_API_KEY=pk_sandbox_...
+GENIUSPAY_API_SECRET=sk_sandbox_...
+GENIUSPAY_WEBHOOK_SECRET=whsec_...
+APP_URL=https://votre-domaine.example
+```
+
+En sandbox, utilisez les clés de test et configurez dans le tableau de bord Genius Pay le webhook `https://votre-domaine.example/api/webhooks/geniuspay` pour `payment.success`, `payment.failed`, `payment.cancelled`, `payment.expired` et `payment.refunded`. La migration Prisma Genius Pay doit être déployée avant l’activation des ventes. Les commandes de billets sont émises uniquement après vérification de la signature du webhook et du montant XOF reçu.
+
+Les paiements en ligne de la billetterie sont initiés avec `payment_method: "wave"` afin de rediriger directement les acheteurs vers Wave. Le lien reçu est accepté uniquement s’il utilise HTTPS sur un domaine Wave.
+
 ## Learn More
 
 To learn more about Next.js, take a look at the following resources:

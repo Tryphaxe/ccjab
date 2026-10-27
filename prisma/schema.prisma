@@ -172,6 +172,7 @@ model TicketOrder {
   paidAt              DateTime?
   waveCheckoutSessionId String?          @unique
   waveTransactionId   String?            @unique
+  geniusPayReference  String?            @unique
   createdAt           DateTime           @default(now())
   updatedAt           DateTime           @updatedAt
 
@@ -209,17 +210,26 @@ model Ticket {
   @@index([orderItemId, status])
 }
 
+model GeniusPayWebhookEvent {
+  id          String   @id
+  event       String
+  receivedAt  DateTime @default(now())
+  processedAt DateTime?
+}
+
 enum TicketOrderStatus {
   PENDING
   PAID
   CANCELLED
   EXPIRED
   REFUNDED
+  REFUND_REQUIRED
 }
 
 enum TicketPaymentProvider {
   NONE
   WAVE
+  GENIUSPAY
 }
 
 enum TicketStatus {

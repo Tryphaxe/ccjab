@@ -2,10 +2,8 @@ import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { authorize } from '@/lib/apiAuth';
 import { writeAuditLog } from '@/lib/auditLog';
-import { ticketingMaintenanceResponse } from '@/lib/ticketingMaintenance';
 
 export async function GET(request, { params }) {
-  return ticketingMaintenanceResponse();
   const auth = await authorize(request, ['ADMIN', 'FINANCIER']);
   if (auth.response) return auth.response;
   const { id: eventId } = await params;
@@ -41,7 +39,6 @@ export async function GET(request, { params }) {
 }
 
 export async function POST(request, { params }) {
-  return ticketingMaintenanceResponse();
   const auth = await authorize(request, ['ADMIN']);
   if (auth.response) return auth.response;
   const { id: eventId } = await params;
@@ -89,7 +86,6 @@ export async function POST(request, { params }) {
 }
 
 export async function PATCH(request, { params }) {
-  return ticketingMaintenanceResponse();
   const auth = await authorize(request, ['ADMIN']);
   if (auth.response) return auth.response;
   const { id: eventId } = await params;

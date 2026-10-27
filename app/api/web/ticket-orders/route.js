@@ -1,21 +1,34 @@
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
+import { createGeniusPayCheckout, geniusPayConfigured } from '@/lib/geniusPay';
 
-const HOLD_MINUTES = 15;
+const HOLD_HOURS = 24;
+const SIMULATION_HOLD_MINUTES = 15;
 const MAX_TICKETS_PER_ORDER = 10;
 const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export async function POST(request) {
-  const simulationEnabled = process.env.NODE_ENV !== 'production' && process.env.ENABLE_TICKET_PAYMENT_SIMULATION === 'true';
-  if (!simulationEnabled) {
-    return NextResponse.json({ error: 'La réservation en ligne sera disponible dès la connexion du paiement sécurisé.' }, { status: 503 });
-  }
-
   let body;
   try {
     body = await request.json();
   } catch {
     return NextResponse.json({ error: 'Requête invalide.' }, { status: 400 });
+  }
+  if (!body || typeof body !== 'object' || Array.isArray(body)) {
+    return NextResponse.json({ error: 'Requête invalide.' }, { status: 400 });
+  }
+
+  const simulationAvailable = process.env.NODE_ENV !== 'production' && process.env.ENABLE_TICKET_PAYMENT_SIMULATION === 'true';
+  const requestedMode = body.paymentMode;
+  if (requestedMode !== undefined && !['simulation', 'geniuspay'].includes(requestedMode)) {
+    return NextResponse.json({ error: 'Mode de paiement de test invalide.' }, { status: 400 });
+  }
+  if (requestedMode === 'simulation' && !simulationAvailable) {
+    return NextResponse.json({ error: 'La simulation est désactivée dans cet environnement.' }, { status: 404 });
+  }
+  const simulationEnabled = requestedMode === 'simulation' || (requestedMode === undefined && simulationAvailable);
+  if (!simulationEnabled && !geniusPayConfigured()) {
+    return NextResponse.json({ error: 'Le paiement sécurisé n’est pas encore configuré.' }, { status: 503 });
   }
 
   const ticketTypeId = typeof body.ticketTypeId === 'string' ? body.ticketTypeId : '';
@@ -74,14 +87,37 @@ export async function POST(request) {
           customerEmail,
           customerPhone: customerPhone || null,
           totalAmount,
-          expiresAt: new Date(now.getTime() + HOLD_MINUTES * 60_000),
+          expiresAt: new Date(now.getTime() + (simulationEnabled ? SIMULATION_HOLD_MINUTES * 60_000 : HOLD_HOURS * 60 * 60_000)),
           items: { create: { ticketTypeId, quantity, unitPrice: ticketType.price } },
         },
         select: { id: true, reference: true, status: true, totalAmount: true, currency: true, expiresAt: true },
       });
     }, { isolationLevel: 'Serializable' });
 
-    return NextResponse.json({ ...order, holdMinutes: HOLD_MINUTES }, { status: 201 });
+    if (simulationEnabled) return NextResponse.json({ ...order, holdMinutes: SIMULATION_HOLD_MINUTES }, { status: 201 });
+
+    try {
+      const checkout = await createGeniusPayCheckout({
+        order,
+        customer: { name: customerName, email: customerEmail, phone: customerPhone },
+      });
+      const expiresAt = checkout.expiresAt && Number.isFinite(checkout.expiresAt.getTime()) && checkout.expiresAt > now
+        ? checkout.expiresAt
+        : order.expiresAt;
+      const updated = await prisma.ticketOrder.update({
+        where: { id: order.id },
+        data: { paymentProvider: 'GENIUSPAY', geniusPayReference: checkout.reference, expiresAt },
+        select: { id: true, reference: true, status: true, totalAmount: true, currency: true, expiresAt: true },
+      });
+      return NextResponse.json({ ...updated, checkoutUrl: checkout.checkoutUrl }, { status: 201 });
+    } catch (paymentError) {
+      await prisma.ticketOrder.updateMany({
+        where: { id: order.id, status: 'PENDING' },
+        data: { status: 'CANCELLED', expiresAt: new Date() },
+      }).catch((cleanupError) => console.error('Impossible de libérer la commande après échec Genius Pay:', cleanupError));
+      console.error('Erreur d’initialisation Genius Pay:', paymentError);
+      return NextResponse.json({ error: 'Impossible d’initialiser le paiement. Aucun billet n’a été débité.' }, { status: 502 });
+    }
   } catch (error) {
     if (['TICKET_TYPE_UNAVAILABLE', 'TICKET_SALES_CLOSED', 'TICKET_CAPACITY', 'INVALID_TICKET_AMOUNT'].includes(error.code)) {
       return NextResponse.json({ error: error.message }, { status: error.code === 'TICKET_CAPACITY' ? 409 : 400 });

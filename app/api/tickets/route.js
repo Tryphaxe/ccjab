@@ -74,7 +74,7 @@ export async function GET(request) {
               salesStart: true,
               salesEnd: true,
               items: {
-                where: { order: { status: 'PAID', paymentProvider: 'WAVE' } },
+                where: { order: { status: 'PAID', paymentProvider: { in: ['WAVE', 'GENIUSPAY'] } } },
                 select: { quantity: true, unitPrice: true },
               },
             },
@@ -83,12 +83,12 @@ export async function GET(request) {
       }),
       prisma.even.count({ where }),
       prisma.ticketOrder.findMany({
-        where: { status: 'PAID', paymentProvider: 'WAVE', paidAt: { gte: start, lte: now } },
+        where: { status: 'PAID', paymentProvider: { in: ['WAVE', 'GENIUSPAY'] }, paidAt: { gte: start, lte: now } },
         select: { paidAt: true, totalAmount: true, items: { select: { quantity: true } } },
       }),
       prisma.ticketType.aggregate({ _sum: { capacity: true } }),
       prisma.ticketOrderItem.findMany({
-        where: { order: { status: 'PAID', paymentProvider: 'WAVE' } },
+        where: { order: { status: 'PAID', paymentProvider: { in: ['WAVE', 'GENIUSPAY'] } } },
         select: { quantity: true, unitPrice: true },
       }),
       prisma.even.count({ where: { visible: true, date_fin: { gte: now }, ticketTypes: { some: activeTicketType } } }),
