@@ -11,8 +11,6 @@ const messages = {
 };
 
 export default function TicketPaymentReturnPage() {
-  const searchParams = useSearchParams();
-  const reference = searchParams.get('reference') || '';
   const [order, setOrder] = useState(null);
   const [error, setError] = useState('');
   const [checking, setChecking] = useState(false);
