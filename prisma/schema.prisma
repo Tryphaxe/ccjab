@@ -173,6 +173,8 @@ model TicketOrder {
   waveCheckoutSessionId String?          @unique
   waveTransactionId   String?            @unique
   geniusPayReference  String?            @unique
+  ticketEmailStatus   TicketEmailStatus  @default(PENDING)
+  ticketEmailSentAt   DateTime?
   createdAt           DateTime           @default(now())
   updatedAt           DateTime           @updatedAt
 
@@ -230,6 +232,12 @@ enum TicketPaymentProvider {
   NONE
   WAVE
   GENIUSPAY
+}
+
+enum TicketEmailStatus {
+  PENDING
+  SENDING
+  SENT
 }
 
 enum TicketStatus {

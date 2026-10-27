@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { verifyGeniusPayWebhook } from '@/lib/geniusPay';
+import { deliverTicketEmail } from '@/lib/ticketDelivery';
 
 function invalid(message, status = 400) {
   return NextResponse.json({ error: message }, { status });
@@ -114,12 +115,31 @@ export async function POST(request) {
       }
 
       await tx.geniusPayWebhookEvent.update({ where: { id: event.id }, data: { processedAt: new Date() } });
-      return { needsReview: event.event === 'payment.success' && order.status !== 'PAID' && order.items.length > 0 && (await tx.ticketOrder.findUnique({ where: { id: order.id }, select: { status: true } }))?.status === 'REFUND_REQUIRED' };
+      const finalStatus = await tx.ticketOrder.findUnique({ where: { id: order.id }, select: { status: true } });
+      return {
+        orderId: order.id,
+        needsReview: event.event === 'payment.success' && finalStatus?.status === 'REFUND_REQUIRED',
+        paid: finalStatus?.status === 'PAID',
+      };
     }, { isolationLevel: 'Serializable' });
     if (result.needsReview) console.error('Paiement Genius Pay reçu sans capacité disponible; remboursement requis:', event.id);
+    if (event.event === 'payment.success' && result.paid) await deliverTicketEmail(result.orderId);
     return NextResponse.json({ received: true, ...(result.needsReview ? { needsReview: true } : {}) });
   } catch (error) {
-    if (error.code === 'P2002') return NextResponse.json({ received: true, duplicate: true });
+    if (error.code === 'P2002') {
+      if (event.event === 'payment.success') {
+        try {
+          const order = orderId
+            ? await prisma.ticketOrder.findUnique({ where: { id: orderId }, select: { id: true } })
+            : await prisma.ticketOrder.findFirst({ where: { geniusPayReference: providerReference }, select: { id: true } });
+          if (order) await deliverTicketEmail(order.id);
+        } catch (deliveryError) {
+          console.error('Échec de l’envoi des billets après confirmation du paiement:', deliveryError);
+          return invalid('Paiement confirmé, mais l’envoi des billets a échoué. Genius Pay pourra réessayer.', 500);
+        }
+      }
+      return NextResponse.json({ received: true, duplicate: true });
+    }
     if (error.code === 'P2034') return invalid('Traitement temporairement indisponible.', 503);
     if (error.code === 'ORDER_NOT_FOUND') return invalid(error.message, 404);
     if (error.code === 'PAYMENT_PROVIDER_MISMATCH' || error.code === 'PAYMENT_REFERENCE_MISMATCH' || error.code === 'PAYMENT_DETAILS_MISMATCH' || error.code === 'ORDER_NOT_PENDING') {

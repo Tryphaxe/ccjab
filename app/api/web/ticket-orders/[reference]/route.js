@@ -11,6 +11,7 @@ export async function GET(_request, { params }) {
         status: true,
         totalAmount: true,
         currency: true,
+        ticketEmailStatus: true,
         expiresAt: true,
         paidAt: true,
         event: { select: { nom_evenement: true, date_debut: true, date_fin: true } },

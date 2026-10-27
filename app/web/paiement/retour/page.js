@@ -1,8 +1,8 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
-import { CheckCircle2, Clock3, Loader2, Ticket, XCircle } from 'lucide-react';
+import { CheckCircle2, Clock3, Download, Loader2, Ticket, XCircle } from 'lucide-react';
 
 const messages = {
   CANCELLED: 'Le paiement a été annulé. Aucun billet n’a été émis.',
@@ -15,6 +15,10 @@ export default function TicketPaymentReturnPage() {
   const [error, setError] = useState('');
   const [checking, setChecking] = useState(false);
   const [reference, setReference] = useState('');
+  const [downloading, setDownloading] = useState(false);
+  const [downloadError, setDownloadError] = useState('');
+  const downloadStarted = useRef(false);
+  const emailPollAttempts = useRef(0);
 
   useEffect(() => {
     setReference(new URLSearchParams(window.location.search).get('reference') || '');
@@ -43,11 +47,48 @@ export default function TicketPaymentReturnPage() {
   }, [refreshOrder]);
 
   useEffect(() => {
-    if (!reference || !order || order.status !== 'PENDING') return undefined;
+    const waitingForPayment = order?.status === 'PENDING';
+    const waitingForEmail = order?.status === 'PAID' && order.ticketEmailStatus !== 'SENT' && emailPollAttempts.current < 15;
+    if (!reference || !order || (!waitingForPayment && !waitingForEmail)) return undefined;
     const controller = new AbortController();
-    const interval = window.setInterval(() => refreshOrder(controller.signal), 4000);
+    const interval = window.setInterval(() => {
+      if (waitingForEmail) emailPollAttempts.current += 1;
+      refreshOrder(controller.signal);
+    }, 4000);
     return () => { window.clearInterval(interval); controller.abort(); };
   }, [order, reference, refreshOrder]);
+
+  const downloadTickets = useCallback(async () => {
+    if (!reference) return;
+    setDownloading(true);
+    setDownloadError('');
+    try {
+      const response = await fetch(`/api/web/ticket-orders/${encodeURIComponent(reference)}/pdf`, { cache: 'no-store' });
+      if (!response.ok) {
+        const data = await response.json().catch(() => ({}));
+        throw new Error(data.error || 'Impossible de télécharger les billets.');
+      }
+      const pdf = await response.blob();
+      const objectUrl = URL.createObjectURL(pdf);
+      const link = document.createElement('a');
+      link.href = objectUrl;
+      link.download = `billets-CCJAB-${reference}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.setTimeout(() => URL.revokeObjectURL(objectUrl), 60_000);
+    } catch (downloadRequestError) {
+      setDownloadError(downloadRequestError.message || 'Impossible de télécharger les billets.');
+    } finally {
+      setDownloading(false);
+    }
+  }, [reference]);
+
+  useEffect(() => {
+    if (order?.status !== 'PAID' || downloadStarted.current) return;
+    downloadStarted.current = true;
+    downloadTickets();
+  }, [downloadTickets, order?.status]);
 
   const tickets = order?.items?.flatMap((item) => item.tickets || []) || [];
 
@@ -62,6 +103,11 @@ export default function TicketPaymentReturnPage() {
             {tickets.map((ticket) => <li key={ticket.code} className="flex items-center gap-3 rounded-sm border border-emerald-100 bg-emerald-50 p-3"><Ticket className="shrink-0 text-emerald-800" size={17} /><span><span className="block font-mono text-sm font-bold">{ticket.code}</span><span className="text-xs text-emerald-900">{order.items.find((item) => item.tickets?.some((entry) => entry.code === ticket.code))?.ticketType?.name}</span></span></li>)}
           </ul>
           <p className="mt-5 text-center text-xs text-[#71635d]">Conservez ces codes pour l’entrée. Référence de commande : {order.reference}</p>
+          <p role="status" className="mt-2 text-center text-xs text-[#71635d]">{order.ticketEmailStatus === 'SENT' ? 'Une copie PDF a été envoyée à l’adresse e-mail indiquée lors de l’achat.' : 'Envoi de la copie PDF par e-mail en cours…'}</p>
+          <div className="mt-5 text-center">
+            <button type="button" onClick={() => { downloadStarted.current = true; downloadTickets(); }} disabled={downloading} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-sm bg-[#a83113] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[#8f290f] disabled:cursor-wait disabled:opacity-60">{downloading ? <Loader2 className="animate-spin" size={16} /> : <Download size={16} />}{downloading ? 'Préparation du billet…' : 'Télécharger le billet PDF'}</button>
+            {downloadError && <p role="alert" className="mt-2 text-xs text-red-700">{downloadError}</p>}
+          </div>
         </div> : order?.status === 'PENDING' || checking ? <div className="text-center">
           <Clock3 className="mx-auto text-[#b93313]" size={36} />
           <h1 className="mt-4 text-3xl font-semibold">Vérification du paiement</h1>

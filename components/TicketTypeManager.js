@@ -1,10 +1,20 @@
 "use client";
 
 import { useCallback, useEffect, useState } from 'react';
-import { CalendarDays, Loader2, Plus, Ticket, ToggleLeft, ToggleRight } from 'lucide-react';
+import { CalendarDays, Check, Info, Loader2, Pencil, Plus, Ticket, ToggleLeft, ToggleRight, X } from 'lucide-react';
 import SearchCombobox from '@/components/ui/search-combobox';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 
 const money = (value) => new Intl.NumberFormat('fr-FR').format(value) + ' FCFA';
+const toLocalDateTime = (value) => {
+  if (!value) return '';
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return '';
+  return new Date(date.getTime() - date.getTimezoneOffset() * 60_000).toISOString().slice(0, 16);
+};
 
 export default function TicketTypeManager() {
   const [events, setEvents] = useState([]);
@@ -137,14 +147,61 @@ export default function TicketTypeManager() {
           <div className="flex items-center justify-between"><h3 className="text-sm font-semibold text-gray-800">Offres existantes</h3>{loading && <Loader2 size={15} className="animate-spin text-[#a24701]" />}</div>
           {!loading && types.length === 0 && <p className="rounded-xl border border-dashed border-gray-200 p-5 text-center text-sm text-gray-500">Aucun tarif configuré pour cet événement.</p>}
           {types.map((type) => <article key={type.id} className="rounded-xl border border-gray-200 p-4">
-            {editing?.id === type.id ? <div className="grid gap-2 sm:grid-cols-2">
-              <input aria-label="Nom du tarif" value={editing.name} onChange={(event) => setEditing({ ...editing, name: event.target.value })} className={inputClass} />
-              <input aria-label="Prix du billet" type="number" min="0" step="1" value={editing.price} onChange={(event) => setEditing({ ...editing, price: event.target.value })} className={inputClass} />
-              <input aria-label="Capacité" type="number" min="1" step="1" value={editing.capacity} onChange={(event) => setEditing({ ...editing, capacity: event.target.value })} className={inputClass} />
-              <div className="flex gap-2"><button type="button" onClick={() => updateType(type, { name: editing.name, price: Number(editing.price), capacity: Number(editing.capacity) })} disabled={saving} className="rounded-lg bg-[#3e2315] px-3 py-2 text-xs font-semibold text-white disabled:opacity-60">Enregistrer</button><button type="button" onClick={() => setEditing(null)} className="rounded-lg border border-gray-200 px-3 py-2 text-xs font-semibold text-gray-600">Annuler</button></div>
-            </div> : <div className="flex flex-wrap items-center justify-between gap-3">
+            {editing?.id === type.id ? <form
+              onSubmit={(event) => {
+                event.preventDefault();
+                updateType(type, {
+                  name: editing.name,
+                  description: editing.description,
+                  price: Number(editing.price),
+                  capacity: Number(editing.capacity),
+                  salesStart: editing.salesStart ? new Date(editing.salesStart).toISOString() : null,
+                  salesEnd: editing.salesEnd ? new Date(editing.salesEnd).toISOString() : null,
+                });
+              }}
+              className="-m-1 space-y-5 rounded-xl border border-[#eadfd9] bg-[#fdfaf8] p-4 sm:p-5"
+            >
+              <div className="flex items-start gap-3">
+                <span className="rounded-lg bg-white p-2 text-[#a24701] shadow-sm"><Pencil size={16} /></span>
+                <div className="min-w-0 flex-1"><h4 className="text-sm font-bold text-gray-950">Modifier le tarif</h4><p className="mt-1 text-xs leading-5 text-gray-500">Les changements s’appliqueront aux prochaines commandes. Les billets déjà vendus restent inchangés.</p></div>
+              </div>
+
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div className="space-y-2">
+                  <Label htmlFor={`ticket-name-${type.id}`} className="text-xs font-semibold text-gray-700">Nom de l’offre</Label>
+                  <Input id={`ticket-name-${type.id}`} required maxLength={80} value={editing.name} onChange={(event) => setEditing({ ...editing, name: event.target.value })} className="h-10 rounded-lg bg-white" placeholder="Ex. Tarif standard" />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor={`ticket-price-${type.id}`} className="text-xs font-semibold text-gray-700">Prix unitaire <span className="font-normal text-gray-500">(FCFA)</span></Label>
+                  <div className="relative"><Input id={`ticket-price-${type.id}`} required type="number" min="0" step="1" value={editing.price} onChange={(event) => setEditing({ ...editing, price: event.target.value })} className="h-10 rounded-lg bg-white pr-14" placeholder="0" /><span className="pointer-events-none absolute inset-y-0 right-3 flex items-center text-xs text-gray-400">FCFA</span></div>
+                </div>
+                <div className="space-y-2 sm:col-span-2">
+                  <Label htmlFor={`ticket-description-${type.id}`} className="text-xs font-semibold text-gray-700">Description <span className="font-normal text-gray-500">(facultative)</span></Label>
+                  <Textarea id={`ticket-description-${type.id}`} maxLength={500} rows={2} value={editing.description} onChange={(event) => setEditing({ ...editing, description: event.target.value })} className="min-h-20 resize-y rounded-lg bg-white" placeholder="Précisez ce qui est inclus dans ce tarif…" />
+                </div>
+                <div className="space-y-2 sm:col-span-2">
+                  <Label htmlFor={`ticket-capacity-${type.id}`} className="text-xs font-semibold text-gray-700">Quota total <span className="font-normal text-gray-500">(billets)</span></Label>
+                  <Input id={`ticket-capacity-${type.id}`} required type="number" min={Math.max(1, type.reserved)} step="1" value={editing.capacity} onChange={(event) => setEditing({ ...editing, capacity: event.target.value })} className="h-10 rounded-lg bg-white" />
+                  <p className="text-[11px] leading-5 text-gray-500">{type.reserved} billet(s) vendu(s) ou réservé(s). Le quota ne peut pas être inférieur à ce nombre.</p>
+                </div>
+              </div>
+
+              <details className="group rounded-lg border border-gray-200 bg-white p-3">
+                <summary className="flex cursor-pointer list-none items-center gap-2 text-xs font-semibold text-gray-700"><CalendarDays size={15} className="text-[#a24701]" />Période de vente <span className="font-normal text-gray-400">(facultative)</span></summary>
+                <div className="mt-4 grid gap-4 sm:grid-cols-2">
+                  <div className="space-y-2"><Label htmlFor={`ticket-start-${type.id}`} className="text-xs font-medium text-gray-600">Début des ventes</Label><Input id={`ticket-start-${type.id}`} type="datetime-local" value={editing.salesStart} onChange={(event) => setEditing({ ...editing, salesStart: event.target.value })} className="h-10 rounded-lg" /></div>
+                  <div className="space-y-2"><Label htmlFor={`ticket-end-${type.id}`} className="text-xs font-medium text-gray-600">Fin des ventes</Label><Input id={`ticket-end-${type.id}`} type="datetime-local" value={editing.salesEnd} onChange={(event) => setEditing({ ...editing, salesEnd: event.target.value })} className="h-10 rounded-lg" /></div>
+                  <p className="flex gap-2 text-[11px] leading-5 text-gray-500 sm:col-span-2"><Info size={14} className="mt-0.5 shrink-0" />Laissez une date vide pour ne pas définir de limite de vente.</p>
+                </div>
+              </details>
+
+              <div className="flex flex-col-reverse gap-2 border-t border-[#eadfd9] pt-4 sm:flex-row sm:justify-end">
+                <Button type="button" variant="outline" onClick={() => setEditing(null)} disabled={saving} className="h-10 rounded-lg bg-white"><X size={15} />Annuler</Button>
+                <Button type="submit" disabled={saving || !editing.name.trim() || !Number.isSafeInteger(Number(editing.price)) || Number(editing.price) < 0 || !Number.isSafeInteger(Number(editing.capacity)) || Number(editing.capacity) < type.reserved} className="h-10 rounded-lg bg-[#3e2315] text-white hover:bg-[#57341f]">{saving ? <Loader2 size={15} className="animate-spin" /> : <Check size={15} />}{saving ? 'Enregistrement…' : 'Enregistrer les modifications'}</Button>
+              </div>
+            </form> : <div className="flex flex-wrap items-center justify-between gap-3">
               <div><div className="flex flex-wrap items-center gap-2"><h4 className="text-sm font-bold text-gray-900">{type.name}</h4><span className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${type.isActive ? 'bg-emerald-50 text-emerald-700' : 'bg-gray-100 text-gray-600'}`}>{type.isActive ? 'En vente' : 'Brouillon'}</span></div><p className="mt-1 text-xs text-gray-500">{money(type.price)} · {type.reserved} réservé(s) sur {type.capacity} · {type.available} disponible(s)</p></div>
-              <div className="flex items-center gap-1"><button type="button" onClick={() => setEditing({ id: type.id, name: type.name, price: String(type.price), capacity: String(type.capacity) })} className="rounded-lg px-3 py-2 text-xs font-semibold text-gray-600 hover:bg-gray-50">Modifier</button><button type="button" disabled={saving} onClick={() => updateType(type, { isActive: !type.isActive })} className="inline-flex items-center gap-1 rounded-lg bg-gray-50 px-3 py-2 text-xs font-semibold text-gray-700 hover:bg-gray-100 disabled:opacity-60">{type.isActive ? <ToggleRight size={15} className="text-emerald-700" /> : <ToggleLeft size={15} />}{type.isActive ? 'Désactiver' : 'Activer'}</button></div>
+              <div className="flex items-center gap-1"><button type="button" onClick={() => setEditing({ id: type.id, name: type.name, description: type.description || '', price: String(type.price), capacity: String(type.capacity), salesStart: toLocalDateTime(type.salesStart), salesEnd: toLocalDateTime(type.salesEnd) })} className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-3 py-2 text-xs font-semibold text-gray-700 transition hover:border-[#e7c9b8] hover:bg-[#fff8f4] hover:text-[#8b3b12]"><Pencil size={13} />Modifier</button><button type="button" disabled={saving} onClick={() => updateType(type, { isActive: !type.isActive })} className="inline-flex items-center gap-1 rounded-lg bg-gray-50 px-3 py-2 text-xs font-semibold text-gray-700 hover:bg-gray-100 disabled:opacity-60">{type.isActive ? <ToggleRight size={15} className="text-emerald-700" /> : <ToggleLeft size={15} />}{type.isActive ? 'Désactiver' : 'Activer'}</button></div>
             </div>}
           </article>)}
         </div>
