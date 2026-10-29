@@ -5,6 +5,7 @@ import { createGeniusPayCheckout, geniusPayConfigured } from '@/lib/geniusPay';
 const HOLD_HOURS = 24;
 const SIMULATION_HOLD_MINUTES = 15;
 const MAX_TICKETS_PER_ORDER = 10;
+const MAX_RESERVATION_RETRIES = 3;
 const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export async function POST(request) {
@@ -41,58 +42,68 @@ export async function POST(request) {
     return NextResponse.json({ error: 'Vérifiez vos coordonnées et choisissez entre 1 et 10 billets.' }, { status: 400 });
   }
 
-  const now = new Date();
   try {
-    const order = await prisma.$transaction(async (tx) => {
-      const ticketType = await tx.ticketType.findUnique({
-        where: { id: ticketTypeId },
-        include: { event: { select: { id: true, visible: true, date_fin: true } } },
-      });
-      if (!ticketType || !ticketType.isActive || !ticketType.event.visible || ticketType.event.date_fin < now) {
-        const error = new Error('Ce tarif n’est pas disponible à la vente.');
-        error.code = 'TICKET_TYPE_UNAVAILABLE';
-        throw error;
-      }
-      if ((ticketType.salesStart && ticketType.salesStart > now) || (ticketType.salesEnd && ticketType.salesEnd <= now)) {
-        const error = new Error('La période de vente de ce tarif est terminée ou n’a pas encore commencé.');
-        error.code = 'TICKET_SALES_CLOSED';
-        throw error;
-      }
+    let order;
+    for (let attempt = 1; attempt <= MAX_RESERVATION_RETRIES; attempt += 1) {
+      const now = new Date();
+      try {
+        order = await prisma.$transaction(async (tx) => {
+          const ticketType = await tx.ticketType.findUnique({
+            where: { id: ticketTypeId },
+            include: { event: { select: { id: true, visible: true, date_fin: true } } },
+          });
+          if (!ticketType || !ticketType.isActive || !ticketType.event.visible || ticketType.event.date_fin < now) {
+            const error = new Error('Ce tarif n’est pas disponible à la vente.');
+            error.code = 'TICKET_TYPE_UNAVAILABLE';
+            throw error;
+          }
+          if ((ticketType.salesStart && ticketType.salesStart > now) || (ticketType.salesEnd && ticketType.salesEnd <= now)) {
+            const error = new Error('La période de vente de ce tarif est terminée ou n’a pas encore commencé.');
+            error.code = 'TICKET_SALES_CLOSED';
+            throw error;
+          }
 
-      const reserved = await tx.ticketOrderItem.aggregate({
-        where: {
-          ticketTypeId,
-          order: { OR: [{ status: 'PAID' }, { status: 'PENDING', expiresAt: { gt: now } }] },
-        },
-        _sum: { quantity: true },
-      });
-      const remaining = ticketType.capacity - (reserved._sum.quantity || 0);
-      if (quantity > remaining) {
-        const error = new Error(`Il ne reste que ${Math.max(0, remaining)} billet(s) à ce tarif.`);
-        error.code = 'TICKET_CAPACITY';
-        throw error;
-      }
+          const reserved = await tx.ticketOrderItem.aggregate({
+            where: {
+              ticketTypeId,
+              order: { OR: [{ status: 'PAID' }, { status: 'PENDING', expiresAt: { gt: now } }] },
+            },
+            _sum: { quantity: true },
+          });
+          const remaining = ticketType.capacity - (reserved._sum.quantity || 0);
+          if (quantity > remaining) {
+            const error = new Error(remaining < 1
+              ? 'Ce tarif vient d’être réservé. Il ne reste plus de billet disponible.'
+              : `Il ne reste que ${remaining} billet${remaining > 1 ? 's' : ''} disponible${remaining > 1 ? 's' : ''} à ce tarif.`);
+            error.code = 'TICKET_CAPACITY';
+            throw error;
+          }
 
-      const totalAmount = ticketType.price * quantity;
-      if (!Number.isSafeInteger(totalAmount)) {
-        const error = new Error('Le montant de cette commande est invalide.');
-        error.code = 'INVALID_TICKET_AMOUNT';
-        throw error;
-      }
+          const totalAmount = ticketType.price * quantity;
+          if (!Number.isSafeInteger(totalAmount)) {
+            const error = new Error('Le montant de cette commande est invalide.');
+            error.code = 'INVALID_TICKET_AMOUNT';
+            throw error;
+          }
 
-      return tx.ticketOrder.create({
-        data: {
-          eventId: ticketType.eventId,
-          customerName,
-          customerEmail,
-          customerPhone: customerPhone || null,
-          totalAmount,
-          expiresAt: new Date(now.getTime() + (simulationEnabled ? SIMULATION_HOLD_MINUTES * 60_000 : HOLD_HOURS * 60 * 60_000)),
-          items: { create: { ticketTypeId, quantity, unitPrice: ticketType.price } },
-        },
-        select: { id: true, reference: true, status: true, totalAmount: true, currency: true, expiresAt: true },
-      });
-    }, { isolationLevel: 'Serializable' });
+          return tx.ticketOrder.create({
+            data: {
+              eventId: ticketType.eventId,
+              customerName,
+              customerEmail,
+              customerPhone: customerPhone || null,
+              totalAmount,
+              expiresAt: new Date(now.getTime() + (simulationEnabled ? SIMULATION_HOLD_MINUTES * 60_000 : HOLD_HOURS * 60 * 60_000)),
+              items: { create: { ticketTypeId, quantity, unitPrice: ticketType.price } },
+            },
+            select: { id: true, reference: true, status: true, totalAmount: true, currency: true, expiresAt: true },
+          });
+        }, { isolationLevel: 'Serializable' });
+        break;
+      } catch (reservationError) {
+        if (reservationError.code !== 'P2034' || attempt === MAX_RESERVATION_RETRIES) throw reservationError;
+      }
+    }
 
     if (simulationEnabled) return NextResponse.json({ ...order, holdMinutes: SIMULATION_HOLD_MINUTES }, { status: 201 });
 
@@ -101,7 +112,7 @@ export async function POST(request) {
         order,
         customer: { name: customerName, email: customerEmail, phone: customerPhone },
       });
-      const expiresAt = checkout.expiresAt && Number.isFinite(checkout.expiresAt.getTime()) && checkout.expiresAt > now
+      const expiresAt = checkout.expiresAt && Number.isFinite(checkout.expiresAt.getTime()) && checkout.expiresAt > new Date()
         ? checkout.expiresAt
         : order.expiresAt;
       const updated = await prisma.ticketOrder.update({
