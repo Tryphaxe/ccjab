@@ -40,11 +40,31 @@ export default function TicketPaymentReturnPage() {
     }
   }, [reference]);
 
+  const verifyPaymentAndRefresh = useCallback(async (signal) => {
+    if (!reference) return;
+    setError('');
+    let reconciliationError = '';
+    try {
+      const response = await fetch(`/api/web/ticket-orders/${encodeURIComponent(reference)}/reconcile`, {
+        method: 'POST',
+        cache: 'no-store',
+        signal,
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) reconciliationError = data.error || 'Impossible de vérifier le paiement auprès de Genius Pay.';
+    } catch (requestError) {
+      if (requestError.name === 'AbortError') return;
+      reconciliationError = 'La vérification directe du paiement est momentanément indisponible.';
+    }
+    await refreshOrder(signal);
+    if (reconciliationError && !signal?.aborted) setError(reconciliationError);
+  }, [reference, refreshOrder]);
+
   useEffect(() => {
     const controller = new AbortController();
-    refreshOrder(controller.signal);
+    verifyPaymentAndRefresh(controller.signal);
     return () => controller.abort();
-  }, [refreshOrder]);
+  }, [verifyPaymentAndRefresh]);
 
   useEffect(() => {
     const waitingForPayment = order?.status === 'PENDING';
@@ -112,8 +132,9 @@ export default function TicketPaymentReturnPage() {
           <Clock3 className="mx-auto text-[#b93313]" size={36} />
           <h1 className="mt-4 text-3xl font-semibold">Vérification du paiement</h1>
           <p className="mt-2 text-sm leading-6 text-[#71635d]">Votre paiement est en cours de confirmation. Cette page se met à jour automatiquement. Les billets seront affichés dès réception de la confirmation sécurisée.</p>
+          {error && <p role="alert" className="mt-3 rounded-sm bg-red-50 px-3 py-2 text-xs text-red-800">{error}</p>}
           <p className="mt-4 flex items-center justify-center gap-2 text-xs text-[#81736e]"><Loader2 className="animate-spin" size={14} />Commande {reference}</p>
-          <button type="button" onClick={() => refreshOrder()} className="mt-5 rounded-sm border border-[#b93313] px-4 py-2 text-xs font-semibold text-[#a83113]">Vérifier à nouveau</button>
+          <button type="button" onClick={() => verifyPaymentAndRefresh()} className="mt-5 rounded-sm border border-[#b93313] px-4 py-2 text-xs font-semibold text-[#a83113]">Vérifier le paiement à nouveau</button>
         </div> : order ? <div className="text-center">
           <XCircle className="mx-auto text-red-700" size={36} />
           <h1 className="mt-4 text-3xl font-semibold">Paiement non confirmé</h1>
