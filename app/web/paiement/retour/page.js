@@ -9,6 +9,8 @@ const messages = {
   EXPIRED: 'Le délai de paiement est dépassé. Recommencez votre réservation.',
   REFUNDED: 'Cette commande a été remboursée et les billets ne sont plus valides.',
 };
+const MAX_AUTOMATIC_PAYMENT_CHECKS = 6;
+const AUTOMATIC_PAYMENT_CHECK_INTERVAL = 10_000;
 
 export default function TicketPaymentReturnPage() {
   const [order, setOrder] = useState(null);
@@ -19,6 +21,8 @@ export default function TicketPaymentReturnPage() {
   const [downloadError, setDownloadError] = useState('');
   const downloadStarted = useRef(false);
   const emailPollAttempts = useRef(0);
+  const paymentAutoChecks = useRef(0);
+  const paymentCheckInProgress = useRef(false);
 
   useEffect(() => {
     setReference(new URLSearchParams(window.location.search).get('reference') || '');
@@ -41,7 +45,8 @@ export default function TicketPaymentReturnPage() {
   }, [reference]);
 
   const verifyPaymentAndRefresh = useCallback(async (signal) => {
-    if (!reference) return;
+    if (!reference || paymentCheckInProgress.current) return;
+    paymentCheckInProgress.current = true;
     setError('');
     let reconciliationError = '';
     try {
@@ -58,13 +63,29 @@ export default function TicketPaymentReturnPage() {
     }
     await refreshOrder(signal);
     if (reconciliationError && !signal?.aborted) setError(reconciliationError);
+    paymentCheckInProgress.current = false;
   }, [reference, refreshOrder]);
 
   useEffect(() => {
     const controller = new AbortController();
+    paymentAutoChecks.current = 1;
     verifyPaymentAndRefresh(controller.signal);
     return () => controller.abort();
   }, [verifyPaymentAndRefresh]);
+
+  useEffect(() => {
+    if (!reference || order?.status !== 'PENDING' || paymentAutoChecks.current >= MAX_AUTOMATIC_PAYMENT_CHECKS) return undefined;
+    const controller = new AbortController();
+    const interval = window.setInterval(() => {
+      if (paymentAutoChecks.current >= MAX_AUTOMATIC_PAYMENT_CHECKS) {
+        window.clearInterval(interval);
+        return;
+      }
+      paymentAutoChecks.current += 1;
+      verifyPaymentAndRefresh(controller.signal);
+    }, AUTOMATIC_PAYMENT_CHECK_INTERVAL);
+    return () => { window.clearInterval(interval); controller.abort(); };
+  }, [order?.status, reference, verifyPaymentAndRefresh]);
 
   useEffect(() => {
     const waitingForPayment = order?.status === 'PENDING';
