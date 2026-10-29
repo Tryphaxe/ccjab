@@ -23,6 +23,12 @@ export async function POST(request) {
     return invalid('Payload de webhook incomplet.');
   }
 
+  // Genius Pay's dashboard test event is a signed connectivity check and has
+  // no payment reference. Acknowledge it without touching orders or tickets.
+  if (event.event === 'webhook.test') {
+    return NextResponse.json({ received: true, test: true });
+  }
+
   const incomingEnvironment = request.headers.get('x-webhook-environment') || event.environment;
   if (process.env.NODE_ENV === 'production' && incomingEnvironment !== 'live') {
     return invalid('Un webhook sandbox ne peut pas modifier une commande de production.', 403);
