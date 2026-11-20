@@ -830,7 +830,7 @@ export default function page() {
                                     </div>
                                     <div className="pl-5">
                                         <p className="text-sm font-medium text-gray-700">
-                                            {event.montant.toLocaleString("fr-FR")} Fcfa
+                                            {event.montant == null ? 'Montant non défini' : `${Number(event.montant).toLocaleString("fr-FR")} Fcfa`}
                                         </p>
                                         <p className="text-xs text-gray-500 truncate" title={`Avance: ${event.avance} • ${event.categorie}`}>
                                             Avance: {event.avance === 0 ? event.avance : (event.avance || 0) + " Fcfa"}
@@ -938,7 +938,7 @@ export default function page() {
                         {/* Barre de pagination */}
                         <div className="flex items-center justify-between p-4 border-t border-[#eee8eb] bg-gray-50">
                             <div className="text-xs text-gray-500 hidden sm:block">
-                                Affichage de <span className="font-medium">{indexOfFirstItem + 1}</span> à <span className="font-medium">{Math.min(indexOfLastItem, filteredEvents.length)}</span> sur <span className="font-medium">{filteredEvents.length}</span> résultats
+                                Affichage de <span className="font-medium">{indexOfFirstItem}</span> à <span className="font-medium">{indexOfLastItem}</span> sur <span className="font-medium">{totalResults}</span> résultats
                             </div>
                             <div className="flex items-center gap-2 mx-auto sm:mx-0">
                                 <Button
